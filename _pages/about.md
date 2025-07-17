@@ -1,22 +1,16 @@
 ---
 layout: about
-title: about
+title: "Weijia (Charlie) Zhang"
 permalink: /
 subtitle: <a href='#'>Affiliations</a>. Address. Contacts. Motto. Etc.
 
 profile:
   align: right
-  image: prof_pic.jpg
+  image: my_pic.jpg
   image_circular: false # crops the image to make it circular
   more_info: >
-    <p><strong>Name:</strong> Charlie Weijia Zhang</p>
-    <p><strong>Email:</strong> <a href="mailto:zhangwj.charlie@gmail.com">zhangwj.charlie@gmail.com</a></p>
-    <p><strong>Phone:</strong> 2172003915</p>
-    <p><strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/weijia-charlie-zhang/">weijia-charlie-zhang</a></p>
-    <p><strong>GitHub:</strong> <a href="https://github.com/CharlieDreemur">CharlieDreemur</a></p>
-    <p><strong>Website:</strong> <a href="https://charliedreemur.wordpress.com">charliedreemur.wordpress.com</a></p>
-    <p>University of Illinois Urbana-Champaign (UIUC)</p>
-    <p>B.S in Computer Science and Mathematics, GPA: 3.86/4.0 (Dean's List), Graduation: May 2026</p>
+    <p>CS + Math @ UIUC</p>
+
 
 selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page

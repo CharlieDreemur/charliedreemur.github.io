@@ -1,5 +1,5 @@
 {
-    "personal": {
+    "basics": {
       "name": "Charlie Weijia Zhang",
       "phone": "2172003915",
       "email": "zhangwj.charlie@gmail.com",
@@ -28,7 +28,7 @@
         ]
       }
     ],
-    "workExperience": [
+    "work": [
       {
         "company": "Microsoft",
         "dates": "July 2025 -- Present",
@@ -65,7 +65,7 @@
         ]
       }
     ],
-    "researchExperience": [
+    "publications": [
       {
         "title": "OpenManus-RL: Better Memory Planning Agent in General Environments via Reinforcement Learning",
         "role": "Research Assistant",
@@ -131,7 +131,7 @@
         "AWS"
       ]
     },
-    "activitiesAndLeadership": [
+    "activities": [
       "Research Assistant at UIUC U Lab, under Professor Jiaxuan You, specializing in LLM agents and NLP fields.",
       "Game Programmer at UIUC Stu/Dio, under Professor Dan Cermak",
       "UIUC ACM GameBuilder Exec/Programming Lead",
