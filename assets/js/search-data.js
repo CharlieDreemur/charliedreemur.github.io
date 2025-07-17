@@ -417,7 +417,7 @@ ninja.data = [{
         title: 'email',
         section: 'Socials',
         handler: () => {
-          window.open("mailto:%7A%68%61%6E%67%77%6A.%63%68%61%72%6C%69%65@%67%6D%61%69%6C.%63%6F%6D", "_blank");
+          window.open("mailto:%77%65%69%6A%69%61%34@%69%6C%6C%69%6E%6F%69%73.%65%64%75", "_blank");
         },
       },{
         id: 'social-github',
@@ -439,34 +439,6 @@ ninja.data = [{
         section: 'Socials',
         handler: () => {
           window.open("", "_blank");
-        },
-      },{
-        id: 'social-phone',
-        title: 'Phone',
-        section: 'Socials',
-        handler: () => {
-          window.open("", "_blank");
-        },
-      },{
-        id: 'social-rss',
-        title: 'RSS Feed',
-        section: 'Socials',
-        handler: () => {
-          window.open("/feed.xml", "_blank");
-        },
-      },{
-        id: 'social-scholar',
-        title: 'Google Scholar',
-        section: 'Socials',
-        handler: () => {
-          window.open("https://scholar.google.com/citations?user=qc6CJjYAAAAJ", "_blank");
-        },
-      },{
-        id: 'social-custom_social',
-        title: 'Custom_social',
-        section: 'Socials',
-        handler: () => {
-          window.open("https://www.alberteinstein.com/", "_blank");
         },
       },{
       id: 'light-theme',
