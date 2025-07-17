@@ -26,7 +26,7 @@ latest_posts:
   scrollable: false # adds a vertical scroll bar if there are more than 3 new posts items
   limit: 3 # leave blank to include all the blog posts
 ---
-Howdy! I'm Charlie Zhang!
+# Howdy! I'm Charlie Zhang!
 
 - CS+Math @ [UIUC](https://illinois.edu/)
 
@@ -34,7 +34,7 @@ Howdy! I'm Charlie Zhang!
 
 - AI Researcher & Full-Stack Programmer & Game Developer
 
-Research
+# Research
 My research interests are in the field of LLM Agents, especially in next-generation AI agents that seamlessly bridge virtual and physical worlds through socially intelligent, tool-agnostic, and ethically grounded architectures, including:
 
 - LLM Agents
@@ -42,7 +42,7 @@ My research interests are in the field of LLM Agents, especially in next-generat
 - Persona Agent
 - Multi-Modal Agents
   
-
+# Cooperate with me!
 Also some random [research ideas](https://lead-cardamom-96f.notion.site/Dreeumr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link):
 <iframe src="https://lead-cardamom-96f.notion.site/Dreeumr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link" width="100%" height="600"></iframe>
 
