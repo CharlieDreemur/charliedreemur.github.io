@@ -2,7 +2,7 @@
 layout: about
 title: "Weijia (Charlie) Zhang"
 permalink: /
-subtitle: <a href='#'>Affiliations</a>. Address. Contacts. Motto. Etc.
+subtitle: University of Illinois Urbana-Champaign
 
 profile:
   align: right
