@@ -43,7 +43,7 @@ My research interests are in the field of LLM Agents, especially in next-generat
 - Multi-Modal Agents
   
 # Cooperate with me!
-Also some random [research ideas](https://lead-cardamom-96f.notion.site/Dreeumr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link):
+Also some random [research ideas](https://lead-cardamom-96f.notion.site/Dreeu2mr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link):
 <iframe src="https://lead-cardamom-96f.notion.site/Dreeumr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link" width="100%" height="600"></iframe>
 
 Feel Free to reach me on [email](weijia4@illinois.edu)
