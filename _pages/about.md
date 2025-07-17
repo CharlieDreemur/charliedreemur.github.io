@@ -9,21 +9,50 @@ profile:
   image: my_pic.jpg
   image_circular: false # crops the image to make it circular
   more_info: >
-    <p>CS + Math @ UIUC</p>
+    <p>University of Illinois at Urbana-Champaign</p>
 
 
-selected_papers: true # includes a list of papers marked as "selected={true}"
+selected_papers: false # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 
 announcements:
-  enabled: true # includes a list of news items
-  scrollable: true # adds a vertical scroll bar if there are more than 3 news items
+  enabled: false # includes a list of news items
+  scrollable: false  # adds a vertical scroll bar if there are more than 3 news items
   limit: 5 # leave blank to include all the news in the `_news` folder
 
 latest_posts:
-  enabled: true
-  scrollable: true # adds a vertical scroll bar if there are more than 3 new posts items
+  enabled: false
+  scrollable: false # adds a vertical scroll bar if there are more than 3 new posts items
   limit: 3 # leave blank to include all the blog posts
 ---
 
-Charlie Weijia Zhang is a Computer Science and Mathematics student at the University of Illinois Urbana-Champaign (UIUC), passionate about AI, LLM agents, and software engineering. He has interned at Microsoft, Tencent, NetEase, and Reborn Network, and contributed to research in reinforcement learning, LLM bias mitigation, and multi-agent systems. Charlie is active in student organizations, game development, and hackathons, and is always eager to collaborate on innovative projects.
+CS+Math @ UIUC
+GPA: 3.9/4.0 (2025 Dean’s List)
+Full-Stack Programmer: backend & frontend
+Game Developer: Unity, UE5
+AI Researcher: NLP, HCI, AIGC
+Basically, I aim to pioneer next-generation AI agents that seamlessly bridge virtual and physical worlds through socially intelligent, tool-agnostic, and ethically grounded architectures. My work focuses on creating agents with persistent memory, adaptive autonomy, and collaborative emergence—transforming how humans interact with AI across games, productivity tools, and social simulations. This vision drives three core research directions:
+
+1. Hyper-Realistic Game NPCs with Embodied Cognition
+How can we create game agents that perceive (voice/image), remember (long-term context), and evolve (persona-driven traits) like humans while interacting with digital worlds?
+→ I develop multi-modal NPCs integrating real-time speech (Whisper + GPT-SoVITs), physical interaction (Inverse Kinematics), and memory architectures (RAG + CoT).
+→ Key innovations: Character-card-driven persona frameworks (Reborn Tech), procedural reward systems for emotional consistency (OpenManus-RL), Unity/Flask visualization for human-in-the-loop testing (Artificial Leviathan).
+→ Goal: NPCs that learn from players and persist memories across gaming sessions.
+
+1. Self-Evolving Tool-Creation Agents
+Can agents autonomously generate, refine, and chain tools to solve novel problems—without human intervention?
+→ I engineer MCP-compatible frameworks (OpenManus-RL) using RL + Mixture of Experts (MoE) to enable agents to:
+ - Self-discover tools (e.g., creating Python scripts or API calls for unseen OS/Web/KG environments)
+ - Optimize tool-chains via REACT reasoning (think→act→create→evaluate) with automated reward signals.
+→ Key innovations: GAIA/WebArena benchmarking, cross-domain generalization via DeepSeek GRPO, synthetic tool-curation pipelines.
+→ Goal: Agents that bootstrap their own toolkits for open-ended problem-solving.
+
+1. Governance-Aware Social Agent Ecosystems
+How do multi-agent societies negotiate ethical rules, mitigate biases, and sustain collaboration at scale?
+→ I simulate emergent social contracts (Artificial Leviathan) using:
+ - Persona-engineered agents (prompt + QA-encoded traits)
+ - Bias-aware evolution (lessons from LLM data augmentation)
+ - Human-AI policy co-creation (Unity/Flask visualization + governance rule extraction).
+→ Key innovations: Hobbesian interaction frameworks, synthetic bias assessment benchmarks, policy generation from collective dynamics.
+→ Goal: Scalable agent societies that self-regulate conflicts and align with human values.
+
