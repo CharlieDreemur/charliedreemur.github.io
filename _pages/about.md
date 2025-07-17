@@ -2,7 +2,7 @@
 layout: about
 title: "Weijia (Charlie) Zhang"
 permalink: /
-subtitle: <a href='https://illinois.edu/'> University of Illinois Urbana-Champaign </a>
+subtitle: About Me
 
 profile:
   align: right
@@ -26,7 +26,7 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
-- CS+Math @ UIUC
+- CS+Math @ [UIUC](https://illinois.edu/)
 
 - GPA: 3.86/4.0 (2025 Dean’s List)
 
