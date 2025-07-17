@@ -2,7 +2,8 @@
 layout: about
 title: "Weijia (Charlie) Zhang"
 permalink: /
-subtitle: About Me
+subtitle: This website is under construction. You can also check my another website [here](https://charliedreemur.wordpress.com).
+
 
 profile:
   align: right
@@ -25,6 +26,7 @@ latest_posts:
   scrollable: false # adds a vertical scroll bar if there are more than 3 new posts items
   limit: 3 # leave blank to include all the blog posts
 ---
+Howdy! I'm Charlie Zhang!
 
 - CS+Math @ [UIUC](https://illinois.edu/)
 
@@ -32,9 +34,16 @@ latest_posts:
 
 - AI Researcher & Full-Stack Programmer & Game Developer
 
-This website is under construction. You can also check my another website [here](https://charliedreemur.wordpress.com).
+Research
+My research interests are in the field of LLM Agents, especially in next-generation AI agents that seamlessly bridge virtual and physical worlds through socially intelligent, tool-agnostic, and ethically grounded architectures, including:
 
-Basically, I aim to pioneer next-generation AI agents that seamlessly bridge virtual and physical worlds through socially intelligent, tool-agnostic, and ethically grounded architectures. My work focuses on creating agents with persistent memory, adaptive autonomy, and collaborative emergence—transforming how humans interact with AI across games, productivity tools, and social simulations. This vision drives three core research directions:
+- LLM Agents
+- Multi-Agent Systems
+- Persona Agent
+- Multi-Modal Agents
+  
+
+Also some random research ideas:
 
 1. Hyper-Realistic Game NPCs with Embodied Cognition
 How can we create game agents that perceive (voice/image), remember (long-term context), and evolve (persona-driven traits) like humans while interacting with digital worlds?
@@ -42,7 +51,7 @@ How can we create game agents that perceive (voice/image), remember (long-term c
 → Key innovations: Character-card-driven persona frameworks (Reborn Tech), procedural reward systems for emotional consistency (OpenManus-RL), Unity/Flask visualization for human-in-the-loop testing (Artificial Leviathan).
 → Goal: NPCs that learn from players and persist memories across gaming sessions.
 
-2. Self-Evolving Tool-Creation Agents
+1. Self-Evolving Tool-Creation Agents
 Can agents autonomously generate, refine, and chain tools to solve novel problems—without human intervention?
 → I engineer MCP-compatible frameworks (OpenManus-RL) using RL + Mixture of Experts (MoE) to enable agents to:
  - Self-discover tools (e.g., creating Python scripts or API calls for unseen OS/Web/KG environments)
@@ -50,7 +59,7 @@ Can agents autonomously generate, refine, and chain tools to solve novel problem
 → Key innovations: GAIA/WebArena benchmarking, cross-domain generalization via DeepSeek GRPO, synthetic tool-curation pipelines.
 → Goal: Agents that bootstrap their own toolkits for open-ended problem-solving.
 
-3. Governance-Aware Social Agent Ecosystems
+1. Governance-Aware Social Agent Ecosystems
 How do multi-agent societies negotiate ethical rules, mitigate biases, and sustain collaboration at scale?
 → I simulate emergent social contracts (Artificial Leviathan) using:
  - Persona-engineered agents (prompt + QA-encoded traits)
