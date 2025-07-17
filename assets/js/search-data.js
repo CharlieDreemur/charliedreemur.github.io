@@ -421,24 +421,10 @@ ninja.data = [{
         },
       },{
         id: 'social-github',
-        title: 'Github',
+        title: 'GitHub',
         section: 'Socials',
         handler: () => {
-          window.open("", "_blank");
-        },
-      },{
-        id: 'social-linkedin',
-        title: 'Linkedin',
-        section: 'Socials',
-        handler: () => {
-          window.open("", "_blank");
-        },
-      },{
-        id: 'social-website',
-        title: 'Website',
-        section: 'Socials',
-        handler: () => {
-          window.open("", "_blank");
+          window.open("https://github.com/CharlieDreemur", "_blank");
         },
       },{
       id: 'light-theme',
