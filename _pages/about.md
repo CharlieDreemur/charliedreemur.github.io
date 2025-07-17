@@ -2,12 +2,12 @@
 layout: about
 title: "Weijia (Charlie) Zhang"
 permalink: /
-subtitle: University of Illinois Urbana-Champaign
+subtitle: <a href='https://illinois.edu/'> University of Illinois Urbana-Champaign </a>
 
 profile:
   align: right
   image: my_pic.jpg
-  image_circular: false # crops the image to make it circular
+  image_circular: true # crops the image to make it circular
   more_info: >
     <p>University of Illinois at Urbana-Champaign</p>
 
@@ -26,11 +26,14 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
-CS+Math @ UIUC
-GPA: 3.9/4.0 (2025 Dean’s List)
-Full-Stack Programmer: backend & frontend
-Game Developer: Unity, UE5
-AI Researcher: NLP, HCI, AIGC
+- CS+Math @ UIUC
+
+- GPA: 3.86/4.0 (2025 Dean’s List)
+
+- AI Researcher & Full-Stack Programmer & Game Developer
+
+This website is under construction. You can also check my another website [here](https://charliedreemur.wordpress.com).
+
 Basically, I aim to pioneer next-generation AI agents that seamlessly bridge virtual and physical worlds through socially intelligent, tool-agnostic, and ethically grounded architectures. My work focuses on creating agents with persistent memory, adaptive autonomy, and collaborative emergence—transforming how humans interact with AI across games, productivity tools, and social simulations. This vision drives three core research directions:
 
 1. Hyper-Realistic Game NPCs with Embodied Cognition
@@ -39,7 +42,7 @@ How can we create game agents that perceive (voice/image), remember (long-term c
 → Key innovations: Character-card-driven persona frameworks (Reborn Tech), procedural reward systems for emotional consistency (OpenManus-RL), Unity/Flask visualization for human-in-the-loop testing (Artificial Leviathan).
 → Goal: NPCs that learn from players and persist memories across gaming sessions.
 
-1. Self-Evolving Tool-Creation Agents
+2. Self-Evolving Tool-Creation Agents
 Can agents autonomously generate, refine, and chain tools to solve novel problems—without human intervention?
 → I engineer MCP-compatible frameworks (OpenManus-RL) using RL + Mixture of Experts (MoE) to enable agents to:
  - Self-discover tools (e.g., creating Python scripts or API calls for unseen OS/Web/KG environments)
@@ -47,7 +50,7 @@ Can agents autonomously generate, refine, and chain tools to solve novel problem
 → Key innovations: GAIA/WebArena benchmarking, cross-domain generalization via DeepSeek GRPO, synthetic tool-curation pipelines.
 → Goal: Agents that bootstrap their own toolkits for open-ended problem-solving.
 
-1. Governance-Aware Social Agent Ecosystems
+3. Governance-Aware Social Agent Ecosystems
 How do multi-agent societies negotiate ethical rules, mitigate biases, and sustain collaboration at scale?
 → I simulate emergent social contracts (Artificial Leviathan) using:
  - Persona-engineered agents (prompt + QA-encoded traits)
@@ -56,3 +59,4 @@ How do multi-agent societies negotiate ethical rules, mitigate biases, and susta
 → Key innovations: Hobbesian interaction frameworks, synthetic bias assessment benchmarks, policy generation from collective dynamics.
 → Goal: Scalable agent societies that self-regulate conflicts and align with human values.
 
+Feel Free to reach me on [email](weijia4@illinois.edu)
