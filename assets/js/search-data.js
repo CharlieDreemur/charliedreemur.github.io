@@ -412,6 +412,11 @@ ninja.data = [{
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/the_godfather/";
+            },},{id: "projects-",
+          title: '',
+          description: "",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/openmanus/";
             },},{
         id: 'social-email',
         title: 'email',
@@ -425,6 +430,20 @@ ninja.data = [{
         section: 'Socials',
         handler: () => {
           window.open("https://github.com/CharlieDreemur", "_blank");
+        },
+      },{
+        id: 'social-linkedin',
+        title: 'LinkedIn',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://www.linkedin.com/in/weijia-charlie-zhang", "_blank");
+        },
+      },{
+        id: 'social-scholar',
+        title: 'Google Scholar',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://scholar.google.com/citations?user=JN57tLsAAAAJ", "_blank");
         },
       },{
       id: 'light-theme',
