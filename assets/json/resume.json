@@ -67,7 +67,7 @@
       "url": "https://reborn.network/",
       "startDate": "2023-05-01",
       "endDate": "2023-07-01",
-      "summary": "Developed multiplayer Role-playing agents framework enabling dynamic interactions (text, voice, action) with AI NPCs in VR environments, including IK and function calling support for physical and directive user engagements. Designed and implemented seamless voice interactions (<1s latency) in VR, enhancing real-time AI agent responsiveness. Managed long-term memory using vector database with dynamic ADD/UPDATE/DELETE operations. Designed character card system for importing/exporting/sharing NPC personas."
+      "summary": "• Developed multiplayer Role-playing agents framework enabling dynamic interactions (text, voice, action) with AI NPCs in VR environments, including IK and function calling support for physical and directive user engagements.\n• Designed and implemented seamless voice interactions (<1s latency) in VR, enhancing real-time AI agent responsiveness.\n• Managed long-term memory using vector database with dynamic ADD/UPDATE/DELETE operations.\n• Designed character card system for importing/exporting/sharing NPC personas."
     },
     {
       "name": "Tencent",
