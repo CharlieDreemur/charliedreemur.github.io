@@ -9,6 +9,17 @@ display_categories: [work, fun]
 horizontal: false
 ---
 
+<!-- Embed the WordPress page directly -->
+<div style="width:100%;height:80vh">
+  <iframe
+    src="https://charliedreemur.wordpress.com/home/"
+    style="width:100%;height:100%;border:none;"
+    loading="lazy"
+    title="Charlie Dreemur – Projects">
+  </iframe>
+</div>
+
+
 <!-- pages/projects.md -->
 <div class="projects">
 {% if site.enable_project_categories and page.display_categories %}
