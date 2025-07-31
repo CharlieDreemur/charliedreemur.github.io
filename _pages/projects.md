@@ -2,7 +2,7 @@
 layout: page
 title: projects
 permalink: /projects/
-description: Please check https://charliedreemur.wordpress.com/home/ for my projects.
+description: <a href='https://charliedreemur.wordpress.com/home/'> Please check this for my projects.
 nav: true
 nav_order: 3
 display_categories: [work, fun]
