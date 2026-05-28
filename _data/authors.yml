@@ -1,18 +1,11 @@
 # Authors
 
-Name Name:
-  name        : "Name Name"
-  uri         : "https://name.com"
-  email       : "name@name.com"
-  bio         : "This is the first name."
-  avatar      : "bio-photo-2.jpg"
-  twitter     : "name"
-  google_plus : "Name"
-
-Name2 Name2:
-  name        : "Name2 Name2"
-  email       : "name2@name2.com"
-  bio         : "I ordered what?"
-  avatar      : "bio-photo.jpg"
-  twitter     : "name2"
-  google_plus : "Name"
+Weijia (Charlie) Zhang:
+  name        : "Weijia (Charlie) Zhang"
+  uri         : "https://charliedreemur.github.io"
+  email       : "weijia4@illinois.edu"
+  bio         : "CS + Math @ UIUC. NLP researcher and game developer."
+  avatar      : "weijia-zhang.jpg"
+  github      : "CharlieDreemur"
+  linkedin    : "weijia-charlie-zhang"
+  googlescholar: "https://scholar.google.com/citations?user=JN57tLsAAAAJ"

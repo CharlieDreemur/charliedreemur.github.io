@@ -1,14 +1,25 @@
 ---
 layout: archive
-title: "Portfolio"
-permalink: /portfolio/
+title: "Projects"
+permalink: /projects/
 author_profile: true
+redirect_from:
+  - /portfolio/
 ---
 
 {% include base_path %}
 
+I keep a broader project archive on <a href="https://charliedreemur.wordpress.com/home/">WordPress</a>.
+
+<div style="width:100%;height:70vh;margin:1rem 0;">
+  <iframe
+    src="https://charliedreemur.wordpress.com/home/"
+    style="width:100%;height:100%;border:0;"
+    loading="lazy"
+    title="Charlie Zhang projects">
+  </iframe>
+</div>
 
 {% for post in site.portfolio %}
   {% include archive-single.html %}
 {% endfor %}
-

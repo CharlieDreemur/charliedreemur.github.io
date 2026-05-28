@@ -4,6 +4,7 @@ _site/
 
 # Ignore the directory for local files during development
 local/
+old_personal_website/
 
 # Ignore the Gemfile that is generated
 Gemfile.lock

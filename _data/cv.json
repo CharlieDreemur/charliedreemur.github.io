@@ -1,152 +1,148 @@
 {
   "basics": {
-    "name": "Your Sidebar Name",
-    "email": "none@example.org",
+    "name": "Weijia (Charlie) Zhang",
+    "label": "CS + Mathematics @ UIUC",
+    "email": "weijia4@illinois.edu",
     "phone": "",
-    "website": "https://academicpages.github.io",
-    "summary": "Currently employed at Red Brick University. Short biography for the left-hand sidebar",
+    "website": "https://charliedreemur.github.io",
+    "summary": "Undergraduate student at the University of Illinois Urbana-Champaign, NLP researcher, and game developer working on LLM agents, multimodal reasoning, and interactive systems.",
     "location": {
       "address": "",
       "postalCode": "",
-      "city": "Earth",
+      "city": "Urbana-Champaign",
       "countryCode": "US",
-      "region": ""
+      "region": "IL"
     },
     "profiles": [
       {
-        "network": "Google Scholar",
-        "username": "",
-        "url": "https://scholar.google.com/citations?user=PS_CX0AAAAAJ"
+        "network": "github",
+        "username": "CharlieDreemur",
+        "url": "https://github.com/CharlieDreemur"
       },
       {
-        "network": "ORCID",
-        "username": "",
-        "url": "https://orcid.org/yourorcidurl"
+        "network": "linkedin",
+        "username": "weijia-charlie-zhang",
+        "url": "https://www.linkedin.com/in/weijia-charlie-zhang/"
       },
       {
-        "network": "GitHub",
-        "username": "academicpages",
-        "url": "https://github.com/academicpages"
+        "network": "google-scholar",
+        "username": "JN57tLsAAAAJ",
+        "url": "https://scholar.google.com/citations?user=JN57tLsAAAAJ"
       }
     ]
   },
-  "work": [],
+  "work": [
+    {
+      "company": "U Lab, University of Illinois Urbana-Champaign",
+      "position": "Research Assistant",
+      "startDate": "Jan 2025",
+      "endDate": "Present",
+      "summary": "Advisor: Prof. Jiaxuan You",
+      "highlights": [
+        "Led SeeingEye, an agentic information-flow project for multimodal reasoning in text-only LLMs.",
+        "Worked on OpenManus-RL, a memory planning agent for general environments via reinforcement learning."
+      ]
+    },
+    {
+      "company": "Microsoft Research Asia",
+      "position": "Research Intern",
+      "startDate": "Jul 2025",
+      "endDate": "Sep 2025",
+      "summary": "Researched LLM agents and multimodal systems for Microsoft Copilot in Excel.",
+      "highlights": [
+        "Built TextAnalysisSFT, a multi-threaded data generation pipeline for the Excel Copilot TextAnalysis API."
+      ]
+    },
+    {
+      "company": "Tencent, WeChat Group",
+      "position": "Software Engineer",
+      "startDate": "Aug 2024",
+      "endDate": "Sep 2024",
+      "summary": "Built cross-platform profiling tools for WeChat Mini Programs.",
+      "highlights": [
+        "Developed hardware and Unity memory profilers for partner teams."
+      ]
+    },
+    {
+      "company": "NetEase Games",
+      "position": "Software Engineer",
+      "startDate": "Jul 2024",
+      "endDate": "Aug 2024",
+      "summary": "Built asset database and visualization tools for game production.",
+      "highlights": [
+        "Implemented a SQLite, Flask, Vue, Redis, and multi-threaded asset indexing pipeline."
+      ]
+    }
+  ],
   "education": [
     {
-      "institution": "GitHub University",
-      "area": "Ph.D in Version Control Theory",
+      "institution": "University of Illinois Urbana-Champaign",
+      "area": "B.S. in Computer Science and Mathematics",
       "studyType": "",
-      "startDate": "",
-      "endDate": "2018",
-      "gpa": null,
-      "courses": []
-    },
-    {
-      "institution": "GitHub University",
-      "area": "M.S. in Jekyll",
-      "studyType": "",
-      "startDate": "",
-      "endDate": "2014",
-      "gpa": null,
-      "courses": []
-    },
-    {
-      "institution": "GitHub University",
-      "area": "B.S. in GitHub",
-      "studyType": "",
-      "startDate": "",
-      "endDate": "2012",
-      "gpa": null,
+      "startDate": "2022",
+      "endDate": "2026",
+      "gpa": "3.86/4.0",
       "courses": []
     }
   ],
-  "skills": [],
+  "skills": [
+    {
+      "name": "AI and LLM Agents",
+      "keywords": ["Multimodal reasoning", "Tool use", "Multi-agent systems", "SFT/RL"]
+    },
+    {
+      "name": "Software Engineering",
+      "keywords": ["Unity", "Unreal", "Godot", "Full-stack development", "Performance profiling"]
+    }
+  ],
   "languages": [],
-  "interests": [],
+  "interests": [
+    {
+      "name": "Research",
+      "keywords": ["LLM agents", "Conversational AI", "Multimodal reasoning", "Social simulation"]
+    }
+  ],
   "references": [],
   "publications": [
     {
-      "name": "Paper Title Number 1",
-      "publisher": "Journal 1",
-      "releaseDate": "2009-10-01",
-      "website": "https://academicpages.github.io/files/paper1.pdf",
-      "summary": "This paper is about the number 1. The number 2 is left for future work."
+      "name": "Artificial Leviathan: Exploring Social Evolution of LLM Agents Through the Lens of Hobbesian Social Contract Theory",
+      "publisher": "arXiv preprint arXiv:2406.14373",
+      "releaseDate": "2024-01-01",
+      "website": "https://arxiv.org/abs/2406.14373",
+      "summary": "A simulated LLM agent society for studying emergent social contracts."
     },
     {
-      "name": "Paper Title Number 2",
-      "publisher": "Journal 1",
-      "releaseDate": "2010-10-01",
-      "website": "https://academicpages.github.io/files/paper2.pdf",
-      "summary": "This paper is about the number 2. The number 3 is left for future work."
-    },
-    {
-      "name": "Paper Title Number 3",
-      "publisher": "Journal 1",
-      "releaseDate": "2015-10-01",
-      "website": "https://academicpages.github.io/files/paper3.pdf",
-      "summary": "This paper is about the number 3. The number 4 is left for future work."
-    },
-    {
-      "name": "Paper Title Number 4",
-      "publisher": "GitHub Journal of Bugs",
-      "releaseDate": "2024-02-17",
-      "website": "https://academicpages.github.io/files/paper3.pdf",
-      "summary": "This paper is about fixing template issue #693."
+      "name": "Understanding and Mitigating the Bias Inheritance in LLM-based Data Augmentation on Downstream Tasks",
+      "publisher": "arXiv preprint arXiv:2502.04419",
+      "releaseDate": "2025-01-01",
+      "website": "https://arxiv.org/abs/2502.04419",
+      "summary": "A study of bias inheritance in synthetic data generated by LLMs."
     }
   ],
-  "presentations": [
-    {
-      "name": "Talk 1 on Relevant Topic in Your Field",
-      "event": "UC San Francisco, Department of Testing",
-      "date": "2012-03-01",
-      "location": "San Francisco, CA, USA",
-      "description": ""
-    },
-    {
-      "name": "Tutorial 1 on Relevant Topic in Your Field",
-      "event": "UC-Berkeley Institute for Testing Science",
-      "date": "2013-03-01",
-      "location": "Berkeley, CA, USA",
-      "description": ""
-    },
-    {
-      "name": "Talk 2 on Relevant Topic in Your Field",
-      "event": "London School of Testing",
-      "date": "2014-02-01",
-      "location": "London, UK",
-      "description": ""
-    },
-    {
-      "name": "Conference Proceeding talk 3 on Relevant Topic in Your Field",
-      "event": "Testing Institute of America 2014 Annual Conference",
-      "date": "2014-03-01",
-      "location": "Los Angeles, CA, USA",
-      "description": ""
-    }
-  ],
+  "presentations": [],
   "teaching": [
     {
-      "course": "Teaching experience 1",
-      "institution": "University 1, Department",
-      "date": "2014-01-01",
-      "role": "Undergraduate course",
-      "description": ""
+      "course": "CS 233: Computer Architecture",
+      "institution": "University of Illinois Urbana-Champaign",
+      "date": "2024-01-01",
+      "role": "Course Assistant",
+      "description": "Held office hours and co-created homework puzzles and Spimbot materials."
     },
     {
-      "course": "Teaching experience 2",
-      "institution": "University 1, Department",
-      "date": "2015-01-01",
-      "role": "Workshop",
-      "description": ""
+      "course": "ACM Gamebuilders Workshops",
+      "institution": "UIUC ACM Gamebuilders",
+      "date": "2023-08-01",
+      "role": "Exec and Workshop Lead",
+      "description": "Led weekly workshops on graphics, Unity, C#, game AI, and performance optimization."
     }
   ],
   "portfolio": [
     {
-      "name": "Portfolio item number 1",
-      "category": "portfolio",
-      "date": "",
-      "url": "",
-      "description": "Short description of portfolio item number 1<br/><img src='/images/500x300.png'>"
+      "name": "OpenManus-RL",
+      "category": "work",
+      "date": "2025-01-01",
+      "url": "https://github.com/OpenManus/OpenManus-RL",
+      "description": "Better memory planning agent in general environments via reinforcement learning."
     }
   ]
 }
