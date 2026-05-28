@@ -1,17 +1,17 @@
 {
   "basics": {
     "name": "Weijia (Charlie) Zhang",
-    "label": "CS + Mathematics @ UIUC",
-    "email": "weijia4@illinois.edu",
-    "phone": "",
+    "label": "Incoming M.S. in Computer Science @ Yale",
+    "email": "zhangwj.charlie@gmail.com",
+    "phone": "2172003915",
     "website": "https://charliedreemur.github.io",
-    "summary": "Undergraduate student at the University of Illinois Urbana-Champaign, NLP researcher, and game developer working on LLM agents, multimodal reasoning, and interactive systems.",
+    "summary": "Incoming Yale M.S. student in Computer Science, UIUC Computer Science and Mathematics graduate, and NLP/LLM agent researcher.",
     "location": {
       "address": "",
       "postalCode": "",
-      "city": "Urbana-Champaign",
+      "city": "",
       "countryCode": "US",
-      "region": "IL"
+      "region": ""
     },
     "profiles": [
       {
@@ -33,24 +33,27 @@
   },
   "work": [
     {
-      "company": "U Lab, University of Illinois Urbana-Champaign",
-      "position": "Research Assistant",
-      "startDate": "Jan 2025",
-      "endDate": "Present",
-      "summary": "Advisor: Prof. Jiaxuan You",
-      "highlights": [
-        "Led SeeingEye, an agentic information-flow project for multimodal reasoning in text-only LLMs.",
-        "Worked on OpenManus-RL, a memory planning agent for general environments via reinforcement learning."
-      ]
-    },
-    {
-      "company": "Microsoft Research Asia",
+      "company": "Microsoft Research Asia, Microsoft",
       "position": "Research Intern",
       "startDate": "Jul 2025",
       "endDate": "Sep 2025",
-      "summary": "Researched LLM agents and multimodal systems for Microsoft Copilot in Excel.",
+      "summary": "Worked on VLM/LLM agent research to improve Microsoft Excel Copilot capabilities.",
       "highlights": [
-        "Built TextAnalysisSFT, a multi-threaded data generation pipeline for the Excel Copilot TextAnalysis API."
+        "Built the TextAnalysisSFT data pipeline for SFT data generation for the new TextAnalysis API in Excel Copilot.",
+        "Mined 2000+ real Kaggle samples, filtered heavy-text sheets, generated queries and Office.js code, and validated outputs with SheetEngine.",
+        "Delivered a dataset that improved Office Script code-generation accuracy by 75%."
+      ]
+    },
+    {
+      "company": "Reborn Network",
+      "position": "AI Engineer",
+      "startDate": "May 2023",
+      "endDate": "Jul 2023",
+      "summary": "Built real-time role-playing agent systems in Unity VR.",
+      "highlights": [
+        "Developed a role-playing agent Unity VR game enabling agents to interact through text, voice, and VR actions in real time with under 1s latency.",
+        "Introduced RAG and vector databases to strengthen long-term agent memory, improving dialogue coherence score from 2/5 to 4/5.",
+        "Designed a reusable character-card framework, enabling a UGC ecosystem and reducing character persona configuration time by 300%."
       ]
     },
     {
@@ -58,91 +61,115 @@
       "position": "Software Engineer",
       "startDate": "Aug 2024",
       "endDate": "Sep 2024",
-      "summary": "Built cross-platform profiling tools for WeChat Mini Programs.",
+      "summary": "Built performance analysis tooling for WeChat Mini Programs and Unity memory profiling.",
       "highlights": [
-        "Developed hardware and Unity memory profilers for partner teams."
-      ]
-    },
-    {
-      "company": "NetEase Games",
-      "position": "Software Engineer",
-      "startDate": "Jul 2024",
-      "endDate": "Aug 2024",
-      "summary": "Built asset database and visualization tools for game production.",
-      "highlights": [
-        "Implemented a SQLite, Flask, Vue, Redis, and multi-threaded asset indexing pipeline."
+        "Developed a cross-platform Android and iOS hardware performance analysis tool for WeChat Mini Programs, supporting 200+ partner teams in identifying performance bottlenecks.",
+        "Built a Unity Mono Memory Profiler that discovered 40+ hidden memory allocation points, reducing memory-leak-related crash rate by 120%."
       ]
     }
   ],
   "education": [
     {
+      "institution": "Yale University",
+      "area": "M.S. in Computer Science",
+      "studyType": "Thesis Track with Full Scholarship",
+      "startDate": "2026-08",
+      "endDate": "2027-05",
+      "gpa": null,
+      "courses": []
+    },
+    {
       "institution": "University of Illinois Urbana-Champaign",
       "area": "B.S. in Computer Science and Mathematics",
       "studyType": "",
-      "startDate": "2022",
-      "endDate": "2026",
-      "gpa": "3.86/4.0",
+      "startDate": "2022-08",
+      "endDate": "2026-05",
+      "gpa": "3.7/4.0",
       "courses": []
     }
   ],
   "skills": [
     {
-      "name": "AI and LLM Agents",
-      "keywords": ["Multimodal reasoning", "Tool use", "Multi-agent systems", "SFT/RL"]
+      "name": "Programming Languages",
+      "keywords": ["Python", "C/C++", "C#", "Java", "JavaScript/TypeScript", "HTML/CSS", "SQL", "Rust"]
     },
     {
-      "name": "Software Engineering",
-      "keywords": ["Unity", "Unreal", "Godot", "Full-stack development", "Performance profiling"]
+      "name": "Frameworks and Libraries",
+      "keywords": ["VERL", "VLLM", "LangGraph", "LangChain", "PyTorch", "TensorFlow"]
+    },
+    {
+      "name": "AI Focus",
+      "keywords": ["SFT", "Reinforcement Learning", "Post-training", "RAG", "Agentic AI", "Machine Learning", "Generative AI"]
     }
   ],
   "languages": [],
   "interests": [
     {
       "name": "Research",
-      "keywords": ["LLM agents", "Conversational AI", "Multimodal reasoning", "Social simulation"]
+      "keywords": ["LLM agents", "VLM/LLM agents", "Multimodal reasoning", "Agent debugging", "Reinforcement learning"]
     }
   ],
   "references": [],
   "publications": [
     {
+      "name": "How Much Vision Does Multimodal Reasoning Need? Vision-Stripping for Multimodal Benchmarks",
+      "publisher": "Under review at NeurIPS 2026",
+      "releaseDate": "2026-01-01",
+      "website": "",
+      "summary": "Research on vision-stripping for multimodal reasoning benchmarks."
+    },
+    {
+      "name": "Every Act Has Its Price: Compressed Moral Composition in Frontier LLMs",
+      "publisher": "Under review at EMNLP 2026",
+      "releaseDate": "2026-01-01",
+      "website": "",
+      "summary": "Research on compressed moral composition in frontier LLMs."
+    },
+    {
+      "name": "SeeingEye: Agentic Information Flow Unlocks Multimodal Reasoning in Text-only LLMs",
+      "publisher": "arXiv preprint arXiv:2510.25092; under review at EMNLP 2026",
+      "releaseDate": "2025-10-01",
+      "website": "https://arxiv.org/abs/2510.25092",
+      "summary": "Agentic information flow for multimodal reasoning in text-only LLMs."
+    },
+    {
       "name": "Artificial Leviathan: Exploring Social Evolution of LLM Agents Through the Lens of Hobbesian Social Contract Theory",
-      "publisher": "arXiv preprint arXiv:2406.14373",
-      "releaseDate": "2024-01-01",
+      "publisher": "The First Workshop on AI Behavioral Science, ACM SIGKDD 2024",
+      "releaseDate": "2024-08-01",
       "website": "https://arxiv.org/abs/2406.14373",
       "summary": "A simulated LLM agent society for studying emergent social contracts."
     },
     {
       "name": "Understanding and Mitigating the Bias Inheritance in LLM-based Data Augmentation on Downstream Tasks",
-      "publisher": "arXiv preprint arXiv:2502.04419",
-      "releaseDate": "2025-01-01",
+      "publisher": "ACL 2026, Oral",
+      "releaseDate": "2026-01-01",
       "website": "https://arxiv.org/abs/2502.04419",
       "summary": "A study of bias inheritance in synthetic data generated by LLMs."
+    },
+    {
+      "name": "Where LLM Agents Fail and How They Can Learn From Failures",
+      "publisher": "arXiv preprint arXiv:2509.25370",
+      "releaseDate": "2025-09-01",
+      "website": "https://arxiv.org/abs/2509.25370",
+      "summary": "Research on LLM agent failures and learning from failed trajectories."
     }
   ],
   "presentations": [],
-  "teaching": [
-    {
-      "course": "CS 233: Computer Architecture",
-      "institution": "University of Illinois Urbana-Champaign",
-      "date": "2024-01-01",
-      "role": "Course Assistant",
-      "description": "Held office hours and co-created homework puzzles and Spimbot materials."
-    },
-    {
-      "course": "ACM Gamebuilders Workshops",
-      "institution": "UIUC ACM Gamebuilders",
-      "date": "2023-08-01",
-      "role": "Exec and Workshop Lead",
-      "description": "Led weekly workshops on graphics, Unity, C#, game AI, and performance optimization."
-    }
-  ],
+  "teaching": [],
   "portfolio": [
     {
-      "name": "OpenManus-RL",
-      "category": "work",
+      "name": "OpenManus & OpenManus-RL",
+      "category": "research",
       "date": "2025-01-01",
       "url": "https://github.com/OpenManus/OpenManus-RL",
-      "description": "Better memory planning agent in general environments via reinforcement learning."
+      "description": "Open-source agent research ecosystem with 60,000+ GitHub stars; contributed to OpenManus-RL as a core contributor."
+    },
+    {
+      "name": "GUIAgentDebugger",
+      "category": "research",
+      "date": "2026-01-01",
+      "url": "",
+      "description": "Self-evolving VLM-agent debugging framework with a GUI-agent error taxonomy and dual-layer memory."
     }
   ]
 }

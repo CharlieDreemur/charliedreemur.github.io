@@ -12,7 +12,7 @@ site_theme               : "default" # The available themes options are "default
 title                    : "Weijia (Charlie) Zhang"
 title_separator          : "-"
 name                     : &name "Weijia (Charlie) Zhang"
-description              : &description "Personal website of Weijia (Charlie) Zhang, CS and Mathematics student at UIUC, NLP researcher, and game developer."   # Update this with a general description of your site, this is the default if not overridden by a page
+description              : &description "Personal website of Weijia (Charlie) Zhang, incoming Yale CS M.S. student, UIUC CS and Mathematics graduate, and NLP / VLM / LLM agent researcher."   # Update this with a general description of your site, this is the default if not overridden by a page
 url                      : https://charliedreemur.github.io # The base hostname & protocol for your site e.g. "https://[your GitHub username].github.io",
                                                            # or if you already have some other page hosted on Github then use "https://[your GitHub username].github.io/[Your Repo Name]"
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
@@ -23,14 +23,14 @@ repository               : "CharlieDreemur/CharlieDreemur.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "weijia-zhang.jpg"
+  avatar           : "weijia-zhang.png"
   name             : "Weijia (Charlie) Zhang"
   pronouns         : # example: "she/her"  
-  bio              : "CS + Math @ UIUC. NLP researcher and game developer."
-  location         : "Urbana-Champaign, IL"
-  employer         : "University of Illinois Urbana-Champaign"
+  bio              : "Incoming CS M.S. @ Yale. UIUC CS + Math. NLP / VLM / LLM agent researcher."
+  location         : "United States"
+  employer         : "Yale University / University of Illinois Urbana-Champaign"
   uri              : "https://charliedreemur.github.io"
-  email            : "weijia4@illinois.edu" 
+  email            : "zhangwj.charlie@gmail.com" 
 
   # Academic websites
   academia         : # URL
