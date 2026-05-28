@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'   # Specify the Python version you need
+        python-version: '3.11'   # 3.10+ required: python-frontmatter>=1.1 imports typing.TypeGuard
 
     - name: Install dependencies
       run: |
