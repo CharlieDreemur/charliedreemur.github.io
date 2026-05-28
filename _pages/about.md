@@ -1,22 +1,19 @@
 ---
 permalink: /
-title: "Howdy! I'm Charlie Zhang"
+title: "Howdy! I'm Weijia Zhang"
 author_profile: true
 redirect_from:
   - /about/
   - /about.html
 ---
 
-I am an incoming M.S. student in Computer Science at Yale University and a Computer Science + Mathematics graduate from the University of Illinois Urbana-Champaign. I work on NLP, VLM/LLM agents, and agentic systems, and I also build games and interactive systems.
+I am an incoming M.S. student in Computer Science at [Yale University](https://www.yale.edu/).
 
-- Incoming M.S. in Computer Science @ [Yale University](https://www.yale.edu/) (Thesis Track with Full Scholarship)
-- B.S. in Computer Science and Mathematics @ [UIUC](https://illinois.edu/)
-- GPA: 3.7/4.0 (2025 Dean's List)
-- NLP / VLM / LLM agent researcher and game developer
+I graduated from [UIUC](https://illinois.edu/) in Math + Computer Science, with the C.W. Gear Outstanding Undergraduate Student award (2 people per year).
 
-I am currently advised by [Prof. Jiaxuan You](https://cs.stanford.edu/people/jiaxuan/). I was also a research intern at Microsoft Research Asia (MSRA), where I worked on VLM/LLM agent research for Microsoft Excel Copilot.
+I worked as a research assistant in UIUC U Lab on LLM agents, multimodal agents, and agentic RL, advised by [Prof. Jiaxuan You](https://cs.stanford.edu/people/jiaxuan/).
 
-I have worked on open-source agent systems, GUI-agent debugging, and real-time role-playing agents in Unity VR. You can find my research on the [publications page](/publications/) and my agent projects on the [projects page](/projects/).
+I have worked on open-source agent systems, GUI-agent debugging, and real-time role-playing agents in Unity VR. You can find my research on the [publications page](/publications/) and my game work on the [game page](/game/).
 
 Research
 ======

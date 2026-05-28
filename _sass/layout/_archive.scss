@@ -74,6 +74,18 @@
   }
 }
 
+.archive__item-teaser--publication {
+  max-width: 220px;
+  margin-bottom: 0.75em;
+  border: 1px solid var(--global-border-color);
+
+  @include breakpoint($medium) {
+    float: right;
+    width: 190px;
+    margin-left: 1em;
+  }
+}
+
 .archive__item:hover {
   .archive__item-teaser {
     box-shadow: 0 0 10px rgba(#000, 0.25);
