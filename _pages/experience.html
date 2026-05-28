@@ -1,0 +1,71 @@
+---
+layout: single
+title: "Experience"
+permalink: /experience/
+author_profile: true
+---
+
+<section class="experience-section">
+  <h2>Education</h2>
+
+  <div class="experience-card-list">
+    {% for education in site.data.cv.education %}
+      {% assign logo_text = education.institution | slice: 0, 1 %}
+      {% if education.institution contains "Yale" %}
+        {% assign logo_text = "Y" %}
+      {% elsif education.institution contains "Illinois" %}
+        {% assign logo_text = "UIUC" %}
+      {% endif %}
+
+      <article class="experience-card experience-card--education">
+        <div class="experience-card__mark" aria-hidden="true">{{ logo_text }}</div>
+        <div class="experience-card__body">
+          <h3>{{ education.institution }}</h3>
+          <p class="experience-card__role">{{ education.area }}</p>
+          <p class="experience-card__date">{{ education.startDate }} - {{ education.endDate }}</p>
+          {% if education.studyType and education.studyType != "" %}
+            <p>{{ education.studyType }}</p>
+          {% endif %}
+          {% if education.gpa %}
+            <p>GPA: {{ education.gpa }}</p>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="experience-section">
+  <h2>Internships & Experience</h2>
+
+  <div class="experience-card-list">
+    {% for job in site.data.cv.work %}
+      {% assign company_name = job.company | split: "," | first %}
+      {% assign logo_text = company_name | slice: 0, 1 %}
+      {% if job.company contains "Microsoft" %}
+        {% assign logo_text = "MSR" %}
+      {% elsif job.company contains "Tencent" %}
+        {% assign logo_text = "WX" %}
+      {% elsif job.company contains "Reborn" %}
+        {% assign logo_text = "RN" %}
+      {% endif %}
+
+      <article class="experience-card experience-card--work">
+        <div class="experience-card__mark" aria-hidden="true">{{ logo_text }}</div>
+        <div class="experience-card__body">
+          <h3>{{ job.company }}</h3>
+          <p class="experience-card__role">{{ job.position }}</p>
+          <p class="experience-card__date">{{ job.startDate }} - {{ job.endDate }}</p>
+          <p>{{ job.summary }}</p>
+          {% if job.highlights %}
+            <ul class="experience-card__highlights">
+              {% for highlight in job.highlights %}
+                <li>{{ highlight }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
