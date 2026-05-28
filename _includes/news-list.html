@@ -1,0 +1,19 @@
+{% assign news_limit = include.limit | default: site.data.news.size %}
+{% assign news_limit = news_limit | plus: 0 %}
+
+<ul class="home-news-list">
+  {% for item in site.data.news limit: news_limit %}
+    <li>
+      <span class="home-news-date">{{ item.date }}:</span>
+      {% if item.url %}
+        {% if item.url contains "://" %}
+          <a href="{{ item.url }}">{{ item.text }}</a>
+        {% else %}
+          <a href="{{ item.url | relative_url }}">{{ item.text }}</a>
+        {% endif %}
+      {% else %}
+        {{ item.text }}
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

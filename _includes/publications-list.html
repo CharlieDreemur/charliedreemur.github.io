@@ -1,0 +1,36 @@
+{% include base_path %}
+
+{% assign publication_limit = include.limit | default: site.publications.size %}
+{% assign publication_limit = publication_limit | plus: 0 %}
+{% assign publications_rendered = 0 %}
+{% assign category_heading_tag = include.category_heading_tag | default: "h2" %}
+
+{% unless include.show_scholar == false %}
+  {% if site.author.googlescholar %}
+    <div class="wordwrap">You can also find my full publication list on <a href="{{ site.author.googlescholar }}">Google Scholar</a>.</div>
+  {% endif %}
+{% endunless %}
+
+{% if site.publication_category %}
+  {% for category in site.publication_category %}
+    {% assign title_shown = false %}
+    {% for post in site.publications reversed %}
+      {% if publications_rendered >= publication_limit %}
+        {% break %}
+      {% endif %}
+      {% if post.category != category[0] %}
+        {% continue %}
+      {% endif %}
+      {% unless title_shown %}
+<{{ category_heading_tag }} class="publication-category-title">{{ category[1].title }}</{{ category_heading_tag }}>
+        {% assign title_shown = true %}
+      {% endunless %}
+      {% include archive-single.html %}
+      {% assign publications_rendered = publications_rendered | plus: 1 %}
+    {% endfor %}
+  {% endfor %}
+{% else %}
+  {% for post in site.publications reversed limit: publication_limit %}
+    {% include archive-single.html %}
+  {% endfor %}
+{% endif %}
