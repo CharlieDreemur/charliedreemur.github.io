@@ -51,8 +51,19 @@
 .page__content {
 
   h2 {
-    padding-bottom: 0.5em;
-    border-bottom: 1px solid var(--global-border-color);
+    position: relative;
+    padding-bottom: 0.55em;
+    border-bottom: 2px solid var(--global-border-color);
+
+    &:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -2px;
+      width: 4.5rem;
+      height: 2px;
+      background: var(--global-link-color);
+    }
   }
 
   p, li, dl {
@@ -104,6 +115,47 @@
   blockquote + .small {
     margin-top: -1.5em;
     padding-left: 1.25rem;
+  }
+
+  .home-intro-card {
+    margin: 0 0 2rem;
+    padding: 1.35rem 1.5rem;
+    border: 1px solid var(--global-border-color);
+    border-radius: 8px;
+    background: rgba(#52adc8, 0.04);
+    box-shadow: 0 8px 22px rgba(#000, 0.035);
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .home-callout {
+    margin: 2rem 0;
+    padding: 1.35rem 1.5rem;
+    border-left: 5px solid #ff5c68;
+    border-radius: 8px;
+    background: #fff2f3;
+    color: #7d242b;
+
+    h2 {
+      margin-top: 0;
+      color: #c92f3b;
+      border-bottom: 0;
+
+      &:after {
+        display: none;
+      }
+    }
+
+    a {
+      color: #c92f3b;
+      font-weight: bold;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 
