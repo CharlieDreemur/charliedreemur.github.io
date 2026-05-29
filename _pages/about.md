@@ -38,6 +38,8 @@ Beyond research, I am a passoinate indie game developer, feel free to check my g
 
 {% include publications-list.html show_scholar=false category_heading_tag="h3" %}
 
+{% include experience-cards.html %}
+
 <div class="home-callout" markdown="1">
 
 ## Cooperate With Me
