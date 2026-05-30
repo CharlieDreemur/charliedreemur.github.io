@@ -11,7 +11,7 @@ redirect_from:
 
 I am an incoming M.S. student in Computer Science at [Yale University](https://www.yale.edu/) (2026 - 2028), admitted to the **Two-Year MS Degree with Full Scholarship**.
 
-I graduated from [UIUC](https://illinois.edu/) in Math + Computer Science  with [C.W. Gear Outstanding Undergraduate Student](https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student) award (2 people per year).
+I graduated from [UIUC](https://illinois.edu/) in Math + Computer Science with the [C.W. Gear Outstanding Undergraduate Student](https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student) award, as one of two annual recipients.
 
 Currently, I worked as a research assistant in UIUC U Lab on LLM agents, multimodal agents, and agentic RL, advised by [Prof. Jiaxuan You](https://cs.stanford.edu/people/jiaxuan/).
 

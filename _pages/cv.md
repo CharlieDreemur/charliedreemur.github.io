@@ -20,6 +20,7 @@ Education
 
 - B.S. in Computer Science and Mathematics, University of Illinois Urbana-Champaign, Aug 2022 - May 2026
   - GPA: 3.7/4.0
+  - C.W. Gear Outstanding Undergraduate Student, one of two annual recipients
   - 2025 Dean's List
 
 Work Experience
@@ -66,7 +67,7 @@ Project Experience
 Activities and Awards
 ======
 
-- May 2026: C.W. Gear Outstanding Undergraduate Student, 2 people per year
+- May 2026: C.W. Gear Outstanding Undergraduate Student, one of two annual recipients
 - 2025: UIUC Dean's List
 - Aug 2025: RecSys 2025 Reviewer
 - Sep 2022: UIUC MechMania 28 AI Hackathon, 2nd Place
