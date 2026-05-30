@@ -4,14 +4,23 @@
   <div class="experience-card-list">
     {% for education in site.data.cv.education %}
       {% assign logo_text = education.institution | slice: 0, 1 %}
+      {% assign logo_src = "" %}
       {% if education.institution contains "Yale" %}
         {% assign logo_text = "Y" %}
+        {% assign logo_src = "/images/logos/yale-shield.svg" %}
       {% elsif education.institution contains "Illinois" %}
         {% assign logo_text = "UIUC" %}
+        {% assign logo_src = "/images/logos/uiuc-block-i.svg" %}
       {% endif %}
 
       <article class="experience-card experience-card--education">
-        <div class="experience-card__mark" aria-hidden="true">{{ logo_text }}</div>
+        <div class="experience-card__mark" aria-hidden="true">
+          {% if logo_src != "" %}
+            <img class="experience-card__logo" src="{{ logo_src | relative_url }}" alt="">
+          {% else %}
+            {{ logo_text }}
+          {% endif %}
+        </div>
         <div class="experience-card__body">
           <h3>{{ education.institution }}</h3>
           <p class="experience-card__role">{{ education.area }}</p>
@@ -35,16 +44,26 @@
     {% for job in site.data.cv.work %}
       {% assign company_name = job.company | split: "," | first %}
       {% assign logo_text = company_name | slice: 0, 1 %}
+      {% assign logo_src = "" %}
       {% if job.company contains "Microsoft" %}
         {% assign logo_text = "MSR" %}
+        {% assign logo_src = "/images/logos/microsoft-icon.svg" %}
       {% elsif job.company contains "Tencent" %}
         {% assign logo_text = "WX" %}
+        {% assign logo_src = "/images/logos/wechat.svg" %}
       {% elsif job.company contains "Reborn" %}
         {% assign logo_text = "RN" %}
+        {% assign logo_src = "/images/logos/reborn.png" %}
       {% endif %}
 
       <article class="experience-card experience-card--work">
-        <div class="experience-card__mark" aria-hidden="true">{{ logo_text }}</div>
+        <div class="experience-card__mark" aria-hidden="true">
+          {% if logo_src != "" %}
+            <img class="experience-card__logo" src="{{ logo_src | relative_url }}" alt="">
+          {% else %}
+            {{ logo_text }}
+          {% endif %}
+        </div>
         <div class="experience-card__body">
           <h3>{{ job.company }}</h3>
           <p class="experience-card__role">{{ job.position }}</p>
