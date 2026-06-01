@@ -60,6 +60,14 @@
   }
 }
 
+.home-intro-card.tilt-card {
+  transform-origin: center top;
+
+  p {
+    transform: translateZ(14px);
+  }
+}
+
 .grid__item .archive__item.tilt-card,
 .feature__item .archive__item.tilt-card {
   min-height: 100%;

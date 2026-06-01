@@ -118,12 +118,18 @@
   }
 
   .home-intro-card {
+    position: relative;
     margin: 0 0 2rem;
-    padding: 1.35rem 1.5rem;
+    padding: 1.35rem 1.55rem;
     border: 1px solid var(--global-border-color);
+    border-left: 4px solid var(--global-link-color);
     border-radius: 8px;
-    background: rgba(#52adc8, 0.04);
-    box-shadow: 0 8px 22px rgba(#000, 0.035);
+    background: var(--global-bg-color);
+    box-shadow: 0 12px 30px rgba(#000, 0.075);
+
+    p {
+      line-height: 1.62;
+    }
 
     p:last-child {
       margin-bottom: 0;

@@ -1,6 +1,6 @@
 (() => {
   const cards = Array.from(document.querySelectorAll(
-    ".experience-card, .grid__item .archive__item, .feature__item .archive__item"
+    ".home-intro-card, .experience-card, .grid__item .archive__item, .feature__item .archive__item"
   ));
 
   if (!cards.length) {
