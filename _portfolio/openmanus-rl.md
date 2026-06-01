@@ -1,10 +1,12 @@
 ---
 title: "OpenManus & OpenManus-RL"
-excerpt: "Core contributor to OpenManus-RL in an open-source agent ecosystem with 60,000+ GitHub stars.<br/><img src='/images/openmanus-rl.jpg'>"
+excerpt: "Core contributor to OpenManus-RL in an open-source agent ecosystem with 60,000+ GitHub stars."
 collection: portfolio
 permalink: /projects/openmanus-rl/
 date: 2025-01-01
 link: "https://github.com/OpenManus/OpenManus-RL"
+header:
+  teaser: openmanus-rl.jpg
 ---
 
 OpenManus-RL is the follow-up project of OpenManus. I collaborated with the official OpenManus team as a core contributor to OpenManus-RL in an open-source ecosystem with 60,000+ GitHub stars.

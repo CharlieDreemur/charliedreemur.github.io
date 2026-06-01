@@ -1,0 +1,101 @@
+/* Reusable 3D hover treatment for compact cards. */
+.tilt-card {
+  --tilt-rx: 0deg;
+  --tilt-ry: 0deg;
+  --tilt-lift: 0;
+  --tilt-glow-x: 50%;
+  --tilt-glow-y: 50%;
+
+  position: relative;
+  transform: perspective(900px) rotateX(var(--tilt-rx)) rotateY(var(--tilt-ry)) translateY(var(--tilt-lift));
+  transform-style: preserve-3d;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+  will-change: transform;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      circle at var(--tilt-glow-x) var(--tilt-glow-y),
+      rgba(82, 173, 200, 0.22),
+      rgba(82, 173, 200, 0) 46%
+    );
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  &.is-tilting,
+  &:hover,
+  &:focus-within {
+    --tilt-lift: -5px;
+
+    border-color: rgba(82, 173, 200, 0.45);
+    box-shadow: 0 16px 34px rgba(#000, 0.14);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+.experience-card.tilt-card {
+  transform-origin: center;
+
+  .experience-card__mark,
+  .experience-card__body {
+    transform: translateZ(18px);
+  }
+}
+
+.grid__item .archive__item.tilt-card,
+.feature__item .archive__item.tilt-card {
+  min-height: 100%;
+  padding: 0.85rem;
+  overflow: hidden;
+  border: 1px solid var(--global-border-color);
+  border-radius: 8px;
+  background: rgba(#fff, 0.04);
+
+  .archive__item-teaser {
+    transform: translateZ(22px);
+  }
+
+  .archive__item-title,
+  .archive__item-excerpt,
+  .page__meta,
+  .page__date {
+    transform: translateZ(16px);
+  }
+}
+
+.page__content .home-project-grid {
+  @include clearfix();
+  margin: 1rem 0 2rem;
+
+  .grid__item {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-card {
+    transform: none;
+    transition:
+      box-shadow 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+}

@@ -8,8 +8,11 @@ redirect_from:
 ---
 
 {% assign schedule_url = site.author.schedule_url %}
-{% assign schedule_embed_url = site.author.schedule_embed_url %}
-{% unless schedule_embed_url %}{% assign schedule_embed_url = schedule_url %}{% endunless %}
+{% assign schedule_view_embed_url = site.author.schedule_view_embed_url %}
+{% assign schedule_appointment_embed_url = site.author.schedule_embed_url %}
+{% assign schedule_timezone_label = site.author.schedule_timezone_label | default: "Eastern Time" %}
+{% unless schedule_view_embed_url %}{% assign schedule_view_embed_url = schedule_appointment_embed_url %}{% endunless %}
+{% unless schedule_view_embed_url %}{% assign schedule_view_embed_url = schedule_url %}{% endunless %}
 
 <div class="home-intro-card" markdown="1">
 
@@ -34,6 +37,14 @@ My research interests center on LLM agents, especially next-generation AI agents
 - Conversational AI: anthropomorphism and social intelligence
 - Post-training: agent SFT and RL
 
+## Projects
+
+<div class="grid__wrapper home-project-grid">
+{% for post in site.portfolio reversed %}
+  {% include archive-single.html type="grid" %}
+{% endfor %}
+</div>
+
 ## Gamedev
 
 Beyond research, I am a passoinate indie game developer, feel free to check my game work on the [game page](/game/). I am also willing to discuss the future of AI X Game.
@@ -44,29 +55,26 @@ Beyond research, I am a passoinate indie game developer, feel free to check my g
 
 {% include experience-cards.html %}
 
-## Schedule a Meeting
-
-<div class="home-schedule-board">
-  <div class="home-schedule-board__header">
-    <div>
-      <strong>Google Calendar availability</strong>
-      <span>Open slots are shown in your local timezone.</span>
-    </div>
-    <a class="btn btn--primary home-schedule-board__button" href="{{ schedule_url }}" target="_blank" rel="noopener">
-      <i class="fa fa-fw fa-calendar-check" aria-hidden="true"></i> Open scheduler
-    </a>
+<div class="home-schedule-panel">
+  <div class="home-schedule-panel__header">
+    <h2>my schedule</h2>
+    <p>Feel free to check my availability. Times shown in {{ schedule_timezone_label }}.</p>
   </div>
-  <div class="home-schedule-board__embed">
+  <div class="home-schedule-panel__frame">
     <iframe
-      src="{{ schedule_embed_url }}"
-      title="Google Calendar appointment scheduler for Weijia Zhang"
+      src="{{ schedule_view_embed_url }}"
+      title="Google Calendar schedule for Weijia Zhang"
       loading="lazy"
       referrerpolicy="no-referrer-when-downgrade"
       frameborder="0"></iframe>
   </div>
-  <p class="home-schedule-board__fallback">
-    If the calendar does not load, <a href="{{ schedule_url }}" target="_blank" rel="noopener">open it in Google Calendar</a>.
-  </p>
+  <div class="home-schedule-panel__footer">
+    <span>Found a good time?</span>
+    <a class="btn btn--info home-schedule-panel__button" href="{{ schedule_url }}" target="_blank" rel="noopener">
+      <i class="fa fa-fw fa-calendar-check" aria-hidden="true"></i> Schedule meeting
+    </a>
+    <a class="home-schedule-panel__link" href="{{ schedule_view_embed_url }}" target="_blank" rel="noopener">Open full view</a>
+  </div>
 </div>
 
 <div class="home-callout" markdown="1">
@@ -76,11 +84,5 @@ Beyond research, I am a passoinate indie game developer, feel free to check my g
 I keep a running list of research ideas on [Idea Planet](https://lead-cardamom-96f.notion.site/Dreeu2mr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link). -->
 
 Feel free to reach me via [email](mailto:zhangwj.charlie@gmail.com) or [LinkedIn](https://www.linkedin.com/in/weijia-charlie-zhang/).
-
-<p class="home-callout-actions">
-  <a class="btn btn--danger home-schedule-button" href="{{ schedule_url }}" target="_blank" rel="noopener">
-    <i class="fa fa-fw fa-calendar" aria-hidden="true"></i> Schedule a time
-  </a>
-</p>
 
 </div>

@@ -32,7 +32,10 @@ author:
   uri              : "https://charliedreemur.github.io"
   email            : "zhangwj.charlie@gmail.com" 
   schedule_url     : "https://calendar.app.google/3xJDqFXN72kG3M8i7"
+  # Paste a public Google Calendar embed URL here to show a week/month viewboard.
+  schedule_view_embed_url :
   schedule_embed_url : "https://calendar.google.com/calendar/appointments/schedules/AcZssZ229kz_oJFK51MpYy-UZEUSBV_XSO8zmSBQUxvQDewx4y18vWC6pHVyKe1gyFGgJ3I1BzUY7czl"
+  schedule_timezone_label : "Eastern Time"
 
   # Academic websites
   academia         : # URL

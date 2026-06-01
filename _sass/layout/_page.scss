@@ -177,36 +177,76 @@
     }
   }
 
-  .home-schedule-board {
-    margin: 2.25rem 0;
+  .home-schedule-panel {
+    margin: 2.5rem 0;
+    overflow: hidden;
+    border: 1px solid rgba(#7a8288, 0.38);
+    border-radius: 8px;
+    background: #20262a;
+    box-shadow: 0 12px 32px rgba(#000, 0.14);
   }
 
-  .home-schedule-board__header {
+  @include breakpoint($large) {
+    .home-schedule-panel {
+      width: 72rem;
+      max-width: calc(100vw - 3rem);
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+
+  .home-schedule-panel__header {
+    padding: 1.35rem 1.75rem 1.2rem;
+    color: #e9edf0;
+
+    h2 {
+      margin: 0 0 0.45rem;
+      color: #f7f8f9;
+      border: 0;
+      font-size: 1.55rem;
+      line-height: 1.1;
+
+      &:after {
+        display: none;
+      }
+    }
+
+    p {
+      margin: 0;
+      color: rgba(#fff, 0.78);
+      font-size: 0.95rem;
+    }
+  }
+
+  .home-schedule-panel__frame {
+    height: 51rem;
+    overflow: hidden;
+    padding: 0.45rem;
+    background: #edf2f8;
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 7px;
+      background: #fff;
+    }
+  }
+
+  .home-schedule-panel__footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.85rem;
-
-    strong,
-    span {
-      display: block;
-      font-family: $sans-serif;
-    }
-
-    strong {
-      color: var(--global-text-color);
-      font-size: 1rem;
-    }
-
-    span {
-      color: var(--global-text-color-light);
-      font-size: 0.85rem;
-    }
+    gap: 0.85rem;
+    padding: 0.9rem 1rem;
+    background: #edf2f8;
+    color: #283138;
+    font-family: $sans-serif;
+    font-size: 0.9rem;
   }
 
-  .home-schedule-board__button {
-    flex: 0 0 auto;
+  .home-schedule-panel__button {
+    margin-bottom: 0;
     color: #fff !important;
     text-decoration: none;
 
@@ -215,26 +255,14 @@
     }
   }
 
-  .home-schedule-board__embed {
-    height: clamp(34rem, 68vh, 48rem);
-    overflow: hidden;
-    border: 1px solid var(--global-border-color);
-    border-radius: 8px;
-    background: var(--global-bg-color);
-    box-shadow: 0 8px 22px rgba(#000, 0.045);
+  .home-schedule-panel__link {
+    color: #2f7f93;
+    font-weight: bold;
+    text-decoration: none;
 
-    iframe {
-      display: block;
-      width: 100%;
-      height: 100%;
-      border: 0;
+    &:hover {
+      text-decoration: underline;
     }
-  }
-
-  .home-schedule-board__fallback {
-    margin-top: 0.75rem;
-    color: var(--global-text-color-light);
-    font-size: 0.85rem;
   }
 
   .home-callout {
@@ -376,18 +404,28 @@
   }
 
   @include breakpoint(max-width $small) {
-    .home-schedule-board__header {
+    .home-schedule-panel {
+      margin-right: -0.5rem;
+      margin-left: -0.5rem;
+    }
+
+    .home-schedule-panel__header {
+      padding: 1.1rem 1.25rem;
+    }
+
+    .home-schedule-panel__frame {
+      height: 41rem;
+      padding: 0.3rem;
+    }
+
+    .home-schedule-panel__footer {
       align-items: stretch;
       flex-direction: column;
     }
 
-    .home-schedule-board__button {
+    .home-schedule-panel__button {
       width: 100%;
       text-align: center;
-    }
-
-    .home-schedule-board__embed {
-      height: 39rem;
     }
 
     .experience-card {
