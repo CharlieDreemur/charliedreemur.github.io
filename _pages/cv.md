@@ -20,7 +20,7 @@ Education
 
 - B.S. in Computer Science and Mathematics, University of Illinois Urbana-Champaign, Aug 2022 - May 2026
   - GPA: 3.7/4.0
-  - C.W. Gear Outstanding Undergraduate Student, one of two annual recipients
+  - 2026 C.W. Gear Outstanding Undergraduate Student, one of two annual recipients
   - 2025 Dean's List
 
 Work Experience
