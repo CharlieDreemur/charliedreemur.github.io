@@ -178,21 +178,16 @@
   }
 
   .home-schedule-panel {
-    margin: 2.5rem 0;
+    width: calc(100vw - 2rem);
+    max-width: 76rem;
+    margin: 2.75rem 0;
+    margin-left: 50%;
     overflow: hidden;
     border: 1px solid rgba(#7a8288, 0.38);
     border-radius: 8px;
     background: #20262a;
     box-shadow: 0 12px 32px rgba(#000, 0.14);
-  }
-
-  @include breakpoint($large) {
-    .home-schedule-panel {
-      width: 72rem;
-      max-width: calc(100vw - 3rem);
-      margin-left: 50%;
-      transform: translateX(-50%);
-    }
+    transform: translateX(-50%);
   }
 
   .home-schedule-panel__header {
@@ -219,9 +214,9 @@
   }
 
   .home-schedule-panel__frame {
-    height: 51rem;
+    height: 51.25rem;
     overflow: hidden;
-    padding: 0.45rem;
+    padding: 0.5rem;
     background: #edf2f8;
 
     iframe {
@@ -405,8 +400,7 @@
 
   @include breakpoint(max-width $small) {
     .home-schedule-panel {
-      margin-right: -0.5rem;
-      margin-left: -0.5rem;
+      width: calc(100vw - 0.75rem);
     }
 
     .home-schedule-panel__header {
@@ -414,7 +408,7 @@
     }
 
     .home-schedule-panel__frame {
-      height: 41rem;
+      height: 46rem;
       padding: 0.3rem;
     }
 

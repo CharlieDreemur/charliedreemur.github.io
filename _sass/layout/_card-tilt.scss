@@ -82,11 +82,32 @@
 }
 
 .page__content .home-project-grid {
-  @include clearfix();
-  margin: 1rem 0 2rem;
+  display: grid;
+  clear: both;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2.5rem;
 
   .grid__item {
-    margin-bottom: 1rem;
+    float: none;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    clear: none;
+  }
+
+  .archive__item {
+    height: 100%;
+  }
+
+  .archive__item-teaser {
+    aspect-ratio: 16 / 9;
+    max-height: none;
+
+    img {
+      height: 100%;
+      object-fit: cover;
+    }
   }
 }
 

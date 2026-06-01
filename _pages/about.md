@@ -62,8 +62,12 @@ Beyond research, I am a passoinate indie game developer, feel free to check my g
   </div>
   <div class="home-schedule-panel__frame">
     <iframe
+      class="home-schedule-panel__iframe"
       src="{{ schedule_view_embed_url }}"
       title="Google Calendar schedule for Weijia Zhang"
+      width="100%"
+      height="820"
+      style="border: 0; width: 100%; min-height: 820px;"
       loading="lazy"
       referrerpolicy="no-referrer-when-downgrade"
       frameborder="0"></iframe>

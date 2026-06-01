@@ -1,0 +1,52 @@
+/* Gentle entrance animation for page sections and repeated content rows. */
+.reveal-item {
+  opacity: 0;
+  filter: blur(4px);
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 520ms ease,
+    filter 520ms ease,
+    transform 560ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, filter, transform;
+}
+
+.reveal-item.is-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate3d(0, 0, 0);
+}
+
+.page__content > h2.reveal-item,
+.page__content > h3.reveal-item {
+  transform: translate3d(0, 10px, 0);
+}
+
+.page__content > h2.reveal-item.is-visible,
+.page__content > h3.reveal-item.is-visible {
+  transform: translate3d(0, 0, 0);
+}
+
+.page__content > h2.reveal-item::after,
+.page__content h3.publication-category-title.reveal-item::after,
+.experience-section.reveal-item h2::after {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 560ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--reveal-delay, 0ms) + 140ms);
+}
+
+.page__content > h2.reveal-item.is-visible::after,
+.page__content h3.publication-category-title.reveal-item.is-visible::after,
+.experience-section.reveal-item.is-visible h2::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-item {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+}
