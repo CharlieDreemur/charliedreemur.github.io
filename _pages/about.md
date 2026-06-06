@@ -25,10 +25,6 @@ Currently, I worked as a research assistant in UIUC U Lab on LLM agents, multimo
 
 </div>
 
-## News
-
-{% include news-list.html %}
-
 ## Research
 
 My research interests center on LLM agents, especially next-generation AI agents that bridge virtual and physical worlds through socially intelligent, tool-agnostic, and ethically grounded architectures.
@@ -36,6 +32,10 @@ My research interests center on LLM agents, especially next-generation AI agents
 - Multimodal agents: memory, reasoning, tool use, and multi-agent systems
 - Conversational AI: anthropomorphism and social intelligence
 - Post-training: agent SFT and RL
+
+## News
+
+{% include news-list.html %}
 
 ## Projects
 
