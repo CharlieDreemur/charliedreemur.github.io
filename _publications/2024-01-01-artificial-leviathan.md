@@ -6,6 +6,7 @@ permalink: /publication/2024-01-01-artificial-leviathan
 excerpt: "A simulated LLM agent society for studying emergent social contracts through Hobbesian social contract theory."
 date: 2024-08-01
 venue: "The First Workshop on AI Behavioral Science, ACM SIGKDD 2024"
+authors: "Gordon Dai*, Weijia Zhang*, Jinhan Li, Siqi Yang, Srihas Rao, Arthur Caetano, and Misha Sra"
 paperurl: "https://arxiv.org/abs/2406.14373"
 citation: "Gordon Dai*, Weijia Zhang*, Jinhan Li, Siqi Yang, Srihas Rao, Arthur Caetano, and Misha Sra. (2024). &quot;Artificial Leviathan: Exploring Social Evolution of LLM Agents Through the Lens of Hobbesian Social Contract Theory.&quot; <i>The First Workshop on AI Behavioral Science, ACM SIGKDD 2024</i>."
 ---
