@@ -16,7 +16,7 @@ redirect_from:
 
 <div class="home-intro-card" markdown="1">
 
-I am an incoming M.S. student in Computer Science at [Yale University](https://www.yale.edu/) (2026 - 2027), admitted to the **(Thesis Track) M.S. in Computer Science with Full Scholarship**.
+I am an incoming M.S. student in Computer Science at [Yale University](https://www.yale.edu/) (2026 - 2028), admitted to the **(Thesis Track) M.S. in Computer Science with Full Scholarship**.
 
 I graduated from [UIUC](https://illinois.edu/) in Math + Computer Science with the [2026 C.W. Gear Outstanding Undergraduate Student](https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student) award, as one of two annual recipients.
 
