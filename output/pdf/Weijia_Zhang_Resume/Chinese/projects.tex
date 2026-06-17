@@ -1,0 +1,28 @@
+\section{研究项目}
+\resumeSubHeadingListStart
+  
+    \resumeProjectHeading
+      {\textbf{OpenManus \& OpenManus-RL (Researcher / Core Contributor)} \ \textbar{} \ \href{https://github.com/OpenManus/OpenManus-RL}{\underline{GitHub}}}{2025年1月 -- 2025年7月}
+      \resumeItemListStart
+        \resumeItem{与 OpenManus 官方团队合作参与 OpenManus-RL，即 60k+ star OpenManus 开源 Agent 生态的后续项目。}
+        \resumeItem{实现 ReAct-style reasoning 与多智能体协作流程，构建 MCP-based tool-library interface，用于自动化工具调用与输出处理。}
+        \resumeItem{为 AlfWorld、WebShop 等 Agent benchmark 构建 SFT 数据与 step-level reward signals，支持 planning 与 memory 实验。}
+      \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\textbf{CUADebug / GUIAgentDebugger (独立一作 / Lead)}}{2026年1月 -- 至今}
+      \resumeItemListStart
+        \resumeItem{设计 CUA root-cause taxonomy，包含 4 个顶层模块与 29 个细粒度 subtype，覆盖 perception、grounding/interaction、reasoning/control 与 external/system failures。}
+        \resumeItem{构建 CUAErrorBench：整理 184 条来自 Claude、Gemini、Qwen Agent 的 OSWorld 失败轨迹，并标注 root step、subtype、evidence、correction 与 confidence。}
+        \resumeItem{实现 tool-augmented RCA debugger，通过 paired before/after screenshots、action traces 与 execution status 定位根因，并输出结构化证据与 repair recipe。}
+        \resumeItem{加入 episodic-memory retrieval 以复用历史 debugging lessons；continual re-rollout 实验中任务成功率达到 direct-continuation baseline 的约 2.1 倍（12.20\% $\rightarrow$ 25.86\%），接近 human RCA 的 29.21\%。}
+      \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\textbf{SeeingEye (一作 / Lead)}}{2025年9月 -- 2026年4月}
+      \resumeItemListStart
+        \resumeItem{设计 SIR-centered agentic perception-reasoning loop：VLM translator 根据问题、当前 SIR 与证据充分性动态路由 OCR、table reading、SmartGridCaption/crop 等工具，并在每轮工具调用后更新结构化视觉证据状态。}
+        \resumeItem{引入 reasoner-guided visual feedback 机制：text-only LLM reasoner 在 SIR 信息不足时生成 targeted feedback，反向指导 VLM 补充缺失视觉细节；较 Qwen2.5-VL-32B，在 MMMU-Pro等benchmark平均提升 16.23 pts}
+      \resumeItemListEnd
+
+\resumeSubHeadingListEnd

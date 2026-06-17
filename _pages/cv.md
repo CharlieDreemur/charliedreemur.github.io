@@ -59,6 +59,13 @@ Project Experience
   - Constructed high-quality SFT datasets for agent benchmarks including AlfWorld and WebShop.
   - Designed step-level reward signals to improve agent planning and memory capabilities.
 
+- SeeingEye, Co-first Author / Researcher, Oct 2025 - Present
+  - Proposed an agentic information-flow framework that enables text-only LLMs to perform multimodal reasoning through structured, tool-mediated textual context.
+  - Designed the perception-to-reasoning pipeline for multimodal tasks while keeping the backbone model text-only.
+  - Studied how tool use, intermediate representations, and memory-like context unlock multimodal reasoning behavior in text-only LLMs.
+  - Released the work as an arXiv preprint, currently under review at EMNLP 2026.
+  - Paper: [SeeingEye]({{ base_path }}/files/SeeingEye_Agentic_Information_Flow_Unlocks_Multimodal_Reasoning_in_Text_Only_LLMs.pdf)
+
 - GUIAgentDebugger, First Author / Lead, Jan 2026 - Present
   - Designed a GUI-agent error taxonomy with 4 major categories and 29 subtypes across perception, interaction localization, task reasoning, and external system failures.
   - Built a self-evolving VLM-agent debugging framework that identifies root causes from failed trajectories, distills them into reusable debugging skills, and enables agents to learn from historical failures.

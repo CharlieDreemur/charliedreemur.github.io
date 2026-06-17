@@ -1,0 +1,28 @@
+\section{Research Projects}
+\resumeSubHeadingListStart
+
+    \resumeProjectHeading
+      {\textbf{CUADebug / GUIAgentDebugger (First Author / Lead)}}{Jan 2026 -- Present}
+      \resumeItemListStart
+        \resumeItem{Designed a CUA root-cause taxonomy with 4 top-level modules and 29 subtypes covering perception, grounding/interaction, reasoning/control, and external/system failures.}
+        \resumeItem{Built CUAErrorBench from 184 human-annotated OSWorld failure trajectories across Claude, Gemini, and Qwen agents, with labels for root step, subtype, evidence, correction, and confidence.}
+        \resumeItem{Developed a tool-augmented RCA debugger that inspects paired before/after screenshots, action traces, and execution status, then submits structured root-cause evidence and repair recipes.}
+        \resumeItem{Added episodic-memory retrieval for reusable debugging lessons; in continual re-rollout experiments, achieved 2.1x the direct-continuation baseline success rate (12.20\% to 25.86\%), approaching 29.21\% with human RCA.}
+      \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\textbf{SeeingEye (First Author / Project Lead)}}{Jan 2025 -- Present}
+      \resumeItemListStart
+        \resumeItem{Designed an SIR-centered agentic perception-reasoning loop where a VLM translator dynamically routes OCR, table-reading, and SmartGridCaption/crop tools based on the question, current SIR, and evidence sufficiency, then updates the structured visual evidence state after each tool call.}
+        \resumeItem{Introduced reasoner-guided visual feedback: when the SIR is insufficient, the text-only LLM reasoner requests targeted missing visual details to guide the next VLM perception step; averaged +13.91 pts over Qwen2.5-VL-32B across MMMU-Pro Vision/Standard and MMMU, with a best gain of +16.23 pts.}
+      \resumeItemListEnd
+
+    \resumeProjectHeading
+      {\textbf{OpenManus \& OpenManus-RL (Researcher / Core Contributor)} \ \textbar{} \ \href{https://github.com/OpenManus/OpenManus-RL}{\underline{GitHub}}}{Jan 2025 -- Jul 2025}
+      \resumeItemListStart
+        \resumeItem{Collaborated with the official OpenManus team on OpenManus-RL, the follow-up to the 60k+ star OpenManus open-source agent ecosystem.}
+        \resumeItem{Implemented ReAct-style reasoning and multi-agent collaboration workflows, including an MCP-based tool-library interface for automated tool invocation and output handling.}
+        \resumeItem{Built SFT data and step-level reward signals for AlfWorld and WebShop agent benchmarks to support planning and memory experiments.}
+      \resumeItemListEnd
+
+\resumeSubHeadingListEnd

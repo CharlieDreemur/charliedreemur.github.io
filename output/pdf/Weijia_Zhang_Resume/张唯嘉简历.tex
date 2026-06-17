@@ -1,0 +1,24 @@
+\documentclass[letterpaper,9pt]{article}
+\usepackage{resume_config} % This loads your Parent Class/Template
+\usepackage{CJKutf8}
+
+\begin{document}
+\begin{CJK*}{UTF8}{gbsn}
+\fontsize{7.8}{8.6}\selectfont
+
+\titleformat{\section}{
+  \vspace{-8pt}\scshape\raggedright\normalsize
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+
+\input{Chinese/header}
+
+% ORDER MATTERS HERE
+\input{Chinese/education} 
+\input{Chinese/work} 
+\input{Chinese/publication} 
+\input{Chinese/projects}
+\input{Chinese/activities}
+\input{Chinese/skills}
+\end{CJK*}
+\end{document}
