@@ -1,6 +1,6 @@
 # Yale Faculty Summary — Weijia Zhang
 
-**Student:** Weijia Zhang | M.S. CS, Yale University (Aug 2026 – May 2028, Thesis Track)
+**Student:** Weijia Zhang | M.S. CS, Yale University (Sep 2026 – May 2028, Thesis Track)
 **Goals:** Industry-research 60% · Academia (PhD after M.S.) 40%
 **Context:** These are potential M.S. thesis advisors and committee members at Yale. UIUC targets are in [advisor-summary-uiuc.md](advisor-summary-uiuc.md).
 **Updated:** 2026-06-12
@@ -34,7 +34,7 @@
 
 Yale 于 2024 年 8 月宣布 **$150M AI 投资计划**，目标在 5 年内招募 **20+ 新 AI faculty**（覆盖工程学院、文理学院、医学院）。2025–2026 年可能有与 Weijia 方向高度匹配的新教授到岗。
 
-**行动建议：** 入学后（Aug 2026）第一时间：
+**行动建议：** 入学后（Sep 2026）第一时间：
 1. 查看 Yale CS/SEAS 2025–2026 新到岗 faculty 名单
 2. 关注 LLM agents、post-training、RAG、multimodal 方向的新教授
 3. 参加 Yale NLP Lab 系列活动和 NLP/LLM Interest Group

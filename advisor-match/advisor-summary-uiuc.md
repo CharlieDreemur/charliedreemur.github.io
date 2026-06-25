@@ -1,6 +1,6 @@
 # UIUC Faculty Summary — Weijia Zhang
 
-**Student:** Weijia Zhang | M.S. CS, Yale University (Aug 2026 – May 2028)，目标 UIUC PhD（2028 后申请）
+**Student:** Weijia Zhang | M.S. CS, Yale University (Sep 2026 – May 2028)，目标 UIUC PhD（2028 后申请）
 **Goals:** Industry-research 60% · Academia (PhD after M.S.) 40%
 **Context:** 机构不匹配——Weijia 在 Yale M.S.，UIUC 教授无法担任 Yale 主导师。以下评估面向 2028 年后的 PhD 申请，以及 M.S. 期间可能的远程合作/实验室联系。
 **Updated:** 2026-06-12
