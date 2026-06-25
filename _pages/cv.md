@@ -14,7 +14,7 @@ redirect_from:
 Education
 ======
 
-- M.S. in Computer Science, Yale University, Aug 2026 - May 2028
+- M.S. in Computer Science, Yale University, Sep 2026 - May 2028
   - Thesis Track with Full Scholarship
   - Incoming student
 
