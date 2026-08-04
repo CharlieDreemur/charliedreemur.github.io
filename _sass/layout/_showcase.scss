@@ -362,22 +362,30 @@
 
 .showcase-card--with-media {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(16rem, 32vw, 23rem);
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
   column-gap: clamp(1rem, 2.5vw, 1.5rem);
 
   > :not(.showcase-card__media) {
     grid-column: 1;
   }
+
+  .showcase-card__topline {
+    grid-column: 1 / -1;
+    margin-bottom: 0.2rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--global-border-color);
+  }
 }
 
 .showcase-card__media {
   grid-column: 2;
-  grid-row: 1 / span 5;
-  align-self: start;
+  grid-row: 2 / span 4;
+  align-self: center;
   overflow: hidden;
   border: 1px solid var(--global-border-color);
   border-radius: 10px;
   background: #fff;
+  box-shadow: 0 8px 20px rgba(#14262d, 0.07);
   text-decoration: none !important;
 
   img {
