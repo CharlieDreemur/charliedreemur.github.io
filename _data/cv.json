@@ -33,6 +33,17 @@
   },
   "work": [
     {
+      "company": "TikTok",
+      "position": "Research Intern",
+      "startDate": "Jun 2026",
+      "endDate": "Present",
+      "summary": "Researching self-evolving multimodal agents for content moderation.",
+      "highlights": [
+        "Designed a ReAct-based moderation agent that combines frame sampling, ASR/OCR, metadata, originality scoring, and visual detection tools into policy-grounded decisions.",
+        "Built a reflection-and-evolution loop that distills solver failures into reusable skills, improving overall F1 score by 15.5%."
+      ]
+    },
+    {
       "company": "Microsoft Research Asia, Microsoft",
       "position": "Research Intern",
       "startDate": "Jul 2025",

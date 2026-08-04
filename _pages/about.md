@@ -37,21 +37,9 @@ My research interests center on LLM agents, especially next-generation AI agents
 
 {% include news-list.html %}
 
-## Projects
-
-<div class="grid__wrapper home-project-grid">
-{% for post in site.portfolio reversed %}
-  {% include archive-single.html type="grid" %}
-{% endfor %}
-</div>
-
 ## Gamedev
 
 Beyond research, I am a passoinate indie game developer, feel free to check my game work on the [game page](/game/). I am also willing to discuss the future of AI X Game.
-
-## Publications
-
-{% include publications-list.html show_scholar=false category_heading_tag="h3" %}
 
 {% include experience-cards.html %}
 

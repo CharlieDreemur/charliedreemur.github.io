@@ -45,7 +45,10 @@
       {% assign company_name = job.company | split: "," | first %}
       {% assign logo_text = company_name | slice: 0, 1 %}
       {% assign logo_src = "" %}
-      {% if job.company contains "Microsoft" %}
+      {% assign logo_icon = "" %}
+      {% if job.company contains "TikTok" %}
+        {% assign logo_icon = "fab fa-tiktok" %}
+      {% elsif job.company contains "Microsoft" %}
         {% assign logo_text = "MSR" %}
         {% assign logo_src = "/images/logos/microsoft-icon.svg" %}
       {% elsif job.company contains "Tencent" %}
@@ -58,7 +61,9 @@
 
       <article class="experience-card experience-card--work">
         <div class="experience-card__mark" aria-hidden="true">
-          {% if logo_src != "" %}
+          {% if logo_icon != "" %}
+            <i class="experience-card__brand-icon {{ logo_icon }}"></i>
+          {% elsif logo_src != "" %}
             <img class="experience-card__logo" src="{{ logo_src | relative_url }}" alt="">
           {% else %}
             {{ logo_text }}

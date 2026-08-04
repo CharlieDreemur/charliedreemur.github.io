@@ -16,7 +16,18 @@
     </div>
     {% if page.showcase.hero_image %}
       <figure class="showcase-hero__art{% if page.showcase.hero_image_mode %} showcase-hero__art--{{ page.showcase.hero_image_mode }}{% endif %}">
-        <img src="{{ base_path }}{{ page.showcase.hero_image }}" alt="{{ page.showcase.hero_alt }}" loading="eager">
+        {% if page.showcase.hero_image_mode == "avatar" %}
+          <a class="showcase-github-profile" href="{{ page.showcase.primary_url }}">
+            <img src="{{ base_path }}{{ page.showcase.hero_image }}" alt="{{ page.showcase.hero_alt }}" loading="eager">
+            <figcaption>
+              <span><i class="fab fa-github" aria-hidden="true"></i> GitHub</span>
+              <strong>@{{ page.showcase.github_username }}</strong>
+              <small>{{ page.showcase.github_bio }}</small>
+            </figcaption>
+          </a>
+        {% else %}
+          <img src="{{ base_path }}{{ page.showcase.hero_image }}" alt="{{ page.showcase.hero_alt }}" loading="eager">
+        {% endif %}
       </figure>
     {% endif %}
   </div>

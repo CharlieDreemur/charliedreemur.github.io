@@ -388,6 +388,16 @@
     object-fit: contain;
   }
 
+  .experience-card__brand-icon.fa-tiktok {
+    color: #111;
+    font-size: 1.3rem;
+    text-shadow: -1px -1px 0 #25f4ee, 1px 1px 0 #fe2c55;
+  }
+
+  html[data-theme="dark"] & .experience-card__brand-icon.fa-tiktok {
+    color: #fff;
+  }
+
   .experience-card__role {
     color: var(--global-text-color-light);
   }
