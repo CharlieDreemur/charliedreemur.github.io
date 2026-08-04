@@ -78,7 +78,7 @@
 
           <div class="showcase-card-list">
             {% for item in group_items %}
-              <article class="showcase-card">
+              <article class="showcase-card{% if item.image %} showcase-card--with-media{% endif %}">
                 <div class="showcase-card__topline">
                   <div>
                     {% if item.badge %}<span class="showcase-card__badge">{{ item.badge }}</span>{% endif %}
@@ -99,7 +99,21 @@
                   </div>
                 </div>
 
-                {% if item.authors %}<p class="showcase-card__authors">{{ item.authors }}</p>{% endif %}
+                {% if item.image %}
+                  {% assign media_url = item.paperurl | default: item.link | default: item.url %}
+                  <a class="showcase-card__media" href="{{ media_url }}" aria-label="View {{ item.title }}">
+                    <img src="{{ base_path }}{{ item.image }}" alt="{{ item.image_alt | default: item.title }}" loading="lazy">
+                  </a>
+                {% endif %}
+
+                {% if item.authors %}
+                  {% assign author_line = item.authors %}
+                  {% if page.showcase.highlight_author %}
+                    {% capture highlighted_author %}<strong>{{ page.showcase.highlight_author }}</strong>{% endcapture %}
+                    {% assign author_line = author_line | replace: page.showcase.highlight_author, highlighted_author %}
+                  {% endif %}
+                  <p class="showcase-card__authors">{{ author_line }}</p>
+                {% endif %}
                 <p class="showcase-card__summary">{{ item.excerpt | strip_html }}</p>
 
                 {% if item.tags %}

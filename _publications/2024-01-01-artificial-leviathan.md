@@ -11,6 +11,8 @@ paperurl: "https://arxiv.org/abs/2406.14373"
 citation: "Gordon Dai*, Weijia Zhang*, Jinhan Li, Siqi Yang, Srihas Rao, Arthur Caetano, and Misha Sra. (2024). &quot;Artificial Leviathan: Exploring Social Evolution of LLM Agents Through the Lens of Hobbesian Social Contract Theory.&quot; <i>The First Workshop on AI Behavioral Science, ACM SIGKDD 2024</i>."
 showcase_group: year-2024
 badge: "Co-first Author"
+image: "/images/publications/artificial-leviathan.png"
+image_alt: "Artificial Leviathan sandbox society simulation environment"
 tags:
   - "Multi-Agent Systems"
   - "Social Simulation"

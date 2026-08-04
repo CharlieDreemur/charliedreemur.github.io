@@ -10,6 +10,8 @@ authors: "Weijia Zhang, Ruiqi Chen, Yunze Xiao, and Weihao Xuan"
 citation: "Weijia Zhang, Ruiqi Chen, Yunze Xiao, and Weihao Xuan. (2026). &quot;Every Act Has Its Price: Compressed Moral Composition in Frontier LLMs.&quot; <i>EMNLP 2026</i>."
 showcase_group: year-2026
 badge: "First Author"
+image: "/images/publications/every-act-has-its-price.png"
+image_alt: "Single-scene moral calibration and composite judgment framework"
 tags:
   - "LLM Ethics"
   - "Moral Reasoning"
