@@ -9,7 +9,7 @@ redirect_from:
 
 {% include base_path %}
 
-[Download Resume as PDF]({{ base_path }}/files/Weijia_Zhang_Resume.pdf){: .btn .btn--primary}
+[Download Resume as PDF](https://drive.google.com/uc?export=download&id=1F3CEzlgadXX5hf0Egj8PjEI5PkAKin7l){: .btn .btn--primary}
 
 Education
 ======

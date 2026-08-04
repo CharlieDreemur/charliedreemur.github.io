@@ -4,9 +4,17 @@ excerpt: "Self-evolving VLM-agent debugging framework with a GUI-agent error tax
 collection: portfolio
 permalink: /projects/gui-agent-debugger/
 date: 2026-01-01
-link: "/files/_EMNLP__CUADebug__Diagnosing_and_Repairing_Computer_Use_Agent_Failures.pdf"
-header:
-  teaser: publications/cuadebug.png
+link: "https://github.com/AgentDebugX/AgentDebugX"
+github: "https://github.com/AgentDebugX/AgentDebugX"
+stars: "34"
+showcase_group: agent-systems
+badge: "First Author · Lead"
+date_label: "Jan 2026 – Present"
+tags:
+  - "Computer-Use Agents"
+  - "Self-Evolution"
+  - "VLM"
+  - "Agent Memory"
 ---
 
 GUIAgentDebugger is a self-evolving VLM-agent debugging framework for diagnosing GUI-agent failures and improving future rollouts.

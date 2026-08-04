@@ -5,12 +5,16 @@ category: manuscripts
 permalink: /publication/2026-01-01-every-act-has-its-price
 excerpt: "A study of compressed moral composition in frontier LLMs."
 date: 2026-01-01
-venue: "Under review"
+venue: "EMNLP 2026"
 authors: "Weijia Zhang, Ruiqi Chen, Yunze Xiao, and Weihao Xuan"
-paperurl: "/files/Every_Act_Has_Its_Price.pdf"
-citation: "Weijia Zhang, Ruiqi Chen, Yunze Xiao, and Weihao Xuan. (2026). &quot;Every Act Has Its Price: Compressed Moral Composition in Frontier LLMs.&quot; <i>Under review at EMNLP 2026</i>."
-header:
-  teaser: publications/every-act-has-its-price.png
+citation: "Weijia Zhang, Ruiqi Chen, Yunze Xiao, and Weihao Xuan. (2026). &quot;Every Act Has Its Price: Compressed Moral Composition in Frontier LLMs.&quot; <i>EMNLP 2026</i>."
+showcase_group: year-2026
+badge: "First Author"
+tags:
+  - "LLM Ethics"
+  - "Moral Reasoning"
+  - "Frontier Models"
+  - "Evaluation"
 ---
 
 This work studies compressed moral composition in frontier LLMs.
