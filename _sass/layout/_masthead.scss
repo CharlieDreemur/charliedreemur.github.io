@@ -8,6 +8,7 @@
   height: fit-content;
   top: 0;
   width: 100%;
+  box-shadow: 0 8px 24px rgba(#0d2028, 0.04);
 
   -webkit-animation: intro 0.3s both;
           animation: intro 0.3s both;
@@ -61,8 +62,83 @@
   white-space: nowrap;
 
   &--lg {
-    padding-right: 2em;
+    padding-right: clamp(0.8rem, 2.5vw, 2em);
     font-weight: 700;
+  }
+}
+
+.masthead__brand {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.15rem 0 !important;
+  line-height: 1;
+
+  &:hover {
+    .masthead__brand-mark {
+      transform: translateY(-1px) rotate(-4deg);
+      box-shadow:
+        0 0 0 3px var(--global-bg-color),
+        0 0 0 5px var(--global-masthead-link-color-hover),
+        0 7px 18px rgba(#14262d, 0.2);
+    }
+
+    .masthead__brand-copy strong {
+      color: var(--global-masthead-link-color-hover);
+    }
+  }
+}
+
+.masthead__brand-mark {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 2.65rem;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(#fff, 0.85), transparent 24%),
+    linear-gradient(145deg, #dff8ff, #9bd7e8);
+  box-shadow:
+    0 0 0 3px var(--global-bg-color),
+    0 0 0 4px var(--global-border-color),
+    0 5px 14px rgba(#14262d, 0.16);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+
+  img {
+    width: 2.25rem;
+    height: 2.25rem;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+}
+
+.masthead__brand-copy {
+  display: grid;
+  gap: 0.22rem;
+  text-align: left;
+
+  strong,
+  small {
+    display: block;
+    font-family: $sans-serif;
+  }
+
+  strong {
+    color: var(--global-masthead-link-color);
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    transition: color 180ms ease;
+  }
+
+  small {
+    color: var(--global-text-color-light);
+    font-size: 0.57rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 }
 
@@ -74,8 +150,38 @@
   cursor: default; /* Move this here too */
 }
 
+.masthead__menu-item--lg.selected {
+  .masthead__brand {
+    border-bottom: 0;
+  }
+
+  .masthead__brand-mark {
+    box-shadow:
+      0 0 0 3px var(--global-bg-color),
+      0 0 0 5px var(--global-masthead-link-color-hover),
+      0 5px 14px rgba(#14262d, 0.18);
+  }
+}
+
 .masthead__menu-item.selected a:hover {
   color: var(--global-text-color);
   border-bottom: 2px solid var(--global-text-color);
   /* No need to repeat pointer-events and cursor here */
+}
+
+@media (max-width: 37.5em) {
+  .masthead__brand-copy small {
+    display: none;
+  }
+
+  .masthead__brand-mark {
+    width: 2.35rem;
+    height: 2.35rem;
+    flex-basis: 2.35rem;
+
+    img {
+      width: 2rem;
+      height: 2rem;
+    }
+  }
 }

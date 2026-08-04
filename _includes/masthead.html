@@ -6,7 +6,15 @@
         <button><span class="navicon"></span></button>
         <ul class="visible-links">
           <li class="masthead__menu-item masthead__menu-item--lg persist {% if page.url == '/' or page.url == '/index.html' %}selected{% endif %}">
-            <a href="{{ base_path }}/">{{ site.title }}</a>
+            <a class="masthead__brand" href="{{ base_path }}/" aria-label="{{ site.title }} — Home">
+              <span class="masthead__brand-mark" aria-hidden="true">
+                <img src="{{ base_path }}/images/github_avatar.png" alt="">
+              </span>
+              <span class="masthead__brand-copy">
+                <strong>Charlie Zhang</strong>
+                <small>AI Researcher</small>
+              </span>
+            </a>
           </li>
           {% for link in site.data.navigation.main %}
             {% if link.url contains 'http' %}
