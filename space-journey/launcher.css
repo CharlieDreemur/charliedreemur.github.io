@@ -38,8 +38,8 @@ html.space-launch-charging::after {
   position: absolute;
   top: var(--start-y);
   left: var(--start-x);
-  width: 1px;
-  height: 1px;
+  width: 0;
+  height: 0;
   opacity: 0;
   will-change: transform, opacity;
   animation: space-charge-drift var(--duration) var(--delay) cubic-bezier(0.48, 0, 0.88, 0.45) infinite;
@@ -47,18 +47,32 @@ html.space-launch-charging::after {
 
 .space-charge-field i::before {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: var(--size);
-  height: calc(var(--size) * 3.6);
-  border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), #effcff 68%, #fff);
+  top: calc(var(--trail-thickness) * -0.5);
+  left: calc(var(--trail-length) * -1);
+  width: var(--trail-length);
+  height: var(--trail-thickness);
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(218, 247, 255, 0.38) 42%, #fff);
   box-shadow:
-    0 0 0.45rem #fff,
-    0 0 1.15rem rgba(210, 246, 255, 1);
+    0 0 0.3rem rgba(255, 255, 255, 0.8),
+    0 0 0.8rem rgba(170, 232, 255, 0.72);
   content: "";
-  filter: brightness(1.65);
-  transform: translate(-50%, -50%);
+  transform: rotate(var(--particle-angle));
+  transform-origin: 100% 50%;
+}
+
+.space-charge-field i::after {
+  position: absolute;
+  top: calc(var(--head-size) * -0.5);
+  left: calc(var(--head-size) * -0.5);
+  width: var(--head-size);
+  height: var(--head-size);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0.35rem #fff,
+    0 0 0.9rem rgba(157, 226, 255, 0.95);
+  content: "";
 }
 
 /* Beat 2 — page blocks fly into the portal, keeping their real styling. */
@@ -104,7 +118,7 @@ html.space-transition-active body {
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 50%, rgba(42, 159, 255, 0.12), transparent 10rem),
+    radial-gradient(circle at var(--portal-x) var(--portal-y), rgba(42, 159, 255, 0.12), transparent 10rem),
     rgba(0, 2, 8, 0);
   opacity: 0;
   pointer-events: all;
@@ -131,8 +145,8 @@ html.space-transition-active body {
 .space-transition__lens {
   position: absolute;
   z-index: 1;
-  top: 50%;
-  left: 50%;
+  top: var(--portal-y);
+  left: var(--portal-x);
   width: 9rem;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -149,8 +163,8 @@ html.space-transition-active body {
 .space-transition__portal {
   position: absolute;
   z-index: 3;
-  top: 50%;
-  left: 50%;
+  top: var(--portal-y);
+  left: var(--portal-x);
   width: 8rem;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -208,8 +222,8 @@ html.space-transition-active body {
 .space-transition__streak {
   position: fixed;
   z-index: 4;
-  top: 50vh;
-  left: 50vw;
+  top: var(--portal-y);
+  left: var(--portal-x);
   width: var(--streak-length);
   height: var(--streak-thickness);
   background: linear-gradient(90deg, rgba(255, 255, 255, 0), #eaffff);
@@ -224,15 +238,15 @@ html.space-transition-active body {
   z-index: 2147483647;
   inset: 0;
   background:
-    radial-gradient(circle at 50vw 50vh, #fff 0 12%, #cdefff 34%, rgba(120, 190, 255, 0) 72%);
+    radial-gradient(circle at var(--portal-x) var(--portal-y), #fff 0 12%, #cdefff 34%, rgba(120, 190, 255, 0) 72%);
   opacity: 0;
   animation: space-flash-burst 570ms 1880ms ease-out forwards;
 }
 
 .space-transition__flash::before {
   position: fixed;
-  top: 50vh;
-  left: 50vw;
+  top: var(--portal-y);
+  left: var(--portal-x);
   width: 11rem;
   aspect-ratio: 1;
   border-radius: 50%;

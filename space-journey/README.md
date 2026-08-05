@@ -28,8 +28,8 @@ Dragging with the left button or one finger swings the view, up to 54° of yaw a
 34° of pitch, and a double click or double tap recentres it. The range is set by
 how far the scene holds up rather than by taste: the corridor star layers and the
 nebulae surround the flight path widely enough that the frame stays populated out
-to the clamp, and at the limit the sun, the ringed giant, Jupiter, and Earth each
-fill the frame from a different heading. Releasing the drag lets the residual
+to the clamp, and at the limit the sun, Saturn, Jupiter, and Earth each fill the
+frame from a different heading. Releasing the drag lets the residual
 velocity coast to a stop, and the view eases back to centre on its own during the
 final approach so the re-entry always frames Earth.
 
@@ -44,8 +44,8 @@ http://localhost:4000/space-journey/
 Three.js is loaded by this module only from jsDelivr. All planets, stars,
 nebulae, and cockpit graphics are generated at runtime. The soundtrack is
 **Cosmic Navigation**, released under CC0 / Public Domain on
-[OpenGameArt](https://opengameart.org/content/cosmic-navigation). It is mixed
-with a quiet, procedurally generated engine drone at runtime.
+[OpenGameArt](https://opengameart.org/content/cosmic-navigation). Everything
+else in the mix is synthesised — see below.
 
 The page preloads the pinned minified Three.js module. Google Fonts are linked
 directly from the document head instead of through a render-blocking CSS import.
@@ -64,17 +64,16 @@ Earth, the Moon, Jupiter, and Mars use photographic maps baked from NASA imagery
 (see below). Jupiter is the hero of the flyby: the flight path skims about 90
 units above its cloud tops, so it swells past 45° of frame and gets three times
 the sphere tessellation of the other bodies, otherwise its limb reads as a
-polygon. The ringed giant is the one remaining invented world, generated at load
-into an equirectangular canvas using 3D value-noise fBm sampled on the unit
-sphere, which avoids pole pinching. Cassini never mapped Saturn in
-equirectangular projection — its global products are perspective mosaics — so
-that planet stays procedural, with zonal banding warped only enough to churn the
-belt edges.
+polygon. Saturn is the one planet still generated at load, into an
+equirectangular canvas using 3D value-noise fBm sampled on the unit sphere, which
+avoids pole pinching. Cassini never mapped it in equirectangular projection — its
+global products are perspective mosaics — so that planet stays procedural, with
+zonal banding warped only enough to churn the belt edges.
 
 The sun is a billboard placed along the key light's direction, and the flyby
-layout has to keep its line of sight clear: at these radii the ringed giant sits
-below the flight axis purely because at its first position it and its rings
-eclipsed the sun for the entire first half of the trip.
+layout has to keep its line of sight clear: at these radii Saturn sits below the
+flight axis purely because at its first position it and its rings eclipsed the sun
+for the entire first half of the trip.
 
 Nothing in the star field may draw across a nearby planet: at this scale a
 single star stuck to a gas giant's disc collapses the sense of distance. Both
@@ -86,7 +85,7 @@ camera closes in rather than washing out whatever lies beyond it.
 Night lights are injected into Earth's standard material through
 `onBeforeCompile` and masked by the sun-facing term, so cities only glow past the
 terminator. Atmospheres are Fresnel shells that shift warm at the terminator, and
-the ringed planet casts an approximated cylindrical shadow onto its own rings.
+Saturn casts an approximated cylindrical shadow onto its own rings.
 Planet, cloud, and atmosphere meshes reuse two unit-sphere geometries. Identical
 stellar beacons also share their baked glow texture and sprite materials. Once
 immutable image and canvas textures are created, they are uploaded immediately
@@ -156,8 +155,48 @@ crosshair rides a limb. When cones overlap the nearest body wins.
 
 The copy lives next to the geometry it describes, in the `info` block passed to
 `addCelestialBody`, so a body cannot be moved or resized without its readout
-following. Stated radii are real; the one invented world on the route quotes the
-ring geometry it is actually built from instead of a measurement it cannot have.
+following. Every body on the route is a real one, and the stated radii are the
+real figures rather than measurements of a scene that was never built to scale.
+
+### Sound
+
+One downloaded file, the score; everything else is Web Audio. The drive is two
+oscillators through a lowpass whose cutoff opens over the first four seconds and
+whose pitch tracks the flight, and the two cues at either end of the trip are
+synthesised on the same principle — nothing has to stay in sync with a recording,
+and there is no second asset to license.
+
+Ignition is three layers: a sub dropping from 126 Hz to 34 Hz as the drive
+catches, a noise band opening from 170 Hz to 2.6 kHz for the acceleration, and a
+short bright transient so the cue has an attack rather than only a swell. It
+peaks about five times louder than the cruise bed and is back down to it within a
+second.
+
+Re-entry is a band of noise on the same curve as the heat shader, squared so it
+stays out of the mix until the shield is actually glowing, with an 11.5 Hz LFO on
+its level so the roar shakes with the hull instead of sitting under the buffeting
+as a flat hiss.
+
+Touchdown is an impact, the burn hissing away behind it, and then a two-note
+resolve held back to 1.1 s. Arriving is the point of the whole flight, so the last
+thing heard is consonant rather than another rumble, and the score and the drive
+duck out of the way to leave it room. The master gain holds flat until the resolve
+has sounded and only then falls: fading from the moment of contact swallows the
+one phrase the descent is building towards.
+
+Two pieces of timing are load-bearing, and both were measured rather than
+guessed. The graph is built during the loading screen instead of at launch — the
+context stays suspended until sound is allowed, but constructing it costs the
+best part of a second on a loaded machine, and paying that at ignition put the
+cue a second and a half behind the launch. The mix then opens as soon as the
+context is live rather than waiting on the score's media element, which can spend
+seconds buffering; waiting on both put ignition three seconds late.
+
+Since the flight starts on its own, the context is usually still suspended at
+ignition and the cue would be scheduled into silence. It is armed rather than
+played, and fires the moment sound actually starts, which in practice is when the
+visitor presses `SOUND ON`. Past the opening seconds it no longer describes
+anything on screen, so it is dropped instead of played late.
 
 ### Textures
 
@@ -194,21 +233,58 @@ The sun is a camera-facing disc rather than a sphere. It is self-luminous and a
 thousand units away, so a photograph of the real disc is both cheaper and more
 faithful than reprojecting that photograph onto geometry — the foreshortening
 near the limb is already correct in the source. The bake remaps the monochrome
-continuum onto photospheric colour temperatures, applies a limb-darkening
-profile, and ends on a wide alpha ramp so the limb dissolves into the corona
-sprite drawn behind it. The disc uses normal blending and a later `renderOrder`
-than the corona, otherwise additive blending would erase the sunspots.
+continuum onto photospheric colour temperatures and ends on a wide alpha ramp so
+the limb dissolves into the corona sprite drawn behind it. The disc uses normal
+blending and a later `renderOrder` than the corona, otherwise additive blending
+would erase the sunspots.
 
-Three things decide whether that disc reads as *the sun* rather than a generic
-glowing ball, and all three had to be dialled in together. It has to be large
-enough on screen — at 40 px bloom swallowed the granulation and the sunspots
-whole. Granulation carries only a few percent of contrast in the raw continuum,
-so the bake amplifies the deviation from the quiet-sun median before mapping it
-onto colour. And the photosphere has to be golden rather than cream, with the
-limb going redder as well as darker, since shorter wavelengths escape from the
-higher and cooler layers seen at a grazing angle. The corona gradient holds full
-strength out to just past the limb: front-loading it buries the corona behind
-the disc and leaves the limb ending on a hard edge against empty space.
+Between the remap and the corona sits the one detail the whole disc depends on.
+The colour ramp reads intensity below the quiet-sun median as a spot, and the
+source frame arrives with the sun's own limb darkening intact — the medians run
+0.96 of quiet at 0.4 R and 0.68 at 0.88 R. The bake also amplifies deviation
+from that median threefold, because granulation carries only a few percent of
+contrast in the raw continuum and both the ramp and bloom flatten what survives.
+Those two together drive the limb to a quarter of the quiet level and paint the
+entire rim in penumbra orange: a hard dark ring, and one that no amount of
+corona tuning can hide, because it is the disc itself. So the profile is divided
+out before the remap and multiplied back into the finished colour. The standard
+quadratic law matches this source to about a percent out to 0.9 R, which is what
+gets divided out; a per-pixel model would only add noise near the limb, where the
+source is already faint and the alpha ramp is fading it anyway.
+
+Two levels then have to agree. The corona must hand off at roughly the
+brightness the darkened limb arrives at and never above it, since the eye judges
+the rim against the halo rather than against the disc — a corona brighter than
+the star it surrounds turns ordinary limb darkening back into a ring. And the
+corona is sized independently of the disc, because a disc drawn at two thirds of
+the beacon buries the entire bright half of the gradient and leaves the limb
+ending on a hard edge against empty space.
+
+None of this survives if the disc is small: at 40 px bloom swallowed the
+granulation and the sunspots whole. The photosphere is warm rather than golden
+for the same reason the profile is divided out — pushing blue as low as *golden*
+implies leaves it bottoming out partway across the disc, so the rest of the
+falloff turns into a saturated orange band with the shape of a painted ring.
+
+Getting the profile into the texture is only half of it, because the tone curve
+decides how much of it reaches the screen. Mapped at full value the entire disc
+lands above the ACES knee, which compresses a 34% falloff into 6%: measured
+angle-averaged, centre to 0.9 R fell 239 to 207, and what little gradient
+remained was crammed into the last tenth of the radius. That is a flat matte ball
+with a rim, from a texture whose gradient is perfectly intact — so the disc is
+scaled down onto the responsive stretch of the curve before bloom ever sees it.
+Brightness and gradient trade against each other here, and the disc is worth
+less than the shading.
+
+Two smaller things sit on top. The baked alpha ramp is deliberately wide, but it
+opens well inside the limb and is still partly open past it, where the texture
+has already fallen to the near-black it uses beyond the edge — a seventh of the
+radius of half-transparent near-black over a saturated corona, which reads as a
+grey ring around the star. The ramp is steepened in the sprite's fragment shader
+rather than in the bake, so the shipped texture stays usable at other sizes.
+And the sun opts out of the diffraction spikes every other beacon draws: those
+are a point-source artifact, and on a star resolved to several hundred pixels
+they put a hard cross over the disc that reads as a reticle.
 
 Source imagery is NASA public-domain material: Blue Marble Next Generation
 topography/bathymetry and cloud composites, Black Marble 2012 night lights (all

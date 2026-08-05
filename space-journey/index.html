@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#02040b">
-    <meta name="description" content="从银河系之外穿越群星，回到 Charlie 的地球。">
+    <meta name="description" content="A flight in from beyond the Milky Way, back to Charlie's Earth.">
     <title>Starbound · Charlie's Space Journey</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,7 @@
   </head>
   <body>
     <main id="experience">
-      <canvas id="space-canvas" aria-label="交互式三维太空场景"></canvas>
+      <canvas id="space-canvas" aria-label="Interactive 3D space scene"></canvas>
 
       <div class="optical-fx" aria-hidden="true">
         <i class="optical-fx__flare"></i>
@@ -54,7 +54,7 @@
       </div>
 
       <header class="topbar">
-        <a class="home-link" href="../" aria-label="返回个人网站">
+        <a class="home-link" href="../" aria-label="Return to the personal site">
           <span class="home-link__glyph" aria-hidden="true"></span>
           <span>RETURN HOME</span>
         </a>
@@ -63,10 +63,10 @@
           <small>RETURN VOYAGE 01</small>
         </div>
         <div class="topbar__controls">
-          <button id="quality-toggle" class="icon-button quality-toggle" type="button" aria-label="切换画质" title="切换画质">
+          <button id="quality-toggle" class="icon-button quality-toggle" type="button" aria-label="Switch graphics quality" title="Switch graphics quality">
             <i aria-hidden="true"></i><span id="quality-label">AUTO</span>
           </button>
-          <button id="sound-toggle" class="icon-button" type="button" aria-label="切换声音" aria-pressed="false">
+          <button id="sound-toggle" class="icon-button" type="button" aria-label="Toggle sound" aria-pressed="false">
             <i class="icon-button__wave" aria-hidden="true"><b></b><b></b><b></b></i>
             <span class="sound-on">SOUND ON</span>
             <span class="sound-off">SOUND OFF</span>
@@ -118,7 +118,7 @@
           <div class="nav-target" aria-live="polite">
             <small aria-hidden="true">NEXT WAYPOINT</small>
             <strong id="waypoint">MILKY WAY HALO</strong>
-            <span id="status">航行系统待命</span>
+            <span id="status">FLIGHT SYSTEMS STANDING BY</span>
           </div>
 
           <div class="nav-readouts" aria-hidden="true">
@@ -160,16 +160,16 @@
 
         <div class="camera-hint" aria-hidden="true">
           <span class="camera-hint__mouse"></span>
-          <span>左键拖拽观察 · 双击归中</span>
+          <span>DRAG TO LOOK · DOUBLE-CLICK TO RECENTRE</span>
         </div>
 
         <div class="caution" id="caution" aria-hidden="true">
           <i></i>
           <strong>HULL TEMP CRITICAL</strong>
-          <span>隔热层过载 · 保持姿态</span>
+          <span>SHIELD OVERLOAD · HOLD ATTITUDE</span>
         </div>
 
-        <div class="tape" aria-label="旅程进度" aria-hidden="true">
+        <div class="tape" aria-label="Journey progress" aria-hidden="true">
           <div class="tape__head">
             <span>TRAJECTORY · DEEP SPACE — EARTH</span>
           </div>
@@ -183,21 +183,21 @@
 
       <section id="earth-return" class="earth-return" aria-live="polite">
         <div class="earth-return__avatar">
-          <img src="../images/github_avatar.png" alt="Charlie 的地球头像">
+          <img src="../images/github_avatar.png" alt="Charlie's Earth avatar">
         </div>
         <div class="earth-return__copy">
           <small>HOME SIGNAL ACQUIRED</small>
-          <strong>欢迎回到地球</strong>
+          <strong>WELCOME BACK TO EARTH</strong>
         </div>
       </section>
 
       <section id="arrival" class="arrival" aria-labelledby="arrival-title">
         <small>TRANSMISSION RECEIVED</small>
-        <h2 id="arrival-title">欢迎来到我的宇宙。</h2>
-        <p>每一个项目，都是一次对未知的远征。</p>
+        <h2 id="arrival-title">Welcome to my universe.</h2>
+        <p>Every project is an expedition into the unknown.</p>
         <div class="arrival__actions">
-          <button id="replay-button" type="button">再次航行</button>
-          <a href="../projects/">探索我的项目</a>
+          <button id="replay-button" type="button">FLY AGAIN</button>
+          <a href="../projects/">EXPLORE MY PROJECTS</a>
         </div>
       </section>
 
@@ -207,11 +207,11 @@
           <img src="../images/github_avatar.png" alt="">
         </div>
         <div class="loader__track"><i id="loader-bar"></i></div>
-        <span id="loader-label">正在校准星图…</span>
+        <span id="loader-label">CALIBRATING STAR CHARTS…</span>
       </div>
 
       <noscript>
-        <div class="fallback">该旅程需要 JavaScript。<a href="../">返回个人网站</a></div>
+        <div class="fallback">This journey needs JavaScript. <a href="../">Return to the site</a></div>
       </noscript>
     </main>
 

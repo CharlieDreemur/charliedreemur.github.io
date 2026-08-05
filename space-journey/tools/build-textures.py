@@ -137,6 +137,11 @@ def build_night(night: np.ndarray, ocean: np.ndarray, height: int) -> np.ndarray
     return np.clip(lights * 1.35, 0, 255)
 
 
+def limb_darkening(mu: np.ndarray) -> np.ndarray:
+    """The standard quadratic law, as a fraction of the disc-centre intensity."""
+    return 0.3 + 0.93 * mu - 0.23 * mu * mu
+
+
 def measure_disc(luminance: np.ndarray) -> tuple[float, float, float]:
     """Locate the solar limb against the empty background."""
     lit = luminance > luminance.max() * 0.25
@@ -171,9 +176,9 @@ def blend_poles(image: Image.Image, band: float = 0.06) -> Image.Image:
 def build_sun(disc: Image.Image) -> Image.Image:
     """Turn a flattened HMI continuum disc into a coloured photosphere billboard.
 
-    The continuum image is monochrome and has had limb darkening removed, so the
-    intensity is remapped onto photospheric colour temperatures and a limb
-    darkening profile is applied back on top.
+    The continuum image is monochrome, so intensity is remapped onto photospheric
+    colour temperatures. Its limb darkening is divided out before that remap and
+    reapplied after, since the ramp cannot tell a darkened limb from a sunspot.
     """
     luminance = np.asarray(disc.convert("L"), dtype=np.float32)
     center_x, center_y, radius = measure_disc(luminance)
@@ -192,19 +197,35 @@ def build_sun(disc: Image.Image) -> Image.Image:
     distance = np.hypot(axis[None, :], axis[:, None])
     inside = distance < 0.985
 
-    quiet = float(np.median(luminance[inside]))
-    intensity = luminance / max(quiet, 1.0)
-    # Granulation spans only a few percent of the raw continuum's range, and the
-    # colour ramp below flattens it away entirely without this gain. Spot cores
-    # fall well below the ramp either way, so they simply clamp to the umbra.
-    intensity = 1.0 + (intensity - 1.0) * 2.4
+    # The render arrives with the sun's own limb darkening intact, and the ramp
+    # below reads anything dimmer than the quiet sun as a spot. Left in, the gain
+    # drives the limb down to a quarter of the quiet level and the whole rim is
+    # painted penumbra orange -- a dark ring no amount of corona tuning can hide,
+    # because it is the disc itself. Divide the profile out so the ramp sees only
+    # granulation and real spots; it is applied back to the finished colour below.
+    # Measured against this source the standard law is accurate to about a
+    # percent from the centre out to 0.9 R.
+    solar = np.clip(distance * 1.04, 0.0, 0.995)
+    mu = np.sqrt(1.0 - solar * solar)
+    profile = limb_darkening(mu)
+
+    quiet = float(np.median((luminance / profile)[inside]))
+    intensity = luminance / (profile * max(quiet, 1.0))
+    # Granulation spans only a few percent of the raw continuum's range. Without
+    # this gain the colour ramp below flattens it away entirely, and bloom
+    # flattens whatever survives again on the way to the screen. Spot cores fall
+    # well below the ramp either way, so they simply clamp to the umbra.
+    intensity = 1.0 + (intensity - 1.0) * 3.0
 
     umbra = np.array([88, 30, 8], dtype=np.float32)
     penumbra = np.array([206, 112, 34], dtype=np.float32)
-    # Golden rather than cream: a near-white disc reads as a generic glowing ball
-    # once bloom is applied, which is the one thing it must not look like.
-    photosphere = np.array([252, 218, 142], dtype=np.float32)
-    facula = np.array([255, 243, 202], dtype=np.float32)
+    # Warm rather than golden. A near-white disc reads as a generic glowing ball
+    # once bloom is applied, but pushing blue as low as the eye expects from the
+    # word "golden" leaves nothing for the limb to fall through: blue bottoms out
+    # partway across the disc and the rest of the falloff turns into a saturated
+    # orange band that reads as a painted ring rather than a curving surface.
+    photosphere = np.array([253, 231, 186], dtype=np.float32)
+    facula = np.array([255, 246, 216], dtype=np.float32)
 
     low = smoothstep(0.0, 0.62, intensity)[..., None]
     mid = smoothstep(0.62, 0.94, intensity)[..., None]
@@ -213,14 +234,14 @@ def build_sun(disc: Image.Image) -> Image.Image:
     color = color + (photosphere - color) * mid
     color = color + (facula - color) * high
 
-    # Limb darkening, kept gentle: a deeper falloff reads as a dark ring once the
-    # corona is drawn behind the disc edge.
-    mu = np.sqrt(np.clip(1.0 - np.minimum(distance, 1.0) ** 2, 0.0, 1.0))
-    color = color * (0.64 + 0.36 * np.power(mu, 0.42))[..., None]
+    # Put the profile removed above back, now that it is shading a colour rather
+    # than being mistaken for a spot.
+    color = color * profile[..., None]
     # The limb is redder as well as darker, since shorter wavelengths escape from
-    # the higher and cooler layers seen at a grazing angle.
+    # the higher and cooler layers seen at a grazing angle. Kept subtle for the
+    # reason given above the palette.
     color = color * np.stack(
-        [np.ones_like(mu), 0.92 + 0.08 * mu, 0.72 + 0.28 * mu], axis=-1
+        [np.ones_like(mu), 0.95 + 0.05 * mu, 0.86 + 0.14 * mu], axis=-1
     )
 
     # A wide alpha ramp lets the limb dissolve into the corona instead of ending

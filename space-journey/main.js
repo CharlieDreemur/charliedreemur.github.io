@@ -106,6 +106,13 @@ const qualityProfiles = {
   },
 };
 
+// tools/build-textures.py crops the solar disc with this much margin around the
+// limb, so the limb sits inside the sprite rather than on its edge. Anything
+// aligning to the limb in world units has to divide it back out.
+const DISC_CROP_MARGIN = 1.04;
+// How far the prominences reach past the limb, in solar radii.
+const PROMINENCE_REACH = 1.75;
+
 // Kept well off the flight axis so every body shows a terminator instead of flat front lighting.
 const sunDirection = new THREE.Vector3(-0.78, 0.36, 0.36).normalize();
 const sunUniform = { value: sunDirection };
@@ -165,6 +172,12 @@ let dragLastY = 0;
 let dragDistance = 0;
 let lastTouchTapAt = 0;
 let audio;
+let noiseBuffer = null;
+let launchCueArmed = false;
+let plasmaRoar = 0;
+// Restored on replay, since the touchdown mix pulls both of these to silence.
+const MUSIC_LEVEL = 0.72;
+const ENGINE_LEVEL = 0.045;
 let qualityMode = "auto";
 let qualityLevel = connection?.saveData ? "eco" : constrainedDevice ? "balanced" : "high";
 
@@ -190,14 +203,16 @@ const stellarTextureCache = new Map();
 const stellarMaterialCache = new Map();
 
 const waypoints = [
-  { at: 0, name: "MILKY WAY HALO", status: "从银河系外缘开始返航" },
-  { at: 0.14, name: "PERSEUS ARM", status: "正在穿越银河旋臂" },
-  { at: 0.32, name: "CELESTIAL GARDEN", status: "检测到高能行星系统" },
-  { at: 0.52, name: "STELLAR NURSERY", status: "经过恒星诞生区" },
-  { at: 0.7, name: "SOL SYSTEM", status: "太阳信号已锁定" },
-  { at: 0.86, name: "LUNAR ORBIT", status: "进入地月空间" },
-  { at: 0.95, name: "EARTH APPROACH", status: "大气层进入程序启动" },
-  { at: 0.975, name: "RE-ENTRY", status: "隔热层过载 · 保持姿态" },
+  // Status lines stay under about 27 characters: the readout is right-aligned to
+  // the gutter, and on a 430 px screen anything longer eats it.
+  { at: 0, name: "MILKY WAY HALO", status: "DEPARTING THE GALACTIC RIM" },
+  { at: 0.14, name: "PERSEUS ARM", status: "CROSSING THE GALACTIC ARM" },
+  { at: 0.32, name: "CELESTIAL GARDEN", status: "PLANETARY SYSTEM DETECTED" },
+  { at: 0.52, name: "STELLAR NURSERY", status: "NEW STARS IGNITING NEARBY" },
+  { at: 0.7, name: "SOL SYSTEM", status: "SOLAR BEACON LOCKED" },
+  { at: 0.86, name: "LUNAR ORBIT", status: "ENTERING CIS-LUNAR SPACE" },
+  { at: 0.95, name: "EARTH APPROACH", status: "ATMOSPHERIC ENTRY ARMED" },
+  { at: 0.975, name: "RE-ENTRY", status: "HEAT SHIELD OVERLOAD" },
 ];
 
 // The voyage opens this far behind the planetary corridor and spends the run-in
@@ -392,7 +407,7 @@ function updateQualityUi() {
   const label = qualityMode === "auto" ? `AUTO · ${qualityLevel.toUpperCase()}` : qualityLevel.toUpperCase();
   qualityLabel.textContent = label;
   qualityToggle.dataset.mode = qualityLevel;
-  qualityToggle.setAttribute("aria-label", `当前画质：${label}，点击切换`);
+  qualityToggle.setAttribute("aria-label", `Graphics quality: ${label}. Click to switch.`);
   experience.classList.toggle("quality-eco", qualityLevel === "eco");
 }
 
@@ -2051,6 +2066,117 @@ function addSpiralGalaxy(centerZ) {
   addStellarBeacon([0, 0, centerZ + 3], 15, { fadeRadius: 260 });
 }
 
+// Plasma tongues climbing off the solar limb. A camera-facing quad rather than
+// modelled geometry: the structure is entirely in the noise field, and the star
+// is far enough away that anything modelled would be sub-pixel across.
+function addSolarProminences(position, solarRadius, intensity) {
+  const octaves = qualityProfiles[qualityLevel].octaves;
+  const extent = solarRadius * 2 * PROMINENCE_REACH;
+
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: frameUniforms.time,
+      uLimb: { value: solarRadius / (extent * 0.5) },
+      uIntensity: { value: intensity },
+    },
+    // Billboarded in the vertex shader, like a sprite: the quad is built in view
+    // space from the object's origin, so it needs no per-frame work on the CPU.
+    // The geometry carries the real extent so the bounding sphere still culls.
+    vertexShader: `
+      varying vec2 vUv;
+
+      void main() {
+        vUv = uv;
+        vec4 origin = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+        gl_Position = projectionMatrix * (origin + vec4(position.xy, 0.0, 0.0));
+      }
+    `,
+    fragmentShader: `
+      #define OCTAVES ${octaves}
+
+      uniform float uTime;
+      uniform float uLimb;
+      uniform float uIntensity;
+      varying vec2 vUv;
+
+      float hash13(vec3 p) {
+        p = fract(p * 0.1031);
+        p += dot(p, p.yzx + 33.33);
+        return fract((p.x + p.y) * p.z);
+      }
+
+      float noise3(vec3 x) {
+        vec3 i = floor(x);
+        vec3 f = fract(x);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(
+            mix(hash13(i), hash13(i + vec3(1.0, 0.0, 0.0)), f.x),
+            mix(hash13(i + vec3(0.0, 1.0, 0.0)), hash13(i + vec3(1.0, 1.0, 0.0)), f.x),
+            f.y
+          ),
+          mix(
+            mix(hash13(i + vec3(0.0, 0.0, 1.0)), hash13(i + vec3(1.0, 0.0, 1.0)), f.x),
+            mix(hash13(i + vec3(0.0, 1.0, 1.0)), hash13(i + vec3(1.0, 1.0, 1.0)), f.x),
+            f.y
+          ),
+          f.z
+        );
+      }
+
+      float fbm(vec3 p) {
+        float sum = 0.0;
+        float amplitude = 0.5;
+        for (int index = 0; index < OCTAVES; index += 1) {
+          sum += amplitude * noise3(p);
+          p *= 2.03;
+          amplitude *= 0.5;
+        }
+        return sum;
+      }
+
+      void main() {
+        vec2 offset = vUv * 2.0 - 1.0;
+        float radius = length(offset);
+        if (radius > 1.0 || radius < uLimb * 0.9) discard;
+
+        vec2 heading = offset / max(radius, 0.0001);
+
+        // The angle enters as a point on the unit circle, so the field wraps
+        // with no seam where atan would fold. Radius goes on the third axis and
+        // scrolls with time, which is what stretches the features along the
+        // radius and makes them climb away from the limb rather than swirl.
+        vec3 flow = vec3(heading * 3.6, radius * 1.7 - uTime * 0.14);
+        float curl = noise3(vec3(heading * 1.4, radius * 0.8 + uTime * 0.045));
+        float turbulence = fbm(flow + (curl - 0.5) * 2.4);
+
+        float above = smoothstep(uLimb * 0.96, uLimb + 0.05, radius);
+        float reach = 1.0 - smoothstep(uLimb, 1.0, radius);
+        reach *= reach;
+
+        // Thresholded rather than used raw. The tongues have to resolve as
+        // separate filaments with gaps between them; the field taken straight
+        // is a uniform haze, and a uniform haze against the limb is the ring
+        // this disc spent so long getting rid of.
+        float flame = smoothstep(0.36, 0.82, turbulence + reach * 0.16) * above * reach;
+        if (flame < 0.004) discard;
+
+        vec3 tint = mix(vec3(0.92, 0.19, 0.03), vec3(1.0, 0.74, 0.32), reach);
+        gl_FragColor = vec4(tint * flame * uIntensity, 1.0);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    fog: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  const flames = new THREE.Mesh(new THREE.PlaneGeometry(extent, extent), material);
+  flames.position.set(...position);
+  scene.add(flames);
+  return flames;
+}
+
 function addStellarBeacon(position, size, options = {}) {
   const {
     coreColor = "#c9f6ff",
@@ -2061,6 +2187,18 @@ function addStellarBeacon(position, size, options = {}) {
     // A photographic disc drawn over the glow, for a star close enough to resolve.
     photosphere = null,
     photosphereScale = 0.34,
+    // The disc hides everything inside its own radius, so a star that resolves
+    // needs its corona sized independently or the entire bright half of the
+    // gradient ends up buried and the limb sits against empty space.
+    coronaScale = 1,
+    // Intensity of the plasma tongues around the limb; 0 leaves them off.
+    prominences = 0,
+    // Where the disc sits on the tone curve decides how much of its limb
+    // darkening survives. Mapped at full value the whole disc lands above the
+    // ACES knee, which compresses a 34% falloff into 6% on screen and hands back
+    // a flat matte ball; the texture's gradient is intact, it is being tone
+    // mapped away. Trimming here drops it onto the responsive stretch.
+    photosphereBrightness = 1,
     // Set for stars the flight path passes through rather than approaches.
     fadeRadius = 0,
     // Only a star with a resolvable disc is worth aiming at; see addCelestialBody.
@@ -2105,11 +2243,17 @@ function addStellarBeacon(position, size, options = {}) {
     }, 384),
   );
 
+  // Prominences are drawn before the halo so the corona sits over their roots,
+  // which is what keeps the tongues looking attached to the limb.
+  if (prominences > 0) {
+    addSolarProminences(position, (size * photosphereScale * 0.5) / DISC_CROP_MARGIN, prominences);
+  }
+
   // Distance fog tints toward near-black, which on an additive sprite erases the
   // star entirely. Stars are light sources, so they opt out of fog.
   const glow = new THREE.Sprite(getStellarMaterial(glowTexture, coreColor, 1));
   glow.position.set(...position);
-  glow.scale.set(size, size, 1);
+  glow.scale.set(size * coronaScale, size * coronaScale, 1);
   registerFadingSprite(glow, { fadeRadius });
 
   const rays = new THREE.Sprite(getStellarMaterial(glowTexture, haloColor, 0.16));
@@ -2120,14 +2264,27 @@ function addStellarBeacon(position, size, options = {}) {
   if (photosphere) {
     // Normal blending, drawn after the halo, so the sunspots read as dark
     // against the surface instead of being added into the glow.
-    const disc = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: photosphere,
-        transparent: true,
-        depthWrite: false,
-        fog: false,
-      }),
-    );
+    const discMaterial = new THREE.SpriteMaterial({
+      map: photosphere,
+      color: new THREE.Color(photosphereBrightness, photosphereBrightness, photosphereBrightness),
+      transparent: true,
+      depthWrite: false,
+      fog: false,
+    });
+    // The bake fades the disc out over a wide ramp so the limb dissolves into
+    // the corona, but the ramp opens well inside the limb and stays partly open
+    // past it, where the texture has already fallen to the near-black it uses
+    // beyond the edge. That band is a seventh of the radius of half-transparent
+    // near-black over a saturated corona, and it reads as a grey ring around the
+    // star. Steepening the curve keeps the disc solid out to the limb and closes
+    // it immediately after, without touching the baked texture.
+    discMaterial.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <alphatest_fragment>",
+        "diffuseColor.a = smoothstep(0.2, 0.8, diffuseColor.a);\n#include <alphatest_fragment>",
+      );
+    };
+    const disc = new THREE.Sprite(discMaterial);
     disc.position.set(...position);
     disc.scale.set(size * photosphereScale, size * photosphereScale, 1);
     disc.renderOrder = 1;
@@ -2198,14 +2355,14 @@ async function buildScene() {
   sharedSurfaceGeometry = getSphereGeometry(profile.sphere[0], profile.sphere[1]);
   sharedShellGeometry = getSphereGeometry(profile.atmosphere[0], profile.atmosphere[1]);
   const photographicSurfaces = loadPhotographicSurfaces();
-  setLoading(12, "正在铺设航道…");
+  setLoading(12, "PLOTTING THE CORRIDOR…");
   addWarpTunnel();
   addSpaceDust();
   await nextFrame();
 
-  // The ringed giant is the only fully procedural planet left, so it is baked
-  // while the photographic maps are still in flight.
-  setLoading(30, "正在铺展行星环…");
+  // Saturn is the only planet still generated rather than photographed, so it is
+  // baked while the photographic maps are still in flight.
+  setLoading(30, "SPREADING THE PLANETARY RINGS…");
   addCelestialBody({
     radius: 78,
     // Below the flight axis on purpose: the sun sits up and to the left, and at
@@ -2220,13 +2377,11 @@ async function buildScene() {
       [238, 226, 200],
     ]),
     glowColor: "#ffc77c",
-    // The one invented world on the route, so its readout quotes the geometry it
-    // is actually built from rather than a measurement it cannot have.
     info: {
-      name: "HALCYON",
+      name: "SATURN",
       kind: "RINGED GIANT",
-      stat: "RING SPAN 2.3 R",
-      note: "环系由冰屑与尘埃组成，绕行一周需要十一个小时。",
+      stat: "R 58,232 KM",
+      note: "Rings 70,000 km across and only tens of metres thick.",
     },
     ring: true,
     emissive: 0.03,
@@ -2237,7 +2392,7 @@ async function buildScene() {
   });
   await nextFrame();
 
-  setLoading(52, "正在接收行星影像…");
+  setLoading(52, "RECEIVING PLANETARY IMAGERY…");
   const surfaces = await photographicSurfaces;
 
   // The hero flyby: the path skims roughly 90 units above Jupiter's cloud tops,
@@ -2258,7 +2413,7 @@ async function buildScene() {
       name: "JUPITER",
       kind: "GAS GIANT",
       stat: "R 69,911 KM",
-      note: "太阳系最大的行星，大红斑风暴至少已经刮了三百年。",
+      note: "Its Great Red Spot has raged for three centuries.",
     },
     emissive: 0.02,
     atmosphereIntensity: 0.5,
@@ -2269,7 +2424,7 @@ async function buildScene() {
   });
   await nextFrame();
 
-  setLoading(64, "正在渲染红色行星…");
+  setLoading(64, "RENDERING THE RED PLANET…");
   addCelestialBody({
     radius: 30,
     position: [-149, -66, -742],
@@ -2286,7 +2441,7 @@ async function buildScene() {
       name: "MARS",
       kind: "TERRESTRIAL",
       stat: "R 3,390 KM",
-      note: "奥林帕斯山高约 22 公里，是已知最高的行星火山。",
+      note: "Olympus Mons rises 22 km, the tallest volcano known.",
     },
     emissive: 0.02,
     atmosphereIntensity: 0.3,
@@ -2298,7 +2453,7 @@ async function buildScene() {
   addAsteroidBelt([31, 4, -812], 34, 96, 613);
   await nextFrame();
 
-  setLoading(74, "正在接收地球影像…");
+  setLoading(74, "RECEIVING EARTH IMAGERY…");
 
   addCelestialBody({
     radius: 16,
@@ -2316,7 +2471,7 @@ async function buildScene() {
       name: "LUNA",
       kind: "NATURAL SATELLITE",
       stat: "R 1,737 KM",
-      note: "被潮汐锁定，永远只以同一面朝向地球。",
+      note: "Tidally locked; one face never turns away from Earth.",
     },
     atmosphereIntensity: 0.16,
     atmosphereThickness: 4.6,
@@ -2324,7 +2479,7 @@ async function buildScene() {
     seed: 2,
   });
 
-  setLoading(80, "正在还原地球…");
+  setLoading(80, "RESTORING EARTH…");
   addCelestialBody({
     radius: 38,
     position: [0, 0, -1048],
@@ -2334,7 +2489,7 @@ async function buildScene() {
       name: "EARTH",
       kind: "HOME · DESTINATION",
       stat: "R 6,371 KM",
-      note: "目前唯一确认存在生命的世界，也是这趟航程的终点。",
+      note: "The only world confirmed to hold life. Journey's end.",
     },
     emissive: 0.015,
     clouds: true,
@@ -2345,7 +2500,7 @@ async function buildScene() {
   });
   await nextFrame();
 
-  setLoading(84, "正在点亮恒星与星云…");
+  setLoading(84, "LIGHTING STARS AND NEBULAE…");
   addNebula([-95, 35, -610], 330, "rgba(91,76,255,0.55)", 0.34, 3);
   addNebula([115, -25, -745], 370, "rgba(224,67,255,0.55)", 0.26, 11);
   addNebula([-30, 38, -875], 320, "rgba(49,224,255,0.55)", 0.2, 19);
@@ -2363,29 +2518,45 @@ async function buildScene() {
       // the warm tones belong to the corona around it, not to the star itself.
       coreColor: "#ffffff",
       haloColor: "#ffd9a6",
+      // Diffraction spikes are a point-source artifact. On a star resolved to
+      // several hundred pixels they draw a hard cross over the disc that reads
+      // as a reticle rather than as a lens, so the sun keeps only its halo.
+      spikes: false,
       // The photosphere texture supplies the disc, so these stops only have to
-      // describe the corona around it. Everything inside 0.33 is hidden behind
-      // that disc, so the gradient holds full strength to just past the limb and
-      // decays from there. Front-loading it wastes the corona behind the disc and
-      // leaves the limb ending on a hard edge against empty space.
+      // describe the corona around it. With the corona at twice the beacon size
+      // the limb lands at 0.317 of the gradient, so full strength is held to
+      // just past that and everything after is the halo: a steep first drop for
+      // the bright ring against the limb, then a long tail out to three solar
+      // radii. Anchoring these to the wrong radius is what buried the entire
+      // bright half of the corona behind the disc and left the limb ending on a
+      // hard edge against empty space.
+      // The level at the limb matters more than the shape: a corona brighter
+      // than the disc it surrounds turns limb darkening into a dark ring, since
+      // the eye reads the rim against the halo rather than against the disc.
+      // These are set to hand off at roughly the brightness the darkened limb
+      // arrives at, then decay to nothing by three solar radii.
       stops: [
-        [0, "rgba(255,252,244,0.9)"],
-        [0.32, "rgba(255,248,233,0.82)"],
-        [0.4, "rgba(255,232,190,0.34)"],
-        [0.55, "rgba(255,216,168,0.13)"],
-        [0.75, "rgba(255,206,158,0.04)"],
-        [1, "rgba(255,204,155,0)"],
+        [0, "rgba(255,244,214,0.5)"],
+        [0.26, "rgba(255,238,198,0.42)"],
+        [0.315, "rgba(255,230,182,0.15)"],
+        [0.36, "rgba(255,224,172,0.055)"],
+        [0.46, "rgba(255,218,166,0.032)"],
+        [0.62, "rgba(255,212,160,0.014)"],
+        [0.8, "rgba(255,208,156,0.006)"],
+        [1, "rgba(255,206,154,0)"],
       ],
+      coronaScale: 2,
+      photosphereBrightness: 0.6,
+      prominences: 0.55,
       photosphere: surfaces.sun,
       info: {
         name: "SOL",
         kind: "G2V MAIN SEQUENCE",
         stat: "R 696,340 KM",
-        note: "光球层约 5,800 K，地球上每一份光与热都来自这里。",
+        note: "A 5,800 K photosphere — the source of all our light.",
       },
-      // Sized so the disc ends exactly where the corona stops above starts to
-      // fall away. At a third of this it was 40 px of screen and bloom turned
-      // the granulation and sunspots into a featureless white ball.
+      // At a third of this it was 40 px of screen and bloom turned the
+      // granulation and sunspots into a featureless white ball.
       photosphereScale: 0.66,
     },
   );
@@ -2393,7 +2564,7 @@ async function buildScene() {
 
   // Built last so every planet and the sun are registered as occluders. The
   // flythrough layers also stop short of Earth; a separate backdrop sits behind it.
-  setLoading(92, "正在点亮星海…");
+  setLoading(92, "LIGHTING THE STAR FIELD…");
   addSpiralGalaxy(-190);
   // Near-white layer tints: each star now carries its own colour temperature,
   // and a saturated layer colour would multiply the warm ones into mud.
@@ -2424,7 +2595,7 @@ async function buildScene() {
   scene.add(new THREE.AmbientLight("#2b466d", 0.12));
   scene.add(new THREE.HemisphereLight("#4f9bf5", "#0d0722", 0.16));
 
-  setLoading(95, "正在启动飞船系统…");
+  setLoading(95, "BRINGING SHIP SYSTEMS ONLINE…");
   await nextFrame();
 }
 
@@ -2466,6 +2637,17 @@ function initRenderer() {
   updateQualityUi();
 }
 
+// One buffer of white noise, shared by the plasma layer and both cues. Two
+// seconds outlasts the longest sweep and is cheap enough to fill on demand.
+function getNoiseBuffer(context) {
+  if (noiseBuffer) return noiseBuffer;
+  const samples = Math.floor(context.sampleRate * 2);
+  noiseBuffer = context.createBuffer(1, samples, context.sampleRate);
+  const channel = noiseBuffer.getChannelData(0);
+  for (let index = 0; index < samples; index += 1) channel[index] = Math.random() * 2 - 1;
+  return noiseBuffer;
+}
+
 function createAudioEngine() {
   if (audio) return audio;
   const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -2475,6 +2657,7 @@ function createAudioEngine() {
   const master = context.createGain();
   const musicGain = context.createGain();
   const engineGain = context.createGain();
+  const sfxGain = context.createGain();
   const filter = context.createBiquadFilter();
   const oscillatorA = context.createOscillator();
   const oscillatorB = context.createOscillator();
@@ -2482,8 +2665,11 @@ function createAudioEngine() {
   const musicSource = context.createMediaElementSource(music);
 
   master.gain.value = 0;
-  musicGain.gain.value = 0.72;
-  engineGain.gain.value = 0.045;
+  musicGain.gain.value = MUSIC_LEVEL;
+  engineGain.gain.value = ENGINE_LEVEL;
+  // Cues are mixed under the score rather than over it: ignition and touchdown
+  // are events in the same room, not a separate trailer.
+  sfxGain.gain.value = 0.58;
   filter.type = "lowpass";
   filter.frequency.value = 180;
   oscillatorA.type = "sawtooth";
@@ -2499,12 +2685,150 @@ function createAudioEngine() {
   oscillatorB.connect(engineGain);
   engineGain.connect(filter);
   filter.connect(master);
+  sfxGain.connect(master);
+
+  // Re-entry plasma: a band of noise whose level rides the same curve as the
+  // heat shader, with an LFO on it so the roar shakes with the hull instead of
+  // sitting under the buffeting as a flat hiss.
+  const entrySource = context.createBufferSource();
+  const entryBand = context.createBiquadFilter();
+  const entryGain = context.createGain();
+  const buffetLfo = context.createOscillator();
+  const buffetDepth = context.createGain();
+  entrySource.buffer = getNoiseBuffer(context);
+  entrySource.loop = true;
+  entryBand.type = "bandpass";
+  entryBand.frequency.value = 760;
+  entryBand.Q.value = 0.65;
+  entryGain.gain.value = 0;
+  buffetLfo.type = "sine";
+  buffetLfo.frequency.value = 11.5;
+  buffetDepth.gain.value = 0;
+  entrySource.connect(entryBand).connect(entryGain).connect(master);
+  buffetLfo.connect(buffetDepth).connect(entryGain.gain);
+
   master.connect(context.destination);
   oscillatorA.start();
   oscillatorB.start();
+  entrySource.start();
+  buffetLfo.start();
 
-  audio = { context, master, filter, oscillatorA, oscillatorB, music, enabled: false };
+  audio = {
+    context,
+    master,
+    filter,
+    musicGain,
+    engineGain,
+    sfxGain,
+    entryGain,
+    buffetDepth,
+    oscillatorA,
+    oscillatorB,
+    music,
+    enabled: false,
+  };
   return audio;
+}
+
+// Ignition, in three layers: a sub that drops as the drive catches, a noise band
+// that opens upward for the acceleration, and a short bright transient so the cue
+// has an attack rather than only a swell.
+function playLaunchCue() {
+  if (!audio || audio.context.state !== "running") return;
+  const { context, sfxGain } = audio;
+  // Sound comes up over half a second, and an ignition scheduled at zero spends
+  // its attack inside that ramp. The cue waits for the mix to arrive.
+  const start = context.currentTime + 0.35;
+
+  const sub = context.createOscillator();
+  const subGain = context.createGain();
+  sub.type = "sine";
+  sub.frequency.setValueAtTime(126, start);
+  sub.frequency.exponentialRampToValueAtTime(34, start + 1.9);
+  subGain.gain.setValueAtTime(0.0001, start);
+  subGain.gain.exponentialRampToValueAtTime(1.15, start + 0.18);
+  subGain.gain.exponentialRampToValueAtTime(0.0001, start + 2.7);
+  sub.connect(subGain).connect(sfxGain);
+  sub.start(start);
+  sub.stop(start + 2.8);
+
+  const sweep = context.createBufferSource();
+  const sweepBand = context.createBiquadFilter();
+  const sweepGain = context.createGain();
+  sweep.buffer = getNoiseBuffer(context);
+  sweepBand.type = "bandpass";
+  sweepBand.Q.value = 1.1;
+  sweepBand.frequency.setValueAtTime(170, start);
+  sweepBand.frequency.exponentialRampToValueAtTime(2600, start + 2.2);
+  sweepGain.gain.setValueAtTime(0.0001, start);
+  sweepGain.gain.exponentialRampToValueAtTime(0.55, start + 1.5);
+  sweepGain.gain.exponentialRampToValueAtTime(0.0001, start + 3.2);
+  sweep.connect(sweepBand).connect(sweepGain).connect(sfxGain);
+  sweep.start(start);
+  sweep.stop(start + 3.3);
+
+  const crack = context.createBufferSource();
+  const crackFilter = context.createBiquadFilter();
+  const crackGain = context.createGain();
+  crack.buffer = getNoiseBuffer(context);
+  crackFilter.type = "highpass";
+  crackFilter.frequency.value = 900;
+  crackGain.gain.setValueAtTime(0.46, start);
+  crackGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.4);
+  crack.connect(crackFilter).connect(crackGain).connect(sfxGain);
+  crack.start(start);
+  crack.stop(start + 0.42);
+}
+
+// Touchdown: the impact, the burn hissing away behind it, and a two-note resolve
+// held back to 1.1 s so it lands with the pixel avatar rather than with the
+// contact. Arriving is the point of the whole flight, so the last thing heard is
+// consonant rather than another rumble.
+function playTouchdownCue() {
+  if (!audio || audio.context.state !== "running") return;
+  const { context, sfxGain } = audio;
+  const start = context.currentTime;
+
+  const impact = context.createOscillator();
+  const impactGain = context.createGain();
+  impact.type = "sine";
+  impact.frequency.setValueAtTime(82, start);
+  impact.frequency.exponentialRampToValueAtTime(26, start + 1.3);
+  impactGain.gain.setValueAtTime(0.0001, start);
+  impactGain.gain.exponentialRampToValueAtTime(0.8, start + 0.06);
+  impactGain.gain.exponentialRampToValueAtTime(0.0001, start + 1.9);
+  impact.connect(impactGain).connect(sfxGain);
+  impact.start(start);
+  impact.stop(start + 2);
+
+  const wash = context.createBufferSource();
+  const washFilter = context.createBiquadFilter();
+  const washGain = context.createGain();
+  wash.buffer = getNoiseBuffer(context);
+  washFilter.type = "lowpass";
+  washFilter.frequency.setValueAtTime(3200, start);
+  washFilter.frequency.exponentialRampToValueAtTime(340, start + 1.8);
+  washGain.gain.setValueAtTime(0.34, start);
+  washGain.gain.exponentialRampToValueAtTime(0.0001, start + 2.1);
+  wash.connect(washFilter).connect(washGain).connect(sfxGain);
+  wash.start(start);
+  wash.stop(start + 2.2);
+
+  [523.25, 784].forEach((frequency, index) => {
+    const tone = context.createOscillator();
+    const toneGain = context.createGain();
+    const at = start + 1.1 + index * 0.16;
+    tone.type = "sine";
+    tone.frequency.value = frequency;
+    toneGain.gain.setValueAtTime(0.0001, at);
+    toneGain.gain.exponentialRampToValueAtTime(0.34, at + 0.3);
+    // Long enough that the master fade is what ends it, rather than the tone
+    // stopping and leaving a second of dead air before the hand-off.
+    toneGain.gain.exponentialRampToValueAtTime(0.0001, at + 2.2);
+    tone.connect(toneGain).connect(sfxGain);
+    tone.start(at);
+    tone.stop(at + 2.3);
+  });
 }
 
 function setSound(enabled) {
@@ -2516,6 +2840,7 @@ function setSound(enabled) {
     soundToggle.setAttribute("aria-pressed", String(target));
     engine.master.gain.cancelScheduledValues(engine.context.currentTime);
     engine.master.gain.linearRampToValueAtTime(target ? 0.34 : 0, engine.context.currentTime + 0.5);
+    if (target) fireArmedLaunchCue();
   };
 
   if (!enabled) {
@@ -2524,10 +2849,29 @@ function setSound(enabled) {
     return;
   }
 
-  // Auto-launch happens without a click, so playback may stay blocked by autoplay policy.
-  Promise.allSettled([engine.context.resume(), engine.music.play()]).then(() => {
-    ramp(engine.context.state === "running" && !engine.music.paused);
+  // Auto-launch happens without a click, so playback may stay blocked by autoplay
+  // policy. The drive and the cues only need the context, while the score also
+  // needs the media element, which can spend a second or two buffering — waiting
+  // on both put the ignition three seconds behind the launch it belongs to. The
+  // mix opens as soon as the context is live and the music joins when it can.
+  engine.music.play().catch(() => {
+    // Blocked or still loading; the drone carries the mix until it starts.
   });
+  Promise.allSettled([engine.context.resume()]).then(() => {
+    ramp(engine.context.state === "running");
+  });
+}
+
+// The flight starts on its own, so at ignition the context is almost always still
+// suspended and the cue would be scheduled into silence. It is armed instead and
+// fires the moment sound actually starts, which in practice is when the visitor
+// hits SOUND ON. Past the opening seconds the ignition no longer describes
+// anything on screen, so it is dropped rather than played late.
+function fireArmedLaunchCue() {
+  if (!launchCueArmed) return;
+  launchCueArmed = false;
+  if (state !== "flying" || performance.now() - flightStartedAt > 5000) return;
+  playLaunchCue();
 }
 
 function launch() {
@@ -2538,6 +2882,7 @@ function launch() {
   flightStartedAt = performance.now();
   experience.classList.remove("is-arrived");
   experience.classList.add("is-flying", "is-launching", "is-booting");
+  launchCueArmed = true;
   setSound(true);
 
   if (audio) {
@@ -2565,6 +2910,19 @@ function replay() {
   });
   if (warpLines) warpLines.material.opacity = 0;
   clearLock();
+  if (audio) {
+    const now = audio.context.currentTime;
+    plasmaRoar = 0;
+    [
+      [audio.musicGain.gain, MUSIC_LEVEL],
+      [audio.engineGain.gain, ENGINE_LEVEL],
+      [audio.entryGain.gain, 0],
+      [audio.buffetDepth.gain, 0],
+    ].forEach(([param, level]) => {
+      param.cancelScheduledValues(now);
+      param.setValueAtTime(level, now);
+    });
+  }
   lensZoom = 1;
   applyCameraLens();
   if (compositeMaterial) {
@@ -2580,7 +2938,7 @@ function beginEarthReturn() {
   if (state === "returning") return;
   state = "returning";
   handoffStartedAt = performance.now();
-  statusLabel.textContent = "已抵达地球 · 正在同步主页";
+  statusLabel.textContent = "TOUCHDOWN · SYNCING HOME";
   experience.classList.add("is-returning");
   experience.classList.remove("is-camera-dragging");
   clearLock();
@@ -2595,8 +2953,26 @@ function beginEarthReturn() {
   }
 
   if (audio?.enabled) {
-    audio.master.gain.cancelScheduledValues(audio.context.currentTime);
-    audio.master.gain.linearRampToValueAtTime(0, audio.context.currentTime + 2.2);
+    const now = audio.context.currentTime;
+    // The score and the drive clear out of the way so the touchdown has the room
+    // to land in, but the master holds until just before navigation so the cue
+    // itself is not faded out from under its own tail.
+    const duck = (param, seconds) => {
+      param.cancelScheduledValues(now);
+      param.setValueAtTime(param.value, now);
+      param.linearRampToValueAtTime(0, now + seconds);
+    };
+    duck(audio.musicGain.gain, 1.1);
+    duck(audio.engineGain.gain, 0.9);
+    duck(audio.entryGain.gain, 0.8);
+    duck(audio.buffetDepth.gain, 0.8);
+    playTouchdownCue();
+    audio.master.gain.cancelScheduledValues(now);
+    // Held flat until the two-note resolve has sounded, then out before the
+    // hand-off navigates at 3.2 s. Fading from contact instead swallows the one
+    // phrase the whole descent is building towards.
+    audio.master.gain.setValueAtTime(audio.master.gain.value, now + (reducedMotion ? 0 : 1.5));
+    audio.master.gain.linearRampToValueAtTime(0, now + (reducedMotion ? 0.55 : 3));
   }
 
   window.setTimeout(() => window.location.assign("../"), reducedMotion ? 650 : 3200);
@@ -2740,6 +3116,15 @@ function updateJourney(progress, now) {
   if (audio?.enabled) {
     audio.oscillatorA.frequency.value = 42 + flightPulse * 17;
     audio.oscillatorB.frequency.value = 57 + progress * 18;
+    // Squared, so the plasma layer stays out of the mix until the shield is
+    // actually glowing rather than creeping in over the last ten seconds.
+    const roar = entry * entry * 0.52;
+    if (Math.abs(roar - plasmaRoar) > 0.004) {
+      plasmaRoar = roar;
+      const now = audio.context.currentTime;
+      audio.entryGain.gain.setTargetAtTime(roar, now, 0.09);
+      audio.buffetDepth.gain.setTargetAtTime(roar * 0.55, now, 0.09);
+    }
   }
 
   if (progress >= 1 && state === "flying") {
@@ -2916,9 +3301,15 @@ async function init() {
   try {
     buildInstruments();
     initRenderer();
+    // Built here rather than at launch. The context stays suspended until the
+    // visitor allows sound, but constructing it costs the best part of a second
+    // on a loaded machine, and paying that at ignition put the cue behind the
+    // launch it belongs to. It also gives the score the whole loading window to
+    // buffer, so it opens with the flight instead of a few seconds into it.
+    createAudioEngine();
     await buildScene();
     initPostProcessing();
-    setLoading(100, "航线已就绪");
+    setLoading(100, "FLIGHT PATH READY");
 
     window.addEventListener("resize", onResize);
     canvas.addEventListener("pointerdown", onCameraPointerDown);
@@ -2933,7 +3324,7 @@ async function init() {
       event.preventDefault();
       cancelAnimationFrame(frameId);
       loader.classList.remove("is-hidden");
-      loaderLabel.textContent = "图形系统正在恢复…";
+      loaderLabel.textContent = "RECOVERING GRAPHICS SYSTEMS…";
     });
     canvas.addEventListener("webglcontextrestored", () => window.location.reload());
     window.addEventListener("keydown", (event) => {
@@ -2964,7 +3355,7 @@ async function init() {
     }, 500);
   } catch (error) {
     console.error("Unable to initialize the space journey:", error);
-    loaderLabel.innerHTML = '飞船系统初始化失败。<a href="../">返回个人网站</a>';
+    loaderLabel.innerHTML = 'SHIP SYSTEMS FAILED TO START. <a href="../">RETURN HOME</a>';
   }
 }
 

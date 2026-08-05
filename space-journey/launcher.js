@@ -100,7 +100,7 @@
   function spawnChargeField(portal) {
     if (reducedMotion || chargeField) return;
     const field = document.createElement("div");
-    const count = window.innerWidth < 700 ? 72 : 120;
+    const count = window.innerWidth < 700 ? 56 : 96;
     const reach = Math.max(window.innerWidth, window.innerHeight);
     field.className = "space-charge-field";
     field.setAttribute("aria-hidden", "true");
@@ -111,11 +111,16 @@
       const radius = 90 + Math.random() * reach * 0.52;
       const startX = portal.x + Math.cos(angle) * radius;
       const startY = portal.y + Math.sin(angle) * radius;
+      const travelX = portal.x - startX;
+      const travelY = portal.y - startY;
       dot.style.setProperty("--start-x", `${startX}px`);
       dot.style.setProperty("--start-y", `${startY}px`);
-      dot.style.setProperty("--travel-x", `${portal.x - startX}px`);
-      dot.style.setProperty("--travel-y", `${portal.y - startY}px`);
-      dot.style.setProperty("--size", `${2.2 + Math.random() * 3}px`);
+      dot.style.setProperty("--travel-x", `${travelX}px`);
+      dot.style.setProperty("--travel-y", `${travelY}px`);
+      dot.style.setProperty("--particle-angle", `${((Math.atan2(travelY, travelX) * 180) / Math.PI).toFixed(1)}deg`);
+      dot.style.setProperty("--head-size", `${1.8 + Math.random() * 2.2}px`);
+      dot.style.setProperty("--trail-length", `${18 + Math.random() * 32}px`);
+      dot.style.setProperty("--trail-thickness", `${0.8 + Math.random() * 1.3}px`);
       dot.style.setProperty("--delay", `${(Math.random() * 0.55).toFixed(2)}s`);
       dot.style.setProperty("--duration", `${(0.8 + Math.random() * 0.65).toFixed(2)}s`);
       field.append(dot);
@@ -297,7 +302,7 @@
     window.setTimeout(() => {
       launcher.classList.add("is-unlocked");
       setHint("Unlocked · launching");
-      runLaunchSequence({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+      runLaunchSequence(portalPoint());
       window.setTimeout(() => window.location.assign(launcher.href), transitionDuration);
     }, centerDuration);
   }
