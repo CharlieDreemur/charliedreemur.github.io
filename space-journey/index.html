@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#02040b">
+    <meta name="description" content="从银河系之外穿越群星，回到 Charlie 的地球。">
+    <title>Starbound · Charlie's Space Journey</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main id="experience">
+      <canvas id="space-canvas" aria-label="交互式三维太空场景"></canvas>
+
+      <div class="optical-fx" aria-hidden="true">
+        <i class="optical-fx__flare"></i>
+        <i class="optical-fx__reflection"></i>
+        <i class="optical-fx__grain"></i>
+      </div>
+      <div class="cinema-bars" aria-hidden="true"></div>
+      <div class="cockpit" aria-hidden="true">
+        <div class="cockpit__frame cockpit__frame--left"></div>
+        <div class="cockpit__frame cockpit__frame--right"></div>
+        <div class="cockpit__dash">
+          <span class="cockpit__light cockpit__light--cyan"></span>
+          <span class="cockpit__light cockpit__light--amber"></span>
+          <span class="cockpit__light cockpit__light--red"></span>
+        </div>
+        <div class="cockpit__glass"></div>
+      </div>
+
+      <header class="topbar">
+        <a class="home-link" href="../" aria-label="返回个人网站">
+          <span aria-hidden="true">←</span>
+          <span>RETURN HOME</span>
+        </a>
+        <div class="mission-id">
+          <span>HOMEBOUND</span>
+          <small>RETURN VOYAGE 01</small>
+        </div>
+        <div class="topbar__controls">
+          <button id="quality-toggle" class="icon-button quality-toggle" type="button" aria-label="切换画质" title="切换画质">
+            <i aria-hidden="true"></i><span id="quality-label">AUTO</span>
+          </button>
+          <button id="sound-toggle" class="icon-button" type="button" aria-label="切换声音" aria-pressed="false">
+            <span class="sound-on">SOUND ON</span>
+            <span class="sound-off">SOUND OFF</span>
+          </button>
+        </div>
+      </header>
+
+      <section id="hud" class="hud" aria-live="polite">
+        <div class="hud__telemetry">
+          <div><small>VELOCITY</small><strong id="velocity">0.00 C</strong></div>
+          <div><small>TO EARTH</small><strong id="distance">26,000 LY</strong></div>
+          <div class="hud__signal"><small>SIGNAL</small><strong><i></i><i></i><i></i><i></i></strong></div>
+        </div>
+
+        <div class="reticle" aria-hidden="true">
+          <i></i><span></span><i></i>
+        </div>
+
+        <div class="camera-hint" aria-hidden="true">
+          <span class="camera-hint__mouse"></span>
+          <span>左键拖拽观察 · 双击归中</span>
+        </div>
+
+        <div class="destination">
+          <small>NEXT WAYPOINT</small>
+          <strong id="waypoint">MILKY WAY HALO</strong>
+          <span id="status">航行系统待命</span>
+        </div>
+
+        <div class="journey-progress" aria-label="旅程进度">
+          <span>DEEP SPACE</span>
+          <div><i id="progress-bar"></i></div>
+          <span>EARTH</span>
+        </div>
+      </section>
+
+      <section id="earth-return" class="earth-return" aria-live="polite">
+        <div class="earth-return__horizon" aria-hidden="true"></div>
+        <div class="earth-return__avatar">
+          <span></span>
+          <img src="../images/github_avatar.png" alt="Charlie 的地球头像">
+        </div>
+        <div class="earth-return__copy">
+          <small>HOME SIGNAL ACQUIRED</small>
+          <strong>欢迎回到地球</strong>
+        </div>
+      </section>
+
+      <section id="arrival" class="arrival" aria-labelledby="arrival-title">
+        <small>TRANSMISSION RECEIVED</small>
+        <h2 id="arrival-title">欢迎来到我的宇宙。</h2>
+        <p>每一个项目，都是一次对未知的远征。</p>
+        <div class="arrival__actions">
+          <button id="replay-button" type="button">再次航行</button>
+          <a href="../projects/">探索我的项目</a>
+        </div>
+      </section>
+
+      <div id="loader" class="loader" role="status">
+        <img src="../images/github_avatar.png" alt="">
+        <div class="loader__track"><i id="loader-bar"></i></div>
+        <span id="loader-label">正在校准星图…</span>
+      </div>
+
+      <noscript>
+        <div class="fallback">该旅程需要 JavaScript。<a href="../">返回个人网站</a></div>
+      </noscript>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
