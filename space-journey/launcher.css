@@ -41,10 +41,10 @@ html.space-launch-charging::after {
   width: calc(var(--size) * 3.6);
   height: var(--size);
   border-radius: 50%;
-  background: linear-gradient(90deg, rgba(22, 143, 204, 0.16), #55d9ff 68%, #fff);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), #effcff 68%, #fff);
   box-shadow:
-    0 0 0.45rem #168fcc,
-    0 0 1.15rem rgba(62, 203, 255, 1);
+    0 0 0.45rem #fff,
+    0 0 1.15rem rgba(210, 246, 255, 1);
   opacity: 0;
   filter: brightness(1.65);
   will-change: transform, opacity;
@@ -94,7 +94,7 @@ html.space-transition-active body {
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at var(--portal-x) var(--portal-y), rgba(42, 159, 255, 0.12), transparent 10rem),
+    radial-gradient(circle at 50% 50%, rgba(42, 159, 255, 0.12), transparent 10rem),
     rgba(0, 2, 8, 0);
   opacity: 0;
   pointer-events: all;
@@ -121,8 +121,8 @@ html.space-transition-active body {
 .space-transition__lens {
   position: absolute;
   z-index: 1;
-  top: var(--portal-y);
-  left: var(--portal-x);
+  top: 50%;
+  left: 50%;
   width: 9rem;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -139,8 +139,8 @@ html.space-transition-active body {
 .space-transition__portal {
   position: absolute;
   z-index: 3;
-  top: var(--portal-y);
-  left: var(--portal-x);
+  top: 50%;
+  left: 50%;
   width: 8rem;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -198,8 +198,8 @@ html.space-transition-active body {
 .space-transition__streak {
   position: absolute;
   z-index: 4;
-  top: var(--portal-y);
-  left: var(--portal-x);
+  top: 50%;
+  left: 50%;
   width: var(--streak-length);
   height: var(--streak-thickness);
   background: linear-gradient(90deg, rgba(255, 255, 255, 0), #eaffff);
@@ -214,7 +214,7 @@ html.space-transition-active body {
   z-index: 5;
   inset: 0;
   background:
-    radial-gradient(circle at var(--portal-x) var(--portal-y), #fff 0 12%, #cdefff 34%, rgba(120, 190, 255, 0) 72%);
+    radial-gradient(circle at 50% 50%, #fff 0 12%, #cdefff 34%, rgba(120, 190, 255, 0) 72%);
   opacity: 0;
   animation: space-flash-burst 570ms 1880ms ease-out forwards;
 }

@@ -62,6 +62,11 @@ equirectangular projection — its global products are perspective mosaics — s
 that planet stays procedural, with zonal banding warped only enough to churn the
 belt edges.
 
+The sun is a billboard placed along the key light's direction, and the flyby
+layout has to keep its line of sight clear: at these radii the ringed giant sits
+below the flight axis purely because at its first position it and its rings
+eclipsed the sun for the entire first half of the trip.
+
 Nothing in the star field may draw across a nearby planet: at this scale a
 single star stuck to a gas giant's disc collapses the sense of distance. Both
 the corridor star layers and the spiral galaxy therefore reject any point that
