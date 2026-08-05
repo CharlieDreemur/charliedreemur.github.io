@@ -9,11 +9,29 @@ const replayButton = document.querySelector("#replay-button");
 const soundToggle = document.querySelector("#sound-toggle");
 const qualityToggle = document.querySelector("#quality-toggle");
 const qualityLabel = document.querySelector("#quality-label");
+const hud = document.querySelector("#hud");
 const velocityLabel = document.querySelector("#velocity");
 const distanceLabel = document.querySelector("#distance");
+const etaLabel = document.querySelector("#eta");
 const waypointLabel = document.querySelector("#waypoint");
 const statusLabel = document.querySelector("#status");
+const navTarget = document.querySelector(".nav-target");
+const gauge = document.querySelector(".gauge");
+const gunsight = document.querySelector(".gunsight");
+const headingStrip = document.querySelector("#heading-strip");
+const ladder = document.querySelector("#ladder");
+const rollNeedle = document.querySelector("#roll-needle");
+const tapeMarks = document.querySelector("#tape-marks");
+const tapeShip = document.querySelector("#tape-ship");
 const progressBar = document.querySelector("#progress-bar");
+const systemBars = ["thrust", "reactor", "hull"].map((key) => ({
+  key,
+  alarms: key === "hull",
+  shown: NaN,
+  row: document.querySelector(`.bars li[data-key="${key}"]`),
+  fill: document.querySelector(`#bar-${key}`),
+  value: document.querySelector(`#val-${key}`),
+}));
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const compactDevice = window.matchMedia("(max-width: 700px)").matches;
@@ -159,6 +177,7 @@ let fastWindows = 0;
 let adaptivePixelScale = 1;
 let resizeFrame = 0;
 let journeyVisualState = "";
+let hullAlarm = false;
 const drawingBufferSize = new THREE.Vector2();
 const sphereGeometryCache = new Map();
 const stellarTextureCache = new Map();
@@ -176,9 +195,105 @@ const waypoints = [
 ];
 
 const cameraLimits = {
-  yaw: 0.62,
-  pitch: 0.38,
+  yaw: 0.95,
+  pitch: 0.6,
 };
+
+// Attitude instruments read in degrees; these convert a look direction into the
+// pixel travel of the heading tape and the pitch ladder.
+const HEADING_PX_PER_DEG = 5;
+const LADDER_PX_PER_DEG = 3.4;
+const BASE_HEADING = 180;
+const DEG = 180 / Math.PI;
+
+// Cached so the per-frame attitude pass only writes transforms it has changed.
+const attitude = { heading: NaN, pitch: NaN, roll: NaN, px: NaN, py: NaN };
+
+function buildInstruments() {
+  const headings = document.createDocumentFragment();
+  for (let deg = 0; deg < 360; deg += 10) {
+    const tick = document.createElement("span");
+    const major = deg % 30 === 0;
+    tick.className = major ? "heading__tick" : "heading__tick heading__tick--minor";
+    tick.style.left = `${deg * HEADING_PX_PER_DEG}px`;
+    if (major) tick.textContent = String(deg).padStart(3, "0");
+    headings.append(tick);
+  }
+  headingStrip.append(headings);
+
+  const rungs = document.createDocumentFragment();
+  for (let deg = -20; deg <= 20; deg += 10) {
+    const line = document.createElement("div");
+    line.className = deg === 0 ? "ladder__line ladder__line--zero" : "ladder__line";
+    line.style.top = `${-deg * LADDER_PX_PER_DEG}px`;
+    const label = deg === 0 ? "" : String(Math.abs(deg));
+    line.innerHTML = `<span>${label}</span><span>${label}</span>`;
+    rungs.append(line);
+  }
+  ladder.append(rungs);
+
+  const marks = document.createDocumentFragment();
+  waypoints.forEach((point, index) => {
+    const mark = document.createElement("span");
+    mark.className = "tape__mark";
+    mark.style.left = `${point.at * 100}%`;
+    mark.innerHTML = `<b></b>`;
+    mark.firstChild.textContent = point.name;
+    mark.dataset.index = String(index);
+    marks.append(mark);
+  });
+  tapeMarks.append(marks);
+}
+
+// Yaw and pitch already drive the camera; feeding them to the glass as well is
+// what makes the projection feel attached to the ship instead of the page.
+function updateAttitude() {
+  const yawDeg = viewYaw * DEG;
+  const pitchDeg = viewPitch * DEG;
+  const heading = (BASE_HEADING - yawDeg + 360) % 360;
+  // The hull banks into the turn, so the roll needle answers a drag the way an
+  // aircraft would rather than sitting dead while the horizon swings.
+  const roll = THREE.MathUtils.clamp(-yawDeg * 0.42 + camera.rotation.z * DEG * 6, -24, 24);
+
+  if (Math.abs(heading - attitude.heading) > 0.02) {
+    attitude.heading = heading;
+    headingStrip.style.transform = `translateX(${-heading * HEADING_PX_PER_DEG}px)`;
+  }
+  if (Math.abs(pitchDeg - attitude.pitch) > 0.02) {
+    attitude.pitch = pitchDeg;
+    ladder.style.transform = `translateY(${pitchDeg * LADDER_PX_PER_DEG}px)`;
+  }
+  if (Math.abs(roll - attitude.roll) > 0.02) {
+    attitude.roll = roll;
+    rollNeedle.style.transform = `translateX(-50%) rotate(${roll}deg)`;
+  }
+
+  const px = THREE.MathUtils.clamp(yawDeg / 36, -1, 1);
+  const py = THREE.MathUtils.clamp(pitchDeg / 22, -1, 1);
+  if (Math.abs(px - attitude.px) > 0.002) {
+    attitude.px = px;
+    hud.style.setProperty("--px", px.toFixed(3));
+  }
+  if (Math.abs(py - attitude.py) > 0.002) {
+    attitude.py = py;
+    hud.style.setProperty("--py", py.toFixed(3));
+  }
+}
+
+function updateSystemBars(values) {
+  systemBars.forEach((bar) => {
+    const level = THREE.MathUtils.clamp(values[bar.key], 0, 100);
+    const rounded = Math.round(level);
+    if (rounded === bar.shown) return;
+    bar.shown = rounded;
+    bar.value.textContent = String(rounded).padStart(2, "0");
+    bar.fill.style.width = `${level.toFixed(1)}%`;
+    // Only the hull raises an alarm; a throttled engine is not a fault.
+    if (!bar.alarms) return;
+    bar.row.classList.toggle("is-warn", level < 92 && level >= 72);
+    bar.row.classList.toggle("is-critical", level < 72);
+  });
+}
 
 function setLoading(percent, label) {
   loaderBar.style.width = `${percent}%`;
@@ -1601,19 +1716,37 @@ function addCelestialBody({
 }
 
 function addNebula(position, scale, color, opacity = 0.36, seed = 5) {
-  const material = new THREE.SpriteMaterial({
-    map: createNebulaTexture(color, seed),
-    transparent: true,
-    opacity,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
+  // One billboard reads as a decal pasted onto the sky. Three copies of the same
+  // filament bake, rotated and offset against each other, interfere into
+  // something with apparent depth for the price of two extra draw calls.
+  const map = createNebulaTexture(color, seed);
+  const layers = [
+    { scale: 1, rotation: 0, weight: 0.52, offset: [0, 0, 0] },
+    { scale: 1.36, rotation: 2.2, weight: 0.3, offset: [scale * 0.1, -scale * 0.07, -scale * 0.16] },
+    { scale: 0.74, rotation: 4.4, weight: 0.26, offset: [-scale * 0.09, scale * 0.06, scale * 0.13] },
+  ];
+
+  layers.forEach((layer) => {
+    const layerOpacity = opacity * layer.weight;
+    const material = new THREE.SpriteMaterial({
+      map,
+      transparent: true,
+      opacity: layerOpacity,
+      rotation: layer.rotation,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const sprite = new THREE.Sprite(material);
+    sprite.position.set(
+      position[0] + layer.offset[0],
+      position[1] + layer.offset[1],
+      position[2] + layer.offset[2],
+    );
+    sprite.scale.set(scale * layer.scale, scale * layer.scale * 0.72, 1);
+    // A billboard cannot be flown through: once the camera is inside it, the
+    // additive haze just washes out whatever lies beyond. Dissolve it instead.
+    registerFadingSprite(sprite, { baseOpacity: layerOpacity, fadeRadius: scale * 1.2 });
   });
-  const sprite = new THREE.Sprite(material);
-  sprite.position.set(...position);
-  sprite.scale.set(scale, scale * 0.72, 1);
-  // A billboard cannot be flown through: once the camera is inside it, the
-  // additive haze just washes out whatever lies beyond. Dissolve it instead.
-  registerFadingSprite(sprite, { baseOpacity: opacity, fadeRadius: scale * 1.2 });
 }
 
 function addAsteroidBelt(center, innerRadius, outerRadius, seed) {
@@ -1624,9 +1757,9 @@ function addAsteroidBelt(center, innerRadius, outerRadius, seed) {
   // the bare icosahedron read as a paper cutout at flyby range.
   const geometry = new THREE.IcosahedronGeometry(1, 1);
   const material = new THREE.MeshStandardMaterial({
-    // Asteroid albedo is closer to charcoal than to sand. The pale tone used
-    // before turned the belt into the brightest thing on screen.
-    color: "#4b4438",
+    // Asteroid albedo sits well below the pale tone used before, which made the
+    // belt the brightest thing on screen, but charcoal loses it against space.
+    color: "#6f6553",
     roughness: 0.96,
     metalness: 0.04,
     flatShading: true,
@@ -1656,7 +1789,7 @@ function addAsteroidBelt(center, innerRadius, outerRadius, seed) {
     mesh.setMatrixAt(index, matrix);
     // Instance colour only modulates the material albedo, so the belt still
     // darkens even where instancing colour is unavailable.
-    tone.setHSL(0.07 + random() * 0.04, 0.12 + random() * 0.14, 0.34 + Math.pow(random(), 1.5) * 0.28);
+    tone.setHSL(0.07 + random() * 0.04, 0.12 + random() * 0.14, 0.55 + Math.pow(random(), 1.5) * 0.4);
     mesh.setColorAt(index, tone);
   }
 
@@ -1924,6 +2057,7 @@ function addStellarBeacon(position, size, options = {}) {
 function addWarpTunnel() {
   const lineCount = qualityLevel === "eco" ? 70 : qualityLevel === "balanced" ? 120 : 180;
   const positions = new Float32Array(lineCount * 6);
+  const colors = new Float32Array(lineCount * 6);
   const random = mulberry32(404);
 
   for (let index = 0; index < lineCount; index += 1) {
@@ -1939,12 +2073,25 @@ function addWarpTunnel() {
     positions[offset + 3] = x * 1.02;
     positions[offset + 4] = y * 1.02;
     positions[offset + 5] = z + 3 + random() * 11;
+
+    // Uniform brightness along a segment reads as a scratch on the lens. Fading
+    // the leading end to black turns each one into a trail, and varying the peak
+    // stops them from looking stamped from one template.
+    const peak = 0.35 + random() * 0.65;
+    colors[offset] = 0;
+    colors[offset + 1] = 0;
+    colors[offset + 2] = 0;
+    colors[offset + 3] = peak;
+    colors[offset + 4] = peak;
+    colors[offset + 5] = peak;
   }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   const material = new THREE.LineBasicMaterial({
     color: "#bcefff",
+    vertexColors: true,
     transparent: true,
     opacity: 0,
     depthWrite: false,
@@ -1972,7 +2119,7 @@ async function buildScene() {
     radius: 78,
     // Below the flight axis on purpose: the sun sits up and to the left, and at
     // this size the planet and its rings eclipse it for the whole first half.
-    position: [-252, -148, -648],
+    position: [-302, -148, -648],
     // Saturn's belts are far lower contrast than Jupiter's; a dark end near
     // black turns the zonal banding into humbug stripes.
     surface: createPlanetSurface("gas", 8, [
@@ -1994,11 +2141,11 @@ async function buildScene() {
   setLoading(52, "正在接收行星影像…");
   const surfaces = await photographicSurfaces;
 
-  // The hero flyby: the path skims roughly 60 units above Jupiter's cloud tops,
+  // The hero flyby: the path skims roughly 90 units above Jupiter's cloud tops,
   // so it swells to fill most of the frame before falling behind.
   addCelestialBody({
     radius: 118,
-    position: [170, -54, -430],
+    position: [204, -54, -430],
     surface:
       surfaces.jupiter ??
       createPlanetSurface("gas", 17, [
@@ -2087,24 +2234,30 @@ async function buildScene() {
   const sunDistance = 420;
   addStellarBeacon(
     [sunDirection.x * sunDistance, sunDirection.y * sunDistance, -1048 + sunDirection.z * sunDistance],
-    170,
+    260,
     {
       // Seen from space the photosphere is a hard white disc at roughly 5800K;
       // the warm tones belong to the corona around it, not to the star itself.
       coreColor: "#ffffff",
       haloColor: "#ffd9a6",
       // The photosphere texture supplies the disc, so these stops only have to
-      // describe the corona around it. It emerges dim at the limb (offset 0.34)
-      // and decays fast, otherwise it rings the disc in a bright halo.
+      // describe the corona around it. Everything inside 0.33 is hidden behind
+      // that disc, so the gradient holds full strength to just past the limb and
+      // decays from there. Front-loading it wastes the corona behind the disc and
+      // leaves the limb ending on a hard edge against empty space.
       stops: [
         [0, "rgba(255,252,244,0.9)"],
-        [0.3, "rgba(255,248,233,0.66)"],
-        [0.37, "rgba(255,236,203,0.24)"],
-        [0.5, "rgba(255,226,186,0.09)"],
-        [0.7, "rgba(255,214,170,0.03)"],
-        [1, "rgba(255,210,165,0)"],
+        [0.32, "rgba(255,248,233,0.82)"],
+        [0.4, "rgba(255,232,190,0.34)"],
+        [0.55, "rgba(255,216,168,0.13)"],
+        [0.75, "rgba(255,206,158,0.04)"],
+        [1, "rgba(255,204,155,0)"],
       ],
       photosphere: surfaces.sun,
+      // Sized so the disc ends exactly where the corona stops above starts to
+      // fall away. At a third of this it was 40 px of screen and bloom turned
+      // the granulation and sunspots into a featureless white ball.
+      photosphereScale: 0.66,
     },
   );
   await nextFrame();
@@ -2244,7 +2397,7 @@ function launch() {
   currentWaypointIndex = -1;
   flightStartedAt = performance.now();
   experience.classList.remove("is-arrived");
-  experience.classList.add("is-flying", "is-launching");
+  experience.classList.add("is-flying", "is-launching", "is-booting");
   setSound(true);
 
   if (audio) {
@@ -2254,6 +2407,7 @@ function launch() {
     audio.filter.frequency.exponentialRampToValueAtTime(520, now + 4);
   }
 
+  window.setTimeout(() => experience.classList.remove("is-booting"), 1400);
   window.setTimeout(() => experience.classList.remove("is-launching"), 2500);
 }
 
@@ -2263,7 +2417,12 @@ function replay() {
   resetCameraView();
   flightProgress = 0;
   currentWaypointIndex = -1;
-  experience.classList.remove("is-arrived", "is-deep-space", "is-earth-approach", "is-returning");
+  experience.classList.remove("is-arrived", "is-deep-space", "is-earth-approach", "is-returning", "is-alert");
+  hullAlarm = false;
+  systemBars.forEach((bar) => {
+    bar.shown = NaN;
+    bar.row.classList.remove("is-warn", "is-critical");
+  });
   if (warpLines) warpLines.material.opacity = 0;
   if (compositeMaterial) {
     compositeMaterial.uniforms.uPixelate.value = 0;
@@ -2333,10 +2492,21 @@ function updateJourney(progress, now) {
     currentWaypointIndex = waypointIndex;
     waypointLabel.textContent = waypoints[waypointIndex].name;
     statusLabel.textContent = waypoints[waypointIndex].status;
+    navTarget.classList.remove("is-updating");
+    void navTarget.offsetWidth;
+    navTarget.classList.add("is-updating");
+    tapeMarks.childNodes.forEach((mark, index) => {
+      mark.classList.toggle("is-passed", index < waypointIndex);
+      mark.classList.toggle("is-active", index === waypointIndex);
+    });
   }
 
   if (now - lastHudUpdate > 100) {
-    velocityLabel.textContent = `${(0.18 + flightPulse * 0.79).toFixed(2)} C`;
+    const velocity = 0.18 + flightPulse * 0.79;
+    velocityLabel.textContent = velocity.toFixed(2);
+    gauge.style.setProperty("--gauge", velocity.toFixed(3));
+    gunsight.style.setProperty("--speed", velocity.toFixed(3));
+
     if (progress < 0.68) {
       const remainingLightYears = Math.max(4.3, 26000 * Math.pow(1 - progress / 0.72, 2));
       distanceLabel.textContent = `${Math.round(remainingLightYears).toLocaleString()} LY`;
@@ -2347,7 +2517,28 @@ function updateJourney(progress, now) {
       const remainingKilometers = 384400 * ((1 - progress) / 0.035);
       distanceLabel.textContent = `${Math.max(0, Math.round(remainingKilometers)).toLocaleString()} KM`;
     }
-    progressBar.style.width = `${Math.min(progress * 100, 100)}%`;
+
+    const remainingSeconds = Math.max(0, Math.round((1 - progress) * flightDuration));
+    etaLabel.textContent = `${String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:${String(remainingSeconds % 60).padStart(2, "0")}`;
+
+    // Hull integrity is the only readout that fails, and it fails exactly when
+    // the plasma layer builds, so the caution light has a cause on screen.
+    updateSystemBars({
+      thrust: 22 + flightPulse * 76,
+      reactor: 54 + Math.sin(progress * Math.PI * 3.4) * 7 + flightPulse * 36,
+      hull: 100 - entry * 41,
+    });
+
+    const percent = Math.min(progress * 100, 100);
+    progressBar.style.width = `${percent}%`;
+    tapeShip.style.left = `${percent}%`;
+
+    const alerting = entry > 0.55;
+    if (alerting !== hullAlarm) {
+      hullAlarm = alerting;
+      experience.classList.toggle("is-alert", alerting);
+    }
+
     lastHudUpdate = now;
   }
 
@@ -2436,6 +2627,7 @@ function animate(now) {
   camera.rotation.y += (viewYaw + hoverYaw - camera.rotation.y) * 0.09;
   camera.rotation.x += (viewPitch + hoverPitch - camera.rotation.x) * 0.09;
   camera.rotation.z = Math.sin(elapsed * 0.45) * 0.0025;
+  updateAttitude();
 
   starLayers.forEach((layer, index) => {
     layer.rotation.z += (index + 1) * 0.000012;
@@ -2510,7 +2702,9 @@ function onCameraPointerMove(event) {
   event.preventDefault();
   const deltaX = event.clientX - dragLastX;
   const deltaY = event.clientY - dragLastY;
-  const sensitivity = event.pointerType === "touch" ? 0.0042 : 0.0032;
+  // Raised alongside the yaw and pitch limits, so reaching the edge of the look
+  // range still takes about a screen-width of drag rather than two.
+  const sensitivity = event.pointerType === "touch" ? 0.005 : 0.0038;
   dragLastX = event.clientX;
   dragLastY = event.clientY;
   dragDistance += Math.abs(deltaX) + Math.abs(deltaY);
@@ -2542,6 +2736,7 @@ function finishCameraDrag(event) {
 
 async function init() {
   try {
+    buildInstruments();
     initRenderer();
     await buildScene();
     initPostProcessing();

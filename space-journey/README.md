@@ -132,6 +132,17 @@ profile, and ends on a wide alpha ramp so the limb dissolves into the corona
 sprite drawn behind it. The disc uses normal blending and a later `renderOrder`
 than the corona, otherwise additive blending would erase the sunspots.
 
+Three things decide whether that disc reads as *the sun* rather than a generic
+glowing ball, and all three had to be dialled in together. It has to be large
+enough on screen — at 40 px bloom swallowed the granulation and the sunspots
+whole. Granulation carries only a few percent of contrast in the raw continuum,
+so the bake amplifies the deviation from the quiet-sun median before mapping it
+onto colour. And the photosphere has to be golden rather than cream, with the
+limb going redder as well as darker, since shorter wavelengths escape from the
+higher and cooler layers seen at a grazing angle. The corona gradient holds full
+strength out to just past the limb: front-loading it buries the corona behind
+the disc and leaves the limb ending on a hard edge against empty space.
+
 Source imagery is NASA public-domain material: Blue Marble Next Generation
 topography/bathymetry and cloud composites, Black Marble 2012 night lights (all
 NASA Visible Earth), the LROC colour mosaic from the NASA Scientific

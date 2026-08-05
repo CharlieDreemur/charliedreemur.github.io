@@ -1,13 +1,20 @@
 :root {
   color-scheme: dark;
-  --ink: #eef7ff;
-  --muted: #8da4b8;
-  --cyan: #7ee8ff;
-  --cyan-bright: #d8faff;
-  --amber: #ffc56e;
+  --ink: #eaf6ff;
+  --muted: #7e97ac;
+  --cyan: #6fe3ff;
+  --cyan-bright: #d6f8ff;
+  --cyan-deep: #1d84ad;
+  --amber: #ffbe5c;
+  --red: #ff6a5e;
+  --hud: var(--cyan);
+  --hud-bright: var(--cyan-bright);
   --panel: rgba(4, 12, 25, 0.62);
   --line: rgba(155, 220, 255, 0.25);
   --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+  --mono: "Space Mono", ui-monospace, monospace;
+  --tech: "Chakra Petch", "Space Mono", system-ui, sans-serif;
+  --gutter: clamp(1.1rem, 3.6vw, 4rem);
 }
 
 * {
@@ -64,6 +71,8 @@ a:focus-visible {
 .is-camera-dragging #space-canvas {
   cursor: grabbing;
 }
+
+/* ---------------------------------------------------------------- optics */
 
 .optical-fx {
   position: fixed;
@@ -165,6 +174,281 @@ a:focus-visible {
   mix-blend-mode: screen;
 }
 
+/* --------------------------------------------------------------- cockpit */
+
+.cockpit {
+  visibility: hidden;
+  position: fixed;
+  z-index: 6;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.8s 0.4s ease, visibility 1.8s;
+}
+
+.is-flying .cockpit {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* The canopy opening is one masked ellipse rather than four straight frames, so
+   the hull curves around the glass the way a moulded canopy does and the shape
+   holds at every aspect ratio. The ellipse is wide and sits low: its top runs
+   off the screen, leaving a gap to see through, and its bottom arc finishes
+   behind the dash instead of floating across open sky. */
+:root {
+  --canopy: 64% 92% at 50% 40%;
+  --canopy-edge: 60%;
+}
+
+.cockpit__hull {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 46% at 50% 104%, rgba(112, 196, 238, 0.2), transparent 62%),
+    radial-gradient(96% 48% at 50% -4%, rgba(146, 192, 226, 0.18), transparent 64%),
+    linear-gradient(180deg, #27323f 0%, #1d2734 22%, #141d28 48%, #0c131b 78%, #06090f 100%);
+  -webkit-mask: radial-gradient(var(--canopy), transparent 0 var(--canopy-edge), rgba(0, 0, 0, 0.9) 68%, #000 76%);
+  mask: radial-gradient(var(--canopy), transparent 0 var(--canopy-edge), rgba(0, 0, 0, 0.9) 68%, #000 76%);
+}
+
+.cockpit__hull::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background-image:
+    repeating-linear-gradient(90deg, rgba(163, 214, 240, 0.07) 0 1px, transparent 1px 84px),
+    repeating-linear-gradient(0deg, rgba(163, 214, 240, 0.05) 0 1px, transparent 1px 118px);
+}
+
+/* Lit bevel where the hull meets the glass, plus the soft bounce just inside it. */
+.cockpit__rim {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(var(--canopy), transparent 0 59.2%, rgba(184, 238, 255, 0.42) 60.4%, transparent 61.8%),
+    radial-gradient(var(--canopy), transparent 0 61%, rgba(86, 170, 214, 0.22) 66%, transparent 76%);
+}
+
+/* Structural ribs sitting on the hull, angled with the canopy taper. */
+.cockpit__pillar {
+  position: absolute;
+  top: -8%;
+  width: clamp(2.2rem, 6.5vw, 7rem);
+  height: 116%;
+  background: linear-gradient(90deg, #0c141f 0%, #24313f 38%, #2c3b4c 56%, #101923 100%);
+}
+
+.cockpit__pillar--left {
+  left: 0;
+  clip-path: polygon(0 0, 100% 0, 54% 100%, 0 100%);
+  box-shadow: inset -1px 0 0 rgba(163, 226, 255, 0.16), 22px 0 60px rgba(0, 0, 0, 0.7);
+}
+
+.cockpit__pillar--right {
+  right: 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 46% 100%);
+  background: linear-gradient(270deg, #0c141f 0%, #24313f 38%, #2c3b4c 56%, #101923 100%);
+  box-shadow: inset 1px 0 0 rgba(163, 226, 255, 0.16), -22px 0 60px rgba(0, 0, 0, 0.7);
+}
+
+.cockpit__seam {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(139, 213, 248, 0.26) 22%, rgba(139, 213, 248, 0.11) 70%, transparent);
+}
+
+.cockpit__pillar--left .cockpit__seam {
+  right: 38%;
+}
+
+.cockpit__pillar--right .cockpit__seam {
+  left: 38%;
+}
+
+.cockpit__rivets {
+  position: absolute;
+  top: 14%;
+  width: 3px;
+  height: 72%;
+  background-image: radial-gradient(circle, rgba(178, 224, 248, 0.34) 0 1px, transparent 1.4px);
+  background-size: 3px 2.4rem;
+}
+
+.cockpit__pillar--left .cockpit__rivets {
+  right: 20%;
+}
+
+.cockpit__pillar--right .cockpit__rivets {
+  left: 20%;
+}
+
+/* Overhead structure: thickens the roof at the corners without closing the
+   gap the canopy leaves at the top centre. */
+.cockpit__brow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 20%;
+  background: linear-gradient(180deg, rgba(12, 18, 27, 0.62) 0%, rgba(9, 14, 21, 0.32) 48%, transparent 90%);
+}
+
+.console {
+  position: absolute;
+  right: -6%;
+  bottom: -19%;
+  left: -6%;
+  height: 36%;
+}
+
+.console__deck {
+  position: absolute;
+  inset: 0;
+  border-top: 1px solid rgba(168, 230, 255, 0.3);
+  background: linear-gradient(180deg, #24303f 0%, #172230 18%, #0c141d 48%, #04080e 84%);
+  box-shadow:
+    0 -26px 90px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(198, 240, 255, 0.18),
+    inset 0 18px 40px rgba(103, 194, 225, 0.07);
+  transform: perspective(620px) rotateX(31deg);
+  transform-origin: top center;
+}
+
+.console__deck::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.7;
+  background-image:
+    repeating-linear-gradient(104deg, transparent 0 3.8%, rgba(134, 206, 240, 0.07) 3.8%, transparent 4.1%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.26) 0 1px, transparent 1px 13px);
+}
+
+/* Instrument spill from the dash onto the underside of the canopy. */
+.console__glow {
+  position: absolute;
+  top: -12%;
+  right: 18%;
+  left: 18%;
+  height: 40%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(88, 205, 250, 0.16), transparent 68%);
+  filter: blur(14px);
+}
+
+.console__bank {
+  position: absolute;
+  top: 12%;
+  display: flex;
+  gap: 0.5rem;
+  transform: perspective(620px) rotateX(31deg);
+  transform-origin: top center;
+}
+
+.console__bank--left {
+  left: 15%;
+}
+
+.console__bank--right {
+  right: 15%;
+  flex-direction: row-reverse;
+}
+
+.console__bank i {
+  width: clamp(0.9rem, 1.6vw, 1.5rem);
+  height: clamp(0.5rem, 0.9vw, 0.8rem);
+  border-top: 1px solid rgba(133, 205, 240, 0.22);
+  background: linear-gradient(180deg, rgba(96, 175, 214, 0.16), rgba(10, 20, 30, 0.5));
+}
+
+.console__bank i:nth-child(2n) {
+  background: linear-gradient(180deg, rgba(255, 190, 92, 0.1), rgba(10, 20, 30, 0.5));
+}
+
+.console__leds {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  display: flex;
+  gap: 0.75rem;
+  transform: translateX(-50%);
+}
+
+.console__led {
+  width: 0.42rem;
+  height: 0.16rem;
+  border-radius: 50%;
+}
+
+.console__led--cyan {
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+  animation: led-blink 3.4s ease-in-out infinite;
+}
+
+.console__led--amber {
+  background: var(--amber);
+  box-shadow: 0 0 12px var(--amber);
+  animation: led-blink 2.1s 0.4s ease-in-out infinite;
+}
+
+.console__led--red {
+  background: var(--red);
+  box-shadow: 0 0 12px var(--red);
+  animation: led-blink 4.7s 1.1s ease-in-out infinite;
+}
+
+.cockpit__glass {
+  position: absolute;
+  inset: 4% 9% 18%;
+  border-radius: 50%;
+  background: linear-gradient(118deg, rgba(189, 232, 255, 0.06), transparent 30%, transparent 67%, rgba(117, 195, 230, 0.028));
+  filter: blur(18px);
+}
+
+/* Plasma that licks around the canopy seal in the last seconds of the descent.
+   It has to stay on the frame: a full-screen orange wash reads as a colour
+   grade, not as something burning outside the glass. */
+.cockpit__heat {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(var(--canopy), transparent 0 50%, rgba(255, 137, 61, 0.22) 59%, rgba(255, 88, 43, 0.34) 65%, transparent 74%),
+    radial-gradient(76% 24% at 50% 98%, rgba(255, 168, 92, 0.24), transparent 74%);
+  transition: opacity 1.6s ease;
+}
+
+.is-earth-approach .cockpit__heat {
+  opacity: 0.45;
+}
+
+.is-alert .cockpit__heat {
+  opacity: 0.95;
+  animation: heat-flicker 0.42s steps(3) infinite;
+}
+
+.is-earth-approach .cockpit__glass {
+  background:
+    radial-gradient(ellipse at 50% 72%, rgba(118, 226, 255, 0.16), transparent 42%),
+    linear-gradient(118deg, rgba(255, 221, 177, 0.08), transparent 28%, transparent 68%, rgba(100, 207, 255, 0.08));
+  box-shadow: inset 0 -3rem 7rem rgba(69, 177, 255, 0.09);
+  transition: background 1.5s ease, box-shadow 1.5s ease;
+}
+
+.quality-eco .cockpit__hull::after,
+.quality-eco .cockpit__rivets,
+.quality-eco .console__glow,
+.quality-eco .cockpit__glass {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- topbar */
+
 .topbar {
   position: fixed;
   z-index: 12;
@@ -174,8 +458,8 @@ a:focus-visible {
   width: 100%;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: max(1.25rem, env(safe-area-inset-top)) clamp(1rem, 4vw, 4.5rem);
-  font-family: "Space Mono", monospace;
+  padding: max(1.15rem, env(safe-area-inset-top)) var(--gutter);
+  font-family: var(--mono);
   font-size: 0.66rem;
   letter-spacing: 0.14em;
 }
@@ -185,51 +469,103 @@ a:focus-visible {
   width: max-content;
   align-items: center;
   gap: 0.65rem;
+  padding: 0.45rem 0.9rem 0.45rem 0.7rem;
+  border: 1px solid rgba(140, 205, 240, 0.16);
+  background: linear-gradient(180deg, rgba(12, 28, 44, 0.5), rgba(4, 10, 19, 0.5));
+  clip-path: polygon(0 0, 100% 0, 100% 62%, calc(100% - 0.55rem) 100%, 0 100%);
   text-decoration: none;
-  transition: color 180ms ease;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
 .home-link:hover {
+  border-color: rgba(126, 232, 255, 0.5);
+  background: linear-gradient(180deg, rgba(20, 54, 78, 0.6), rgba(6, 16, 28, 0.6));
   color: var(--cyan);
+}
+
+.home-link__glyph {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-bottom: 1px solid currentColor;
+  border-left: 1px solid currentColor;
+  transform: rotate(45deg);
 }
 
 .mission-id {
   display: grid;
-  gap: 0.2rem;
+  padding: 0.15rem 1.6rem;
+  gap: 0.14rem;
   text-align: center;
+}
+
+.mission-id::before,
+.mission-id::after {
+  position: absolute;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-top: 1px solid rgba(126, 232, 255, 0.4);
+  content: "";
+}
+
+.mission-id {
+  position: relative;
+}
+
+.mission-id::before {
+  top: 0;
+  left: 0;
+  border-left: 1px solid rgba(126, 232, 255, 0.4);
+}
+
+.mission-id::after {
+  top: 0;
+  right: 0;
+  border-right: 1px solid rgba(126, 232, 255, 0.4);
 }
 
 .mission-id span {
   color: var(--cyan-bright);
-  font-size: 0.7rem;
+  font-family: var(--tech);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.4em;
+  text-indent: 0.4em;
 }
 
 .mission-id small {
   color: var(--muted);
-  font-size: 0.55rem;
-}
-
-.icon-button {
-  justify-self: end;
-  padding: 0.55rem 0;
-  background: transparent;
-  cursor: pointer;
-  font-family: "Space Mono", monospace;
-  font-size: 0.58rem;
-  letter-spacing: 0.12em;
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
 }
 
 .topbar__controls {
   display: flex;
   justify-self: end;
   align-items: center;
-  gap: clamp(0.8rem, 2vw, 1.6rem);
+  gap: clamp(0.7rem, 1.8vw, 1.4rem);
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 0.45rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid rgba(140, 205, 240, 0.14);
+  background: rgba(6, 15, 26, 0.42);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.icon-button:hover {
+  border-color: rgba(126, 232, 255, 0.45);
+  color: var(--cyan-bright);
 }
 
 .quality-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
   color: var(--muted);
 }
 
@@ -246,6 +582,36 @@ a:focus-visible {
   box-shadow: 0 0 8px var(--amber);
 }
 
+.icon-button__wave {
+  display: flex;
+  height: 0.55rem;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.icon-button__wave b {
+  width: 0.1rem;
+  height: 40%;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+.icon-button[aria-pressed="true"] .icon-button__wave b {
+  background: var(--cyan);
+  opacity: 1;
+  animation: signal-wave 0.9s ease-in-out infinite alternate;
+}
+
+.icon-button[aria-pressed="true"] .icon-button__wave b:nth-child(2) {
+  height: 100%;
+  animation-delay: -0.3s;
+}
+
+.icon-button[aria-pressed="true"] .icon-button__wave b:nth-child(3) {
+  height: 66%;
+  animation-delay: -0.6s;
+}
+
 .icon-button .sound-on,
 .icon-button[aria-pressed="true"] .sound-off {
   display: none;
@@ -256,19 +622,17 @@ a:focus-visible {
   color: var(--cyan);
 }
 
-.arrival > small {
-  margin-bottom: 1.25rem;
-  color: var(--cyan);
-  font-family: "Space Mono", monospace;
-  font-size: 0.66rem;
-  letter-spacing: 0.26em;
-}
+/* ------------------------------------------------------------------- hud */
 
 .hud {
   visibility: hidden;
   position: fixed;
   z-index: 9;
   inset: 0;
+  --px: 0;
+  --py: 0;
+  --shake: 0;
+  color: var(--hud);
   opacity: 0;
   pointer-events: none;
   transition: opacity 1.2s 0.5s ease, visibility 1.2s;
@@ -279,157 +643,815 @@ a:focus-visible {
   opacity: 1;
 }
 
-.hud__telemetry {
+/* Everything reads as a projection on the canopy: a faint holographic wash
+   plus scanlines that the individual instruments do not have to carry. */
+.hud__glass {
   position: absolute;
-  top: 18%;
-  left: clamp(1.2rem, 4vw, 4.5rem);
-  display: grid;
-  gap: 1.3rem;
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  background:
+    radial-gradient(52% 46% at 50% 46%, rgba(84, 196, 240, 0.05), transparent 72%),
+    repeating-linear-gradient(0deg, rgba(150, 226, 255, 0.028) 0 1px, transparent 1px 4px);
 }
 
-.hud__telemetry::before,
-.destination::before {
+.quality-eco .hud__glass {
+  display: none;
+}
+
+.cluster {
   position: absolute;
-  width: 2rem;
-  height: 2rem;
-  border-top: 1px solid rgba(126, 232, 255, 0.35);
+  display: grid;
+  gap: clamp(0.7rem, 1.4vh, 1.1rem);
+  filter: drop-shadow(0 0 14px rgba(24, 118, 158, 0.35));
+}
+
+/* Readouts have to survive a gas giant filling the frame behind them, so each
+   cluster carries its own scrim instead of relying on glow alone. */
+.cluster::before {
+  position: absolute;
+  z-index: -1;
+  inset: -0.9rem -1.2rem -1.1rem;
+  content: "";
+  background: linear-gradient(180deg, rgba(3, 13, 25, 0.66), rgba(2, 9, 18, 0.46));
+  -webkit-mask: linear-gradient(180deg, #000 86%, transparent);
+  mask: linear-gradient(180deg, #000 86%, transparent);
+}
+
+.cluster--left::before {
+  border-left: 1px solid rgba(126, 232, 255, 0.22);
+}
+
+.cluster--right::before {
+  border-right: 1px solid rgba(126, 232, 255, 0.22);
+}
+
+.cluster--left {
+  top: clamp(6.5rem, 19vh, 12rem);
+  left: var(--gutter);
+  transform:
+    perspective(1500px) rotateY(7deg)
+    translate3d(calc(var(--px) * 13px), calc(var(--py) * 9px), 0);
+}
+
+.cluster--right {
+  right: var(--gutter);
+  bottom: clamp(7.5rem, 21vh, 13rem);
+  justify-items: end;
+  text-align: right;
+  transform:
+    perspective(1500px) rotateY(-7deg)
+    translate3d(calc(var(--px) * 13px), calc(var(--py) * 9px), 0);
+}
+
+.cluster__head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(111, 227, 255, 0.22);
+  font-family: var(--tech);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+}
+
+.cluster__head::after {
+  flex: 1;
+  height: 1px;
+  min-width: 1.2rem;
+  background: linear-gradient(90deg, rgba(111, 227, 255, 0.4), transparent);
   content: "";
 }
 
-.hud__telemetry::before {
-  top: -0.75rem;
-  left: -0.8rem;
-  border-left: 1px solid rgba(126, 232, 255, 0.35);
+.cluster--right .cluster__head::after {
+  order: -1;
+  background: linear-gradient(270deg, rgba(111, 227, 255, 0.4), transparent);
 }
 
-.destination::before {
-  top: -0.75rem;
-  right: -0.8rem;
-  border-right: 1px solid rgba(126, 232, 255, 0.35);
+.cluster__head i {
+  width: 0.3rem;
+  height: 0.3rem;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  transform: rotate(45deg);
 }
 
-.hud__telemetry div,
-.destination {
-  display: grid;
-  gap: 0.25rem;
+.cluster__head em {
+  color: rgba(126, 172, 196, 0.75);
+  font-size: 0.5rem;
+  font-style: normal;
+  letter-spacing: 0.18em;
 }
 
-.hud small,
-.destination small {
-  color: var(--muted);
-  font-family: "Space Mono", monospace;
-  font-size: 0.52rem;
-  letter-spacing: 0.15em;
+/* ----------------------------------------------------------- speed gauge */
+
+.gauge {
+  position: relative;
+  width: clamp(6rem, 8.5vw, 8.4rem);
+  aspect-ratio: 1;
+  --gauge: 0;
 }
 
-.hud__telemetry strong,
-.destination strong {
-  color: var(--cyan-bright);
-  font-family: "Space Mono", monospace;
-  font-size: 0.72rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-}
-
-.hud__signal strong {
-  display: flex;
-  height: 0.85rem;
-  align-items: flex-end;
-  gap: 0.18rem;
-}
-
-.hud__signal i {
-  width: 0.16rem;
-  background: var(--cyan);
-  box-shadow: 0 0 5px rgba(126, 232, 255, 0.6);
-  animation: signal-wave 1.2s ease-in-out infinite alternate;
-}
-
-.hud__signal i:nth-child(1) {
-  height: 35%;
-}
-
-.hud__signal i:nth-child(2) {
-  height: 58%;
-  animation-delay: -0.7s;
-}
-
-.hud__signal i:nth-child(3) {
-  height: 82%;
-  animation-delay: -0.35s;
-}
-
-.hud__signal i:nth-child(4) {
-  height: 100%;
-  animation-delay: -0.9s;
-}
-
-.destination {
+.gauge__ring {
   position: absolute;
-  right: clamp(1.2rem, 4vw, 4.5rem);
-  bottom: 19%;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -125deg,
+    rgba(111, 227, 255, 0.85) 0 calc(var(--gauge) * 250deg),
+    rgba(111, 227, 255, 0.12) calc(var(--gauge) * 250deg) 250deg,
+    transparent 250deg
+  );
+  -webkit-mask: radial-gradient(closest-side, transparent 0 76%, #000 77% 92%, transparent 93%);
+  mask: radial-gradient(closest-side, transparent 0 76%, #000 77% 92%, transparent 93%);
+}
+
+.gauge__ring::after {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  content: "";
+  background: conic-gradient(
+    from -125deg,
+    transparent 0 calc(var(--gauge) * 250deg - 6deg),
+    rgba(255, 255, 255, 0.9) calc(var(--gauge) * 250deg - 6deg) calc(var(--gauge) * 250deg),
+    transparent calc(var(--gauge) * 250deg)
+  );
+  filter: blur(1px);
+}
+
+.gauge__ticks {
+  position: absolute;
+  inset: -0.05rem;
+  border-radius: 50%;
+  opacity: 0.5;
+  background: repeating-conic-gradient(
+    from -125deg,
+    rgba(178, 232, 255, 0.95) 0 0.8deg,
+    transparent 0.8deg 12.5deg
+  );
+  -webkit-mask: radial-gradient(closest-side, transparent 0 93%, #000 94% 100%);
+  mask: radial-gradient(closest-side, transparent 0 93%, #000 94% 100%);
+}
+
+.gauge__value {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.1rem;
+}
+
+.gauge__value strong {
+  color: var(--hud-bright);
+  font-family: var(--tech);
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(111, 227, 255, 0.55);
+}
+
+.gauge__value small {
+  color: rgba(151, 195, 216, 0.85);
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  letter-spacing: 0.2em;
+}
+
+/* ------------------------------------------------------------ system bars */
+
+.bars {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  gap: 0.45rem;
+  list-style: none;
+}
+
+.bars li {
+  display: grid;
+  width: clamp(9.5rem, 15vw, 13rem);
+  grid-template-columns: 3.4rem 1fr 1.6rem;
+  align-items: center;
+  gap: 0.5rem;
+  --fill: var(--cyan);
+}
+
+.bars small {
+  color: rgba(133, 175, 199, 0.9);
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.16em;
+}
+
+.bars b {
+  color: var(--hud-bright);
+  font-family: var(--tech);
+  font-size: 0.62rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.destination span {
-  margin-top: 0.35rem;
-  color: rgba(238, 247, 255, 0.7);
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
+.bar {
+  position: relative;
+  height: 0.32rem;
+  overflow: hidden;
+  background: rgba(88, 148, 178, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 224, 0.1);
 }
 
-.reticle {
+.bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(111, 227, 255, 0.35), var(--fill));
+  box-shadow: 0 0 10px var(--fill);
+  transition: width 0.3s ease, background 0.4s ease;
+}
+
+/* Segmenting the fill reads as a physical instrument rather than a web bar. */
+.bar::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: repeating-linear-gradient(90deg, transparent 0 4px, rgba(2, 8, 14, 0.85) 4px 5px);
+}
+
+.bars li.is-warn {
+  --fill: var(--amber);
+}
+
+.bars li.is-warn b {
+  color: var(--amber);
+}
+
+.bars li.is-critical {
+  --fill: var(--red);
+}
+
+.bars li.is-critical b {
+  color: var(--red);
+  animation: value-alarm 0.9s steps(2) infinite;
+}
+
+/* ------------------------------------------------------------ nav cluster */
+
+.nav-target {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.nav-target small {
+  color: rgba(133, 175, 199, 0.85);
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.2em;
+}
+
+.nav-target strong {
+  color: var(--hud-bright);
+  font-family: var(--tech);
+  font-size: clamp(0.95rem, 1.5vw, 1.3rem);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 20px rgba(111, 227, 255, 0.4);
+}
+
+.nav-target span {
+  color: rgba(216, 236, 247, 0.72);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+}
+
+.nav-target.is-updating strong,
+.nav-target.is-updating span {
+  animation: readout-lock 0.55s steps(4);
+}
+
+.nav-readouts {
+  display: flex;
+  gap: 1.4rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(111, 227, 255, 0.16);
+}
+
+.nav-readouts div {
+  display: grid;
+  gap: 0.14rem;
+}
+
+.nav-readouts small {
+  color: rgba(133, 175, 199, 0.85);
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  letter-spacing: 0.18em;
+}
+
+.nav-readouts strong {
+  color: var(--hud-bright);
+  font-family: var(--tech);
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.nav-uplink {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.nav-uplink small {
+  color: rgba(133, 175, 199, 0.85);
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  letter-spacing: 0.18em;
+}
+
+.signal {
+  display: flex;
+  height: 0.8rem;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.signal i {
+  width: 0.14rem;
+  background: var(--cyan);
+  box-shadow: 0 0 6px rgba(126, 232, 255, 0.6);
+  animation: signal-wave 1.2s ease-in-out infinite alternate;
+}
+
+.signal i:nth-child(1) {
+  height: 28%;
+}
+
+.signal i:nth-child(2) {
+  height: 46%;
+  animation-delay: -0.7s;
+}
+
+.signal i:nth-child(3) {
+  height: 64%;
+  animation-delay: -0.35s;
+}
+
+.signal i:nth-child(4) {
+  height: 82%;
+  animation-delay: -0.9s;
+}
+
+.signal i:nth-child(5) {
+  height: 100%;
+  animation-delay: -0.5s;
+}
+
+/* -------------------------------------------------------------- gunsight */
+
+.gunsight {
+  position: absolute;
+  top: 47%;
+  left: 50%;
+  display: grid;
+  width: min(34rem, 62vw);
+  justify-items: center;
+  transform:
+    translate(-50%, -50%)
+    translate3d(calc(var(--px) * -5px), calc(var(--py) * -4px), 0);
+}
+
+.heading {
+  position: relative;
+  width: min(15rem, 38vw);
+  height: 1.15rem;
+  margin-bottom: 0.2rem;
+  overflow: hidden;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+}
+
+.heading__strip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: flex;
+  height: 100%;
+  align-items: flex-start;
+  will-change: transform;
+}
+
+.heading__tick {
+  position: absolute;
+  bottom: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.12rem;
+  color: rgba(174, 226, 248, 0.8);
+  font-family: var(--mono);
+  font-size: 0.42rem;
+  letter-spacing: 0.08em;
+  transform: translateX(-50%);
+}
+
+.heading__tick::before {
+  width: 1px;
+  height: 0.34rem;
+  background: currentColor;
+  content: "";
+  opacity: 0.7;
+}
+
+.heading__tick--minor {
+  opacity: 0.42;
+}
+
+.heading__tick--minor::before {
+  height: 0.2rem;
+}
+
+.heading__mark {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-top: 0.32rem solid var(--hud-bright);
+  border-right: 0.26rem solid transparent;
+  border-left: 0.26rem solid transparent;
+  filter: drop-shadow(0 0 5px rgba(126, 232, 255, 0.8));
+  transform: translateX(-50%);
+}
+
+.ladder {
   position: absolute;
   top: 50%;
   left: 50%;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  transform: translate(-50%, -50%);
-  opacity: 0.5;
+  width: min(19rem, 44vw);
+  height: 0;
+  will-change: transform;
 }
 
-.reticle i {
-  display: block;
-  width: 2.5rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan));
-}
-
-.reticle i:last-child {
-  transform: rotate(180deg);
-}
-
-.reticle span {
-  width: 0.32rem;
-  height: 0.32rem;
-  border: 1px solid var(--cyan);
-  border-radius: 50%;
-  box-shadow: 0 0 10px rgba(126, 232, 255, 0.65);
-  animation: reticle-breathe 1.8s ease-in-out infinite;
-}
-
-.is-camera-dragging .reticle {
-  opacity: 0.82;
-}
-
-.is-camera-dragging .reticle span {
-  animation: none;
-  transform: scale(1.6);
-}
-
-.camera-hint {
+.ladder__line {
   position: absolute;
-  bottom: 14%;
+  left: 50%;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(140, 232, 255, 0.62);
+  font-family: var(--mono);
+  font-size: 0.4rem;
+  letter-spacing: 0.1em;
+  transform: translate(-50%, -50%);
+}
+
+.ladder__line span {
+  width: 1.1rem;
+}
+
+.ladder__line span:last-child {
+  text-align: right;
+}
+
+.ladder__line::before,
+.ladder__line::after {
+  width: calc(50% - 4rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(126, 226, 255, 0.5));
+  content: "";
+}
+
+.ladder__line::after {
+  background: linear-gradient(270deg, transparent, rgba(126, 226, 255, 0.5));
+}
+
+.ladder__line--zero {
+  color: rgba(224, 250, 255, 0.95);
+}
+
+.ladder__line--zero::before,
+.ladder__line--zero::after {
+  background: linear-gradient(90deg, transparent, rgba(214, 248, 255, 0.8));
+}
+
+.ladder__line--zero::after {
+  background: linear-gradient(270deg, transparent, rgba(214, 248, 255, 0.8));
+}
+
+.gunsight__core {
+  position: relative;
+  display: grid;
+  width: 4.4rem;
+  aspect-ratio: 1;
+  margin: 0.9rem 0 0.7rem;
+  place-items: center;
+  filter: drop-shadow(0 0 8px rgba(20, 110, 150, 0.7));
+}
+
+/* Broken ring: four arcs, so the reticle reads as machined rather than drawn. */
+.gunsight__ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(150, 238, 255, 0.85);
+  border-radius: 50%;
+  -webkit-mask: conic-gradient(
+    #000 0 18deg, transparent 18deg 72deg,
+    #000 72deg 108deg, transparent 108deg 162deg,
+    #000 162deg 198deg, transparent 198deg 252deg,
+    #000 252deg 288deg, transparent 288deg 342deg,
+    #000 342deg 360deg
+  );
+  mask: conic-gradient(
+    #000 0 18deg, transparent 18deg 72deg,
+    #000 72deg 108deg, transparent 108deg 162deg,
+    #000 162deg 198deg, transparent 198deg 252deg,
+    #000 252deg 288deg, transparent 288deg 342deg,
+    #000 342deg 360deg
+  );
+}
+
+.gunsight__pip {
+  width: 0.3rem;
+  height: 0.3rem;
+  border: 1px solid var(--hud-bright);
+  box-shadow: 0 0 12px rgba(126, 232, 255, 0.8);
+  transform: rotate(45deg);
+  animation: reticle-breathe 2.4s ease-in-out infinite;
+}
+
+/* The wings splay with velocity, which gives speed a shape as well as a number. */
+.gunsight__wing {
+  position: absolute;
+  top: 50%;
+  width: 2.6rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hud));
+  transition: transform 0.5s var(--ease-cinematic);
+}
+
+.gunsight__wing--l {
+  right: 100%;
+  transform: translateX(calc(var(--speed, 0) * -1.6rem));
+}
+
+.gunsight__wing--r {
+  left: 100%;
+  background: linear-gradient(270deg, transparent, var(--hud));
+  transform: translateX(calc(var(--speed, 0) * 1.6rem));
+}
+
+.gunsight__wing--l::after,
+.gunsight__wing--r::after {
+  position: absolute;
+  top: -0.16rem;
+  width: 1px;
+  height: 0.34rem;
+  background: var(--hud);
+  content: "";
+}
+
+.gunsight__wing--l::after {
+  right: 0;
+}
+
+.gunsight__wing--r::after {
+  left: 0;
+}
+
+/* The scale is a true circle segment and the needle pivots on its centre, so
+   the pointer tracks the arc instead of drifting off it at the extremes. */
+.roll {
+  position: relative;
+  width: 7.5rem;
+  height: 1rem;
+}
+
+.roll__arc {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 7.5rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(126, 232, 255, 0.32);
+  border-radius: 50%;
+  -webkit-mask: linear-gradient(180deg, #000 0 11%, transparent 11%);
+  mask: linear-gradient(180deg, #000 0 11%, transparent 11%);
+  transform: translateX(-50%);
+}
+
+.roll::before {
+  position: absolute;
+  top: -0.2rem;
+  left: 50%;
+  width: 1px;
+  height: 0.26rem;
+  background: rgba(126, 232, 255, 0.6);
+  content: "";
+  transform: translateX(-50%);
+}
+
+.roll__needle {
+  position: absolute;
+  top: 0.05rem;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-right: 0.22rem solid transparent;
+  border-bottom: 0.3rem solid var(--hud-bright);
+  border-left: 0.22rem solid transparent;
+  filter: drop-shadow(0 0 5px rgba(126, 232, 255, 0.7));
+  transform: translateX(-50%);
+  transform-origin: 50% 3.7rem;
+  will-change: transform;
+}
+
+.is-camera-dragging .gunsight__ring {
+  border-color: rgba(126, 232, 255, 0.85);
+}
+
+.is-camera-dragging .gunsight__pip {
+  animation: none;
+  transform: rotate(45deg) scale(1.5);
+}
+
+/* --------------------------------------------------------------- caution */
+
+.caution {
+  position: absolute;
+  top: clamp(4.5rem, 13vh, 8rem);
   left: 50%;
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  color: rgba(190, 220, 235, 0.62);
-  font-family: "Space Mono", monospace;
-  font-size: 0.48rem;
+  gap: 0.7rem;
+  padding: 0.4rem 1rem 0.4rem 0.75rem;
+  border: 1px solid rgba(255, 106, 94, 0.45);
+  background: linear-gradient(90deg, rgba(48, 10, 8, 0.72), rgba(24, 6, 6, 0.55));
+  clip-path: polygon(0.6rem 0, 100% 0, calc(100% - 0.6rem) 100%, 0 100%);
+  opacity: 0;
+  transform: translate(-50%, -0.6rem);
+  transition: opacity 0.5s ease, transform 0.5s var(--ease-cinematic);
+}
+
+.is-alert .caution {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  animation: caution-pulse 1s ease-in-out infinite;
+}
+
+.caution i {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--red);
+  box-shadow: 0 0 12px var(--red);
+  transform: rotate(45deg);
+}
+
+.caution strong {
+  color: #ffd9d3;
+  font-family: var(--tech);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+}
+
+.caution span {
+  color: rgba(255, 197, 190, 0.72);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+}
+
+/* Alert state recolours the whole projection rather than one widget. */
+.is-alert .hud {
+  --hud: #ff9a6d;
+  --hud-bright: #ffe0cf;
+}
+
+.is-alert .cluster {
+  filter: drop-shadow(0 0 16px rgba(190, 70, 40, 0.45));
+}
+
+/* ----------------------------------------------------------- journey tape */
+
+.tape {
+  position: absolute;
+  right: var(--gutter);
+  bottom: clamp(2.4rem, 6vh, 4rem);
+  left: var(--gutter);
+  display: grid;
+  gap: 0.4rem;
+  transform: perspective(1200px) rotateX(9deg);
+  transform-origin: bottom center;
+}
+
+.tape__head {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(126, 172, 196, 0.72);
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.2em;
+}
+
+.tape__marks {
+  position: relative;
+  height: 1.2rem;
+}
+
+.tape__mark {
+  position: absolute;
+  bottom: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  color: rgba(126, 172, 196, 0.55);
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  transition: color 0.5s ease, opacity 0.5s ease;
+}
+
+.tape__mark:first-child {
+  justify-items: start;
+  transform: translateX(0);
+}
+
+.tape__mark:last-child {
+  justify-items: end;
+  transform: translateX(-100%);
+}
+
+.tape__mark b {
+  font-weight: 400;
+}
+
+.tape__mark::after {
+  width: 1px;
+  height: 0.34rem;
+  background: currentColor;
+  content: "";
+}
+
+.tape__mark.is-passed {
+  color: rgba(126, 232, 255, 0.55);
+}
+
+.tape__mark.is-active {
+  color: var(--hud-bright);
+  text-shadow: 0 0 10px rgba(126, 232, 255, 0.7);
+}
+
+.tape__rail {
+  position: relative;
+  height: 2px;
+  background: rgba(150, 205, 235, 0.16);
+}
+
+.tape__rail i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(111, 227, 255, 0.25), var(--hud));
+  box-shadow: 0 0 10px var(--hud);
+}
+
+.tape__ship {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-top: 0.26rem solid transparent;
+  border-bottom: 0.26rem solid transparent;
+  border-left: 0.46rem solid var(--hud-bright);
+  filter: drop-shadow(0 0 6px rgba(126, 232, 255, 0.9));
+  transform: translate(-30%, -50%);
+}
+
+
+/* ------------------------------------------------------------ camera hint */
+
+.camera-hint {
+  position: absolute;
+  bottom: clamp(6rem, 12vh, 8.5rem);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(126, 232, 255, 0.14);
+  background: rgba(4, 12, 22, 0.4);
+  color: rgba(190, 220, 235, 0.7);
+  font-family: var(--mono);
+  font-size: 0.46rem;
   letter-spacing: 0.1em;
-  opacity: 0.82;
   transform: translateX(-50%);
   transition: opacity 0.8s ease, transform 0.8s ease;
 }
@@ -441,143 +1463,37 @@ a:focus-visible {
 
 .camera-hint__mouse {
   position: relative;
-  width: 0.72rem;
-  height: 1rem;
+  width: 0.66rem;
+  height: 0.95rem;
   border: 1px solid currentColor;
-  border-radius: 0.45rem;
+  border-radius: 0.4rem;
 }
 
 .camera-hint__mouse::after {
   position: absolute;
-  top: 0.16rem;
+  top: 0.14rem;
   left: 50%;
   width: 1px;
-  height: 0.25rem;
+  height: 0.22rem;
   background: currentColor;
   content: "";
   transform: translateX(-50%);
 }
 
-.journey-progress {
-  position: absolute;
-  right: clamp(1.2rem, 4vw, 4.5rem);
-  bottom: 8%;
-  left: clamp(1.2rem, 4vw, 4.5rem);
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.8rem;
-  color: var(--muted);
-  font-family: "Space Mono", monospace;
-  font-size: 0.5rem;
-  letter-spacing: 0.12em;
+/* -------------------------------------------------------- boot / shutdown */
+
+.is-booting .cluster,
+.is-booting .tape,
+.is-booting .gunsight {
+  animation: instrument-boot 0.9s var(--ease-cinematic) both;
 }
 
-.journey-progress div {
-  height: 1px;
-  overflow: visible;
-  background: rgba(180, 220, 255, 0.2);
+.is-booting .cluster--right {
+  animation-delay: 0.12s;
 }
 
-.journey-progress i {
-  display: block;
-  width: 0%;
-  height: 1px;
-  background: var(--cyan);
-  box-shadow: 0 0 8px var(--cyan);
-}
-
-.cockpit {
-  visibility: hidden;
-  position: fixed;
-  z-index: 6;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 1.8s 0.5s ease, visibility 1.8s;
-}
-
-.is-flying .cockpit {
-  visibility: visible;
-  opacity: 1;
-}
-
-.cockpit__frame {
-  position: absolute;
-  top: -10%;
-  width: clamp(4rem, 13vw, 15rem);
-  height: 90%;
-  background: linear-gradient(90deg, #02050b 8%, #101824 45%, #03070d 86%);
-  box-shadow: inset -8px 0 18px rgba(123, 192, 220, 0.06), 20px 0 60px rgba(0, 0, 0, 0.75);
-}
-
-.cockpit__frame--left {
-  left: -3%;
-  transform: skewX(-7deg);
-  clip-path: polygon(0 0, 86% 0, 58% 100%, 0 100%);
-}
-
-.cockpit__frame--right {
-  right: -3%;
-  transform: skewX(7deg);
-  clip-path: polygon(14% 0, 100% 0, 100% 100%, 42% 100%);
-}
-
-.cockpit__dash {
-  position: absolute;
-  right: -5%;
-  bottom: -18%;
-  left: -5%;
-  height: 34%;
-  border-top: 1px solid rgba(142, 216, 248, 0.15);
-  background:
-    linear-gradient(110deg, transparent 12%, rgba(108, 226, 255, 0.12) 12.3%, transparent 13%),
-    linear-gradient(250deg, transparent 16%, rgba(108, 226, 255, 0.08) 16.2%, transparent 17%),
-    linear-gradient(#111a24, #010309 68%);
-  box-shadow: 0 -20px 80px rgba(0, 0, 0, 0.8), inset 0 14px 30px rgba(103, 194, 225, 0.04);
-  transform: perspective(600px) rotateX(30deg);
-}
-
-.cockpit__light {
-  position: absolute;
-  top: 18%;
-  width: 0.45rem;
-  height: 0.18rem;
-  border-radius: 50%;
-}
-
-.cockpit__light--cyan {
-  left: 43%;
-  background: var(--cyan);
-  box-shadow: 0 0 12px var(--cyan);
-}
-
-.cockpit__light--amber {
-  left: 48%;
-  background: var(--amber);
-  box-shadow: 0 0 12px var(--amber);
-}
-
-.cockpit__light--red {
-  left: 52%;
-  background: #ff776d;
-  box-shadow: 0 0 12px #ff776d;
-}
-
-.cockpit__glass {
-  position: absolute;
-  inset: 5% 8% 16%;
-  border-radius: 50%;
-  background: linear-gradient(118deg, rgba(189, 232, 255, 0.055), transparent 30%, transparent 67%, rgba(117, 195, 230, 0.025));
-  filter: blur(18px);
-}
-
-.is-earth-approach .cockpit__glass {
-  background:
-    radial-gradient(ellipse at 50% 72%, rgba(118, 226, 255, 0.16), transparent 42%),
-    linear-gradient(118deg, rgba(255, 221, 177, 0.07), transparent 28%, transparent 68%, rgba(100, 207, 255, 0.08));
-  box-shadow: inset 0 -3rem 7rem rgba(69, 177, 255, 0.09);
-  transition: background 1.5s ease, box-shadow 1.5s ease;
+.is-booting .tape {
+  animation-delay: 0.22s;
 }
 
 .cinema-bars::before,
@@ -604,6 +1520,8 @@ a:focus-visible {
 .is-launching .cinema-bars::after {
   height: 7vh;
 }
+
+/* ---------------------------------------------------------- earth return */
 
 .earth-return {
   visibility: hidden;
@@ -701,7 +1619,7 @@ a:focus-visible {
 
 .earth-return__copy small {
   color: var(--cyan);
-  font-family: "Space Mono", monospace;
+  font-family: var(--mono);
   font-size: 0.52rem;
   letter-spacing: 0.22em;
 }
@@ -725,6 +1643,8 @@ a:focus-visible {
   transition: opacity 0.8s ease;
 }
 
+/* --------------------------------------------------------------- arrival */
+
 .arrival {
   visibility: hidden;
   position: fixed;
@@ -736,6 +1656,7 @@ a:focus-visible {
   border: 1px solid rgba(150, 227, 255, 0.24);
   background: rgba(2, 9, 19, 0.72);
   box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(94, 202, 255, 0.045);
+  clip-path: polygon(1.2rem 0, 100% 0, 100% calc(100% - 1.2rem), calc(100% - 1.2rem) 100%, 0 100%, 0 1.2rem);
   opacity: 0;
   text-align: center;
   transform: translate(-50%, -44%) scale(0.96);
@@ -747,6 +1668,15 @@ a:focus-visible {
   visibility: visible;
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
+}
+
+.arrival > small {
+  display: block;
+  margin-bottom: 1.25rem;
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
 }
 
 .arrival h2 {
@@ -773,9 +1703,11 @@ a:focus-visible {
   padding: 0.85rem 1.2rem;
   border: 1px solid var(--line);
   background: rgba(12, 35, 52, 0.55);
+  clip-path: polygon(0.5rem 0, 100% 0, 100% calc(100% - 0.5rem), calc(100% - 0.5rem) 100%, 0 100%, 0 0.5rem);
   cursor: pointer;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-family: var(--tech);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
   text-decoration: none;
   transition: border-color 180ms ease, background 180ms ease;
 }
@@ -785,6 +1717,8 @@ a:focus-visible {
   border-color: var(--cyan);
   background: rgba(30, 76, 99, 0.55);
 }
+
+/* ---------------------------------------------------------------- loader */
 
 .loader {
   position: fixed;
@@ -803,18 +1737,36 @@ a:focus-visible {
   opacity: 0;
 }
 
-.loader img {
-  width: 4.5rem;
-  image-rendering: pixelated;
+.loader__badge {
+  position: relative;
+  display: grid;
+  width: 7.5rem;
+  aspect-ratio: 1;
+  place-items: center;
+}
+
+.loader__badge i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(126, 232, 255, 0.28);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: loader-spin 2.6s linear infinite;
+}
+
+.loader__badge img {
+  width: 4.2rem;
   filter: drop-shadow(0 0 20px rgba(105, 219, 255, 0.45));
+  image-rendering: pixelated;
   animation: loader-float 2.2s ease-in-out infinite;
 }
 
 .loader__track {
-  width: min(15rem, 55vw);
-  height: 1px;
+  position: relative;
+  width: min(16rem, 58vw);
+  height: 2px;
   overflow: hidden;
-  background: rgba(151, 211, 238, 0.17);
+  background: rgba(151, 211, 238, 0.15);
 }
 
 .loader__track i {
@@ -828,7 +1780,7 @@ a:focus-visible {
 
 .loader span {
   color: var(--muted);
-  font-family: "Space Mono", monospace;
+  font-family: var(--mono);
   font-size: 0.55rem;
   letter-spacing: 0.16em;
 }
@@ -842,16 +1794,24 @@ a:focus-visible {
   background: #02040b;
 }
 
+/* ------------------------------------------------------------- keyframes */
+
 @keyframes loader-float {
   50% {
     transform: translateY(-8px) rotate(3deg);
   }
 }
 
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes reticle-breathe {
   50% {
     opacity: 0.45;
-    transform: scale(1.8);
+    transform: rotate(45deg) scale(1.7);
   }
 }
 
@@ -859,6 +1819,76 @@ a:focus-visible {
   to {
     opacity: 0.38;
     transform: scaleY(0.55);
+  }
+}
+
+@keyframes led-blink {
+  0%,
+  92%,
+  100% {
+    opacity: 1;
+  }
+
+  95% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes value-alarm {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes readout-lock {
+  0% {
+    opacity: 0.15;
+    transform: translateX(0.35rem);
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes caution-pulse {
+  50% {
+    border-color: rgba(255, 106, 94, 0.9);
+    box-shadow: 0 0 22px rgba(255, 80, 66, 0.35);
+  }
+}
+
+@keyframes heat-flicker {
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes instrument-boot {
+  0% {
+    opacity: 0;
+    filter: brightness(3);
+    clip-path: inset(0 0 100% 0);
+  }
+
+  40% {
+    opacity: 1;
+    filter: brightness(1.8);
+  }
+
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+    clip-path: inset(0 0 0 0);
   }
 }
 
@@ -967,37 +1997,71 @@ a:focus-visible {
   }
 }
 
+/* ----------------------------------------------------------- adaptations */
+
+@media (max-width: 900px) {
+  .cluster--left {
+    top: clamp(5rem, 14vh, 9rem);
+  }
+
+  .gauge {
+    width: 5.4rem;
+  }
+
+  .bars li {
+    width: 8.6rem;
+    grid-template-columns: 2.8rem 1fr 1.4rem;
+  }
+}
+
 @media (max-width: 700px) {
   .topbar {
     grid-template-columns: 1fr 1fr;
   }
 
-  .mission-id {
+  .mission-id,
+  .quality-toggle,
+  .ladder,
+  .heading,
+  .roll,
+  .bars li[data-key="reactor"] {
     display: none;
   }
 
-  .quality-toggle {
+  .cockpit__pillar {
+    width: 16vw;
+  }
+
+  .cluster--left {
+    top: 5.5rem;
+    transform: translate3d(calc(var(--px) * 8px), calc(var(--py) * 6px), 0);
+  }
+
+  .cluster--right {
+    bottom: 8.5rem;
+    transform: translate3d(calc(var(--px) * 8px), calc(var(--py) * 6px), 0);
+  }
+
+  .gunsight {
+    top: 44%;
+  }
+
+  /* Eight waypoint labels cannot share 430px, so only the live one is named. */
+  .tape__mark:not(.is-active) b {
     display: none;
   }
 
-  .cockpit__frame {
-    width: 18vw;
+  .tape__head span:first-child {
+    display: none;
   }
 
-  .hud__telemetry {
-    top: 14%;
-  }
-
-  .destination {
-    bottom: 21%;
-  }
-
-  .journey-progress {
-    bottom: 6%;
+  .caution {
+    top: auto;
+    bottom: 10.5rem;
   }
 
   .camera-hint {
-    bottom: 13%;
+    bottom: 7.5rem;
     width: max-content;
     max-width: 80vw;
   }
@@ -1007,6 +2071,10 @@ a:focus-visible {
     height: 0.9rem;
     border-radius: 0.2rem;
     transform: rotate(-12deg);
+  }
+
+  .caution span {
+    display: none;
   }
 
   .arrival__actions {

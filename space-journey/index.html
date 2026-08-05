@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
@@ -23,20 +23,41 @@
         <i class="optical-fx__grain"></i>
       </div>
       <div class="cinema-bars" aria-hidden="true"></div>
+
       <div class="cockpit" aria-hidden="true">
-        <div class="cockpit__frame cockpit__frame--left"></div>
-        <div class="cockpit__frame cockpit__frame--right"></div>
-        <div class="cockpit__dash">
-          <span class="cockpit__light cockpit__light--cyan"></span>
-          <span class="cockpit__light cockpit__light--amber"></span>
-          <span class="cockpit__light cockpit__light--red"></span>
+        <div class="cockpit__hull"></div>
+        <div class="cockpit__rim"></div>
+        <div class="cockpit__pillar cockpit__pillar--left">
+          <i class="cockpit__seam"></i>
+          <i class="cockpit__rivets"></i>
+        </div>
+        <div class="cockpit__pillar cockpit__pillar--right">
+          <i class="cockpit__seam"></i>
+          <i class="cockpit__rivets"></i>
+        </div>
+        <div class="cockpit__brow"></div>
+        <div class="console">
+          <div class="console__deck"></div>
+          <div class="console__glow"></div>
+          <div class="console__bank console__bank--left">
+            <i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="console__bank console__bank--right">
+            <i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="console__leds">
+            <span class="console__led console__led--cyan"></span>
+            <span class="console__led console__led--amber"></span>
+            <span class="console__led console__led--red"></span>
+          </div>
         </div>
         <div class="cockpit__glass"></div>
+        <div class="cockpit__heat"></div>
       </div>
 
       <header class="topbar">
         <a class="home-link" href="../" aria-label="返回个人网站">
-          <span aria-hidden="true">←</span>
+          <span class="home-link__glyph" aria-hidden="true"></span>
           <span>RETURN HOME</span>
         </a>
         <div class="mission-id">
@@ -48,21 +69,87 @@
             <i aria-hidden="true"></i><span id="quality-label">AUTO</span>
           </button>
           <button id="sound-toggle" class="icon-button" type="button" aria-label="切换声音" aria-pressed="false">
+            <i class="icon-button__wave" aria-hidden="true"><b></b><b></b><b></b></i>
             <span class="sound-on">SOUND ON</span>
             <span class="sound-off">SOUND OFF</span>
           </button>
         </div>
       </header>
 
-      <section id="hud" class="hud" aria-live="polite">
-        <div class="hud__telemetry">
-          <div><small>VELOCITY</small><strong id="velocity">0.00 C</strong></div>
-          <div><small>TO EARTH</small><strong id="distance">26,000 LY</strong></div>
-          <div class="hud__signal"><small>SIGNAL</small><strong><i></i><i></i><i></i><i></i></strong></div>
-        </div>
+      <section id="hud" class="hud">
+        <div class="hud__glass" aria-hidden="true"></div>
 
-        <div class="reticle" aria-hidden="true">
-          <i></i><span></span><i></i>
+        <aside class="cluster cluster--left" aria-hidden="true">
+          <header class="cluster__head">
+            <i></i><span>PROPULSION</span><em>PRP·01</em>
+          </header>
+
+          <div class="gauge">
+            <div class="gauge__ring"></div>
+            <div class="gauge__ticks"></div>
+            <div class="gauge__value">
+              <strong id="velocity">0.00</strong>
+              <small>C · LIGHT</small>
+            </div>
+          </div>
+
+          <ul class="bars">
+            <li data-key="thrust">
+              <small>THRUST</small>
+              <div class="bar"><i id="bar-thrust"></i></div>
+              <b id="val-thrust">00</b>
+            </li>
+            <li data-key="reactor">
+              <small>REACTOR</small>
+              <div class="bar"><i id="bar-reactor"></i></div>
+              <b id="val-reactor">00</b>
+            </li>
+            <li data-key="hull">
+              <small>HULL</small>
+              <div class="bar"><i id="bar-hull"></i></div>
+              <b id="val-hull">100</b>
+            </li>
+          </ul>
+        </aside>
+
+        <aside class="cluster cluster--right">
+          <header class="cluster__head" aria-hidden="true">
+            <em>NAV·07</em><span>NAVIGATION</span><i></i>
+          </header>
+
+          <div class="nav-target" aria-live="polite">
+            <small aria-hidden="true">NEXT WAYPOINT</small>
+            <strong id="waypoint">MILKY WAY HALO</strong>
+            <span id="status">航行系统待命</span>
+          </div>
+
+          <div class="nav-readouts" aria-hidden="true">
+            <div><small>RANGE</small><strong id="distance">26,000 LY</strong></div>
+            <div><small>ETA</small><strong id="eta">--:--</strong></div>
+          </div>
+
+          <div class="nav-uplink" aria-hidden="true">
+            <small>UPLINK</small>
+            <span class="signal"><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+        </aside>
+
+        <div class="gunsight" aria-hidden="true">
+          <div class="heading">
+            <div class="heading__strip" id="heading-strip"></div>
+            <span class="heading__mark"></span>
+          </div>
+          <div class="ladder" id="ladder"></div>
+          <div class="gunsight__core">
+            <span class="gunsight__ring"></span>
+            <span class="gunsight__pip"></span>
+            <i class="gunsight__wing gunsight__wing--l"></i>
+            <i class="gunsight__wing gunsight__wing--r"></i>
+          </div>
+          <div class="roll">
+            <span class="roll__arc"></span>
+            <span class="roll__needle" id="roll-needle"></span>
+          </div>
         </div>
 
         <div class="camera-hint" aria-hidden="true">
@@ -70,16 +157,22 @@
           <span>左键拖拽观察 · 双击归中</span>
         </div>
 
-        <div class="destination">
-          <small>NEXT WAYPOINT</small>
-          <strong id="waypoint">MILKY WAY HALO</strong>
-          <span id="status">航行系统待命</span>
+        <div class="caution" id="caution" aria-hidden="true">
+          <i></i>
+          <strong>HULL TEMP CRITICAL</strong>
+          <span>隔热层过载 · 保持姿态</span>
         </div>
 
-        <div class="journey-progress" aria-label="旅程进度">
-          <span>DEEP SPACE</span>
-          <div><i id="progress-bar"></i></div>
-          <span>EARTH</span>
+        <div class="tape" aria-label="旅程进度" aria-hidden="true">
+          <div class="tape__head">
+            <span>TRAJECTORY</span>
+            <span>DEEP SPACE — EARTH</span>
+          </div>
+          <div class="tape__marks" id="tape-marks"></div>
+          <div class="tape__rail">
+            <i id="progress-bar"></i>
+            <span class="tape__ship" id="tape-ship"></span>
+          </div>
         </div>
       </section>
 
@@ -106,7 +199,10 @@
       </section>
 
       <div id="loader" class="loader" role="status">
-        <img src="../images/github_avatar.png" alt="">
+        <div class="loader__badge">
+          <i></i>
+          <img src="../images/github_avatar.png" alt="">
+        </div>
         <div class="loader__track"><i id="loader-bar"></i></div>
         <span id="loader-label">正在校准星图…</span>
       </div>

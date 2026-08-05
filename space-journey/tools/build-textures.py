@@ -194,17 +194,21 @@ def build_sun(disc: Image.Image) -> Image.Image:
 
     quiet = float(np.median(luminance[inside]))
     intensity = luminance / max(quiet, 1.0)
+    # Granulation spans only a few percent of the raw continuum's range, and the
+    # colour ramp below flattens it away entirely without this gain. Spot cores
+    # fall well below the ramp either way, so they simply clamp to the umbra.
+    intensity = 1.0 + (intensity - 1.0) * 2.4
 
-    umbra = np.array([104, 38, 10], dtype=np.float32)
-    penumbra = np.array([214, 122, 42], dtype=np.float32)
-    # Slightly below clipping, so bloom does not blow the disc out to flat white
-    # and erase the granulation and spots.
-    photosphere = np.array([246, 236, 206], dtype=np.float32)
-    facula = np.array([255, 251, 238], dtype=np.float32)
+    umbra = np.array([88, 30, 8], dtype=np.float32)
+    penumbra = np.array([206, 112, 34], dtype=np.float32)
+    # Golden rather than cream: a near-white disc reads as a generic glowing ball
+    # once bloom is applied, which is the one thing it must not look like.
+    photosphere = np.array([252, 218, 142], dtype=np.float32)
+    facula = np.array([255, 243, 202], dtype=np.float32)
 
     low = smoothstep(0.0, 0.62, intensity)[..., None]
     mid = smoothstep(0.62, 0.94, intensity)[..., None]
-    high = smoothstep(0.94, 1.12, intensity)[..., None]
+    high = smoothstep(0.97, 1.09, intensity)[..., None]
     color = umbra + (penumbra - umbra) * low
     color = color + (photosphere - color) * mid
     color = color + (facula - color) * high
@@ -212,7 +216,12 @@ def build_sun(disc: Image.Image) -> Image.Image:
     # Limb darkening, kept gentle: a deeper falloff reads as a dark ring once the
     # corona is drawn behind the disc edge.
     mu = np.sqrt(np.clip(1.0 - np.minimum(distance, 1.0) ** 2, 0.0, 1.0))
-    color = color * (0.66 + 0.34 * np.power(mu, 0.4))[..., None]
+    color = color * (0.64 + 0.36 * np.power(mu, 0.42))[..., None]
+    # The limb is redder as well as darker, since shorter wavelengths escape from
+    # the higher and cooler layers seen at a grazing angle.
+    color = color * np.stack(
+        [np.ones_like(mu), 0.92 + 0.08 * mu, 0.72 + 0.28 * mu], axis=-1
+    )
 
     # A wide alpha ramp lets the limb dissolve into the corona instead of ending
     # on a hard cut.
