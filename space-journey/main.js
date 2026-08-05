@@ -2167,7 +2167,7 @@ async function buildScene() {
   setLoading(64, "正在渲染红色行星…");
   addCelestialBody({
     radius: 30,
-    position: [-124, -66, -742],
+    position: [-149, -66, -742],
     surface:
       surfaces.mars ??
       createPlanetSurface("rock", 29, [
@@ -2184,14 +2184,14 @@ async function buildScene() {
     seed: 29,
   });
 
-  addAsteroidBelt([26, 4, -812], 34, 96, 613);
+  addAsteroidBelt([31, 4, -812], 34, 96, 613);
   await nextFrame();
 
   setLoading(74, "正在接收地球影像…");
 
   addCelestialBody({
     radius: 16,
-    position: [140, -48, -930],
+    position: [168, -48, -930],
     surface:
       surfaces.moon ??
       createPlanetSurface("rock", 2, [
