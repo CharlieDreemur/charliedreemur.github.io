@@ -59,7 +59,9 @@
     if (!returning) return;
 
     const bounds = launcher.getBoundingClientRect();
-    const startSize = Math.min(144, window.innerWidth * 0.28);
+    // Must equal the `clamp(6rem, 12vw, 9rem)` the journey page leaves the
+    // avatar at, or the navigation shows up as a jump in scale.
+    const startSize = Math.min(144, Math.max(96, window.innerWidth * 0.12));
     const overlay = document.createElement("div");
     const avatar = document.createElement("img");
     const root = document.documentElement;
@@ -113,7 +115,6 @@
       dot.style.setProperty("--start-y", `${startY}px`);
       dot.style.setProperty("--travel-x", `${portal.x - startX}px`);
       dot.style.setProperty("--travel-y", `${portal.y - startY}px`);
-      dot.style.setProperty("--particle-angle", `${((angle * 180) / Math.PI).toFixed(1)}deg`);
       dot.style.setProperty("--size", `${2.2 + Math.random() * 3}px`);
       dot.style.setProperty("--delay", `${(Math.random() * 0.55).toFixed(2)}s`);
       dot.style.setProperty("--duration", `${(0.8 + Math.random() * 0.65).toFixed(2)}s`);
@@ -234,7 +235,7 @@
     flash.className = "space-transition__flash";
     status.className = "space-transition__status";
     status.textContent = "Folding spacetime · Destination locked";
-    overlay.append(lens, core, flash, status);
+    overlay.append(lens, core, status);
 
     const meteors = igniteMeteors(portal);
     buildTrails(overlay, meteors);
@@ -244,7 +245,7 @@
     }
 
     clearChargeField();
-    root.append(overlay);
+    root.append(overlay, flash);
     requestAnimationFrame(() => root.classList.add("space-transition-active"));
   }
 
