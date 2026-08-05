@@ -24,6 +24,11 @@ const rollNeedle = document.querySelector("#roll-needle");
 const tapeMarks = document.querySelector("#tape-marks");
 const tapeShip = document.querySelector("#tape-ship");
 const progressBar = document.querySelector("#progress-bar");
+const targetCard = document.querySelector("#target");
+const targetName = document.querySelector("#target-name");
+const targetKind = document.querySelector("#target-kind");
+const targetStat = document.querySelector("#target-stat");
+const targetNote = document.querySelector("#target-note");
 const systemBars = ["thrust", "reactor", "hull"].map((key) => ({
   key,
   alarms: key === "hull",
@@ -35,7 +40,7 @@ const systemBars = ["thrust", "reactor", "hull"].map((key) => ({
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const compactDevice = window.matchMedia("(max-width: 700px)").matches;
-const flightDuration = reducedMotion ? 18 : 52;
+const flightDuration = reducedMotion ? 20 : 60;
 const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 const constrainedDevice =
   compactDevice ||
@@ -143,6 +148,7 @@ let sharedShellGeometry;
 let flightStartedAt = 0;
 let flightProgress = 0;
 let handoffStartedAt = 0;
+let lensZoom = 1;
 let state = "idle";
 let frameId;
 let pointerX = 0;
@@ -194,6 +200,16 @@ const waypoints = [
   { at: 0.975, name: "RE-ENTRY", status: "隔热层过载 · 保持姿态" },
 ];
 
+// The voyage opens this far behind the planetary corridor and spends the run-in
+// over the first quarter of the flight. The distance is what buys the empty sky
+// at the start: fog is exponential in range, so from back here Earth sits at
+// about 97% extinction and the nearest giant at 77%, which turns them into a
+// point and a dim disc without touching the layout that the rest of the trip is
+// composed around. Stars are unfogged, so the field itself stays bright.
+const approachDistance = 612;
+const journeyStartZ = 8 + approachDistance;
+const journeyEndZ = -1004;
+
 const cameraLimits = {
   yaw: 0.95,
   pitch: 0.6,
@@ -208,6 +224,58 @@ const DEG = 180 / Math.PI;
 
 // Cached so the per-frame attitude pass only writes transforms it has changed.
 const attitude = { heading: NaN, pitch: NaN, roll: NaN, px: NaN, py: NaN };
+
+// A body's own angular radius is under half a degree for most of the flight, so
+// the crosshair gets a floor to aim into. Once locked, a target keeps the lock
+// slightly past its own cone, otherwise the card flickers on the limb.
+const LOCK_FLOOR = 0.042;
+const LOCK_RELEASE = 1.45;
+const targets = [];
+const aimDirection = new THREE.Vector3();
+const aimOffset = new THREE.Vector3();
+let lockedTarget = null;
+
+function registerTarget(info, position, radius) {
+  targets.push({ ...info, center: new THREE.Vector3(...position), radius });
+}
+
+function updateTargeting() {
+  if (state !== "flying" || !targets.length) return;
+  camera.getWorldDirection(aimDirection);
+
+  let best = null;
+  let bestRange = Infinity;
+  for (const target of targets) {
+    aimOffset.subVectors(target.center, camera.position);
+    const range = aimOffset.length();
+    if (range < 1 || range >= bestRange) continue;
+    const offset = Math.acos(
+      THREE.MathUtils.clamp(aimOffset.dot(aimDirection) / range, -1, 1),
+    );
+    const cone = Math.max(Math.asin(Math.min(target.radius / range, 1)), LOCK_FLOOR);
+    if (offset > (target === lockedTarget ? cone * LOCK_RELEASE : cone)) continue;
+    best = target;
+    bestRange = range;
+  }
+
+  if (best === lockedTarget) return;
+  lockedTarget = best;
+  experience.classList.toggle("is-locked", Boolean(best));
+  if (!best) return;
+  targetName.textContent = best.name;
+  targetKind.textContent = best.kind;
+  targetStat.textContent = best.stat;
+  targetNote.textContent = best.note;
+  targetCard.classList.remove("is-acquiring");
+  void targetCard.offsetWidth;
+  targetCard.classList.add("is-acquiring");
+}
+
+function clearLock() {
+  lockedTarget = null;
+  experience.classList.remove("is-locked");
+  targetCard.classList.remove("is-acquiring");
+}
 
 function buildInstruments() {
   const headings = document.createDocumentFragment();
@@ -634,6 +702,7 @@ function initPostProcessing() {
       uFlight: { value: 0 },
       uEntryHeat: { value: 0 },
       uPixelate: { value: 0 },
+      uFadeOut: { value: 1 },
     },
     vertexShader: fullscreenVertexShader,
     fragmentShader: `
@@ -651,6 +720,7 @@ function initPostProcessing() {
       uniform float uFlight;
       uniform float uEntryHeat;
       uniform float uPixelate;
+      uniform float uFadeOut;
       varying vec2 vUv;
 
       // Narkowicz ACES approximation, the usual filmic curve for this look.
@@ -697,8 +767,16 @@ function initPostProcessing() {
         #ifdef USE_BLOOM
           vec3 bloom = texture2D(tBloom, distorted).rgb;
           vec3 streak = texture2D(tStreak, distorted).rgb;
-          color += bloom * uBloomStrength * (1.0 + uFlight * 0.5);
-          color += streak * vec3(0.55, 0.78, 1.0) * uStreakStrength * (1.0 + uFlight);
+          // Both come from blurred buffers, so they smear straight across the
+          // quantisation and leave the frame looking merely out of focus. They
+          // retire as the grid closes in, which is what lets the blocks read.
+          // The same applies once Earth fills the frame: a bright-pass bloom is
+          // built for point highlights against sky, and turns a sunlit cloud
+          // deck spanning every pixel into flat haze. uEntryHeat already tracks
+          // exactly that stretch of the descent.
+          float optics = (1.0 - uPixelate) * (1.0 - uEntryHeat * 0.62);
+          color += bloom * uBloomStrength * (1.0 + uFlight * 0.5) * optics;
+          color += streak * vec3(0.55, 0.78, 1.0) * uStreakStrength * (1.0 + uFlight) * optics;
         #endif
 
         if (uEntryHeat > 0.0001) {
@@ -731,7 +809,10 @@ function initPostProcessing() {
           color += grain * (1.2 - level * 0.7) * (1.0 - uPixelate);
         }
 
-        gl_FragColor = vec4(max(color, 0.0), 1.0);
+        // The avatar has to land on black. Earth fills the frame edge to edge by
+        // touchdown, so without this the pixel portrait ends up sitting on a
+        // bloomed grey field instead of the empty sky the home page opens on.
+        gl_FragColor = vec4(max(color, 0.0) * uFadeOut, 1.0);
         #include <colorspace_fragment>
       }
     `,
@@ -1349,8 +1430,11 @@ const toStar = new THREE.Vector3();
 const toBody = new THREE.Vector3();
 
 function overlapsOccluder(star) {
-  for (let step = 0; step <= 12; step += 1) {
-    cameraSample.set(0, 0, 8 - (step / 12) * 982);
+  // Stepped over the whole path, run-in included, at roughly the spacing the
+  // shorter path used before it was extended.
+  const steps = 20;
+  for (let step = 0; step <= steps; step += 1) {
+    cameraSample.set(0, 0, journeyStartZ - (step / steps) * (journeyStartZ - journeyEndZ));
     toStar.subVectors(star, cameraSample);
     const starDistance = toStar.length();
 
@@ -1626,6 +1710,9 @@ function addCelestialBody({
   position,
   surface,
   glowColor,
+  // Copy for the targeting card. Registered here so the lock volume can never
+  // drift from the geometry it belongs to.
+  info = null,
   ring = false,
   emissive = 0.03,
   clouds = false,
@@ -1712,6 +1799,7 @@ function addCelestialBody({
   // Recorded so the star field can carve itself out of the volume in front of
   // each body; see addStarLayer.
   occluders.push({ center: new THREE.Vector3(...position), radius: radius * 1.04 });
+  if (info) registerTarget(info, position, radius);
   return group;
 }
 
@@ -1975,6 +2063,8 @@ function addStellarBeacon(position, size, options = {}) {
     photosphereScale = 0.34,
     // Set for stars the flight path passes through rather than approaches.
     fadeRadius = 0,
+    // Only a star with a resolvable disc is worth aiming at; see addCelestialBody.
+    info = null,
     // Distant stars are a pinprick inside a wide halo. A body with a resolvable
     // disc, like the sun, overrides these stops to widen the solid core.
     stops = [
@@ -2046,6 +2136,7 @@ function addStellarBeacon(position, size, options = {}) {
       center: new THREE.Vector3(...position),
       radius: size * photosphereScale * 0.5,
     });
+    if (info) registerTarget(info, position, size * photosphereScale * 0.5);
     // Deliberately not an eco-dimmed sprite: fading the surface would let the
     // halo bleed through and wash the sunspots out.
     scene.add(disc);
@@ -2129,6 +2220,14 @@ async function buildScene() {
       [238, 226, 200],
     ]),
     glowColor: "#ffc77c",
+    // The one invented world on the route, so its readout quotes the geometry it
+    // is actually built from rather than a measurement it cannot have.
+    info: {
+      name: "HALCYON",
+      kind: "RINGED GIANT",
+      stat: "RING SPAN 2.3 R",
+      note: "环系由冰屑与尘埃组成，绕行一周需要十一个小时。",
+    },
     ring: true,
     emissive: 0.03,
     atmosphereIntensity: 0.62,
@@ -2155,6 +2254,12 @@ async function buildScene() {
         [228, 212, 182],
       ]),
     glowColor: "#ffd6a4",
+    info: {
+      name: "JUPITER",
+      kind: "GAS GIANT",
+      stat: "R 69,911 KM",
+      note: "太阳系最大的行星，大红斑风暴至少已经刮了三百年。",
+    },
     emissive: 0.02,
     atmosphereIntensity: 0.5,
     atmosphereThickness: 3.6,
@@ -2177,6 +2282,12 @@ async function buildScene() {
         [226, 176, 148],
       ]),
     glowColor: "#ff9f6b",
+    info: {
+      name: "MARS",
+      kind: "TERRESTRIAL",
+      stat: "R 3,390 KM",
+      note: "奥林帕斯山高约 22 公里，是已知最高的行星火山。",
+    },
     emissive: 0.02,
     atmosphereIntensity: 0.3,
     atmosphereThickness: 4.2,
@@ -2201,6 +2312,12 @@ async function buildScene() {
         [232, 230, 224],
       ]),
     glowColor: "#dce7ef",
+    info: {
+      name: "LUNA",
+      kind: "NATURAL SATELLITE",
+      stat: "R 1,737 KM",
+      note: "被潮汐锁定，永远只以同一面朝向地球。",
+    },
     atmosphereIntensity: 0.16,
     atmosphereThickness: 4.6,
     rotationSpeed: 0.0004,
@@ -2213,6 +2330,12 @@ async function buildScene() {
     position: [0, 0, -1048],
     surface: surfaces.earth ?? createPlanetSurface("earth", 1984),
     glowColor: "#4fc7ff",
+    info: {
+      name: "EARTH",
+      kind: "HOME · DESTINATION",
+      stat: "R 6,371 KM",
+      note: "目前唯一确认存在生命的世界，也是这趟航程的终点。",
+    },
     emissive: 0.015,
     clouds: true,
     atmosphereIntensity: 0.8,
@@ -2254,6 +2377,12 @@ async function buildScene() {
         [1, "rgba(255,204,155,0)"],
       ],
       photosphere: surfaces.sun,
+      info: {
+        name: "SOL",
+        kind: "G2V MAIN SEQUENCE",
+        stat: "R 696,340 KM",
+        note: "光球层约 5,800 K，地球上每一份光与热都来自这里。",
+      },
       // Sized so the disc ends exactly where the corona stops above starts to
       // fall away. At a third of this it was 40 px of screen and bloom turned
       // the granulation and sunspots into a featureless white ball.
@@ -2275,6 +2404,14 @@ async function buildScene() {
     starLayers[starLayers.length - 1].userData.optional = true;
   }
   addStarLayer(profile.stars[1], 1500, 1.05, "#f0f6ff", 173, { near: -1180, far: -1750 });
+  // The run-in crosses empty sky, which is the point, but with nothing close
+  // enough to shift against the camera it reads as a still frame for a quarter
+  // of the flight. A third of the corridor's count over twice its spread gives
+  // the parallax back without filling the emptiness in.
+  addStarLayer(Math.round(profile.stars[0] / 3), 1350, 0.86, "#eaf1ff", 229, {
+    near: journeyStartZ + 140,
+    far: 60,
+  });
 
   const keyLight = new THREE.DirectionalLight("#fff2dc", 4.2);
   keyLight.position.copy(sunDirection).multiplyScalar(100);
@@ -2318,9 +2455,12 @@ function initRenderer() {
     compactDevice ? 66 : 58,
     window.innerWidth / window.innerHeight,
     0.1,
-    1800,
+    // Far enough to hold the backdrop star layer from the new start point. Star
+    // materials carry no fog, so anything the frustum cuts there would visibly
+    // pop in rather than fade up as the ship closes.
+    2500,
   );
-  camera.position.set(0, 0, 8);
+  camera.position.set(0, 0, journeyStartZ);
   scene.add(camera);
   clock = new THREE.Clock();
   updateQualityUi();
@@ -2412,7 +2552,7 @@ function launch() {
 }
 
 function replay() {
-  camera.position.set(0, 0, 8);
+  camera.position.set(0, 0, journeyStartZ);
   camera.rotation.set(0, 0, 0);
   resetCameraView();
   flightProgress = 0;
@@ -2424,9 +2564,13 @@ function replay() {
     bar.row.classList.remove("is-warn", "is-critical");
   });
   if (warpLines) warpLines.material.opacity = 0;
+  clearLock();
+  lensZoom = 1;
+  applyCameraLens();
   if (compositeMaterial) {
     compositeMaterial.uniforms.uPixelate.value = 0;
     compositeMaterial.uniforms.uEntryHeat.value = 0;
+    compositeMaterial.uniforms.uFadeOut.value = 1;
   }
   state = "idle";
   window.setTimeout(launch, 500);
@@ -2439,6 +2583,7 @@ function beginEarthReturn() {
   statusLabel.textContent = "已抵达地球 · 正在同步主页";
   experience.classList.add("is-returning");
   experience.classList.remove("is-camera-dragging");
+  clearLock();
   isCameraDragging = false;
   yawVelocity = 0;
   pitchVelocity = 0;
@@ -2465,8 +2610,18 @@ function updateJourney(progress, now) {
   // The cruise easing is already decelerating by the time Earth fills the frame,
   // so the descent contributes its own accelerating term. Without it the last
   // three seconds park in orbit and the "atmospheric entry" callout has nothing
-  // behind it. It ends 15 units clear of the atmosphere shell at radius * 1.035.
-  camera.position.z = 8 - eased * 982 - entry * entry * entry * 21;
+  // behind it. This ends 46 units from Earth's centre, which projects the disc
+  // half again as wide as the old 21-unit push did and leaves under 7 units of
+  // clearance over the atmosphere shell at radius * 1.035 — the shell is
+  // front-facing, so crossing it would pop the glow inside out.
+  // The run-in decays over the first quarter while the cruise easing is still
+  // ramping up, so the two overlap and the flight still opens from a standstill
+  // the way the launch portal implies. Smoothstep rather than the cubic used for
+  // the cruise: it covers the same ground at half the peak speed, and the cubic
+  // made the ship charge the corridor at five times its cruising rate and then
+  // stand on the brakes.
+  const runIn = approachDistance * (1 - THREE.MathUtils.smoothstep(progress, 0, 0.25));
+  camera.position.z = 8 + runIn - eased * 982 - entry * entry * entry * 29.5;
   camera.position.x = Math.sin(progress * Math.PI * 5.2) * (1.3 + progress * 1.4) * (1 - landingBlend);
   camera.position.y = Math.sin(progress * Math.PI * 3.1) * 1.25 * (1 - landingBlend);
 
@@ -2600,7 +2755,20 @@ function updateHandoff(now) {
   const seconds = (now - handoffStartedAt) / 1000;
   const handoff = THREE.MathUtils.smoothstep(seconds, 0, 1.25);
   compositeMaterial.uniforms.uPixelate.value = handoff;
-  compositeMaterial.uniforms.uEntryHeat.value = Math.max(0, 1 - handoff * 0.9);
+  // The burn clears well before the quantisation finishes, so the blocks Earth
+  // breaks into are legible rather than buried under the glare.
+  compositeMaterial.uniforms.uEntryHeat.value = Math.max(0, 1 - handoff * 1.7);
+  // Earth is inside the frame edges by now, so what is left of it is a patch of
+  // cloud rather than a planet, and holding on it reads as a stall. Darkening
+  // early gives the pixel globe something to resolve out of instead.
+  compositeMaterial.uniforms.uFadeOut.value = 1 - THREE.MathUtils.smoothstep(seconds, 0.5, 1.45);
+
+  // Earth cannot be dollied into any further without crossing the atmosphere
+  // shell, so the last of the approach comes from the lens instead. The point is
+  // that the planet is still growing at the moment the avatar takes over: a
+  // frozen frame underneath makes the swap read as a cut to a different image.
+  lensZoom = 1 - 0.28 * THREE.MathUtils.smoothstep(seconds, 0, 1.4);
+  applyCameraLens();
 
   // Buffeting bleeds off rather than cutting, so the ship settles as it lands.
   const buffet = Math.max(0, 1 - seconds / 1.6) * 0.5;
@@ -2650,17 +2818,27 @@ function animate(now) {
     updateHandoff(now);
   }
 
+  // After the render, so the crosshair is tested against the same camera matrix
+  // the frame was actually drawn with.
   renderCinematicFrame();
+  updateTargeting();
   monitorPerformance(now);
   frameId = requestAnimationFrame(animate);
+}
+
+// Narrow viewports need the wider lens to keep Earth and the cockpit frame in
+// the same shot. lensZoom rides on top of it so the hand-off punch survives a
+// resize instead of being reset to the base focal length mid-move.
+function applyCameraLens() {
+  camera.fov = (window.innerWidth <= 700 ? 66 : 58) * lensZoom;
+  camera.updateProjectionMatrix();
 }
 
 function onResize() {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.fov = window.innerWidth <= 700 ? 66 : 58;
-    camera.updateProjectionMatrix();
+    applyCameraLens();
     applyViewportResolution({ force: true });
   });
 }

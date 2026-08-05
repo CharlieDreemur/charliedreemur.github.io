@@ -25,8 +25,6 @@
       <div class="cinema-bars" aria-hidden="true"></div>
 
       <div class="cockpit" aria-hidden="true">
-        <div class="cockpit__hull"></div>
-        <div class="cockpit__rim"></div>
         <div class="cockpit__pillar cockpit__pillar--left">
           <i class="cockpit__seam"></i>
           <i class="cockpit__rivets"></i>
@@ -152,6 +150,14 @@
           </div>
         </div>
 
+        <div class="target" id="target" aria-live="polite">
+          <i class="target__lock" aria-hidden="true"></i>
+          <strong id="target-name"></strong>
+          <span id="target-kind"></span>
+          <b id="target-stat"></b>
+          <em id="target-note"></em>
+        </div>
+
         <div class="camera-hint" aria-hidden="true">
           <span class="camera-hint__mouse"></span>
           <span>左键拖拽观察 · 双击归中</span>
@@ -165,8 +171,7 @@
 
         <div class="tape" aria-label="旅程进度" aria-hidden="true">
           <div class="tape__head">
-            <span>TRAJECTORY</span>
-            <span>DEEP SPACE — EARTH</span>
+            <span>TRAJECTORY · DEEP SPACE — EARTH</span>
           </div>
           <div class="tape__marks" id="tape-marks"></div>
           <div class="tape__rail">
@@ -177,9 +182,7 @@
       </section>
 
       <section id="earth-return" class="earth-return" aria-live="polite">
-        <div class="earth-return__horizon" aria-hidden="true"></div>
         <div class="earth-return__avatar">
-          <span></span>
           <img src="../images/github_avatar.png" alt="Charlie 的地球头像">
         </div>
         <div class="earth-return__copy">
