@@ -197,7 +197,7 @@ a:focus-visible {
    off the screen, leaving a gap to see through, and its bottom arc finishes
    behind the dash instead of floating across open sky. */
 :root {
-  --canopy: 64% 92% at 50% 40%;
+  --canopy: 53% 90% at 50% 39%;
   --canopy-edge: 60%;
 }
 
@@ -205,11 +205,12 @@ a:focus-visible {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(70% 46% at 50% 104%, rgba(112, 196, 238, 0.2), transparent 62%),
-    radial-gradient(96% 48% at 50% -4%, rgba(146, 192, 226, 0.18), transparent 64%),
-    linear-gradient(180deg, #27323f 0%, #1d2734 22%, #141d28 48%, #0c131b 78%, #06090f 100%);
-  -webkit-mask: radial-gradient(var(--canopy), transparent 0 var(--canopy-edge), rgba(0, 0, 0, 0.9) 68%, #000 76%);
-  mask: radial-gradient(var(--canopy), transparent 0 var(--canopy-edge), rgba(0, 0, 0, 0.9) 68%, #000 76%);
+    radial-gradient(var(--canopy), transparent 0 60%, rgba(150, 208, 240, 0.4) 63%, rgba(80, 122, 152, 0.16) 70%, transparent 82%),
+    radial-gradient(70% 46% at 50% 104%, rgba(112, 196, 238, 0.24), transparent 62%),
+    radial-gradient(96% 48% at 50% -4%, rgba(160, 204, 236, 0.24), transparent 64%),
+    linear-gradient(180deg, #303c4a 0%, #232e3c 20%, #18222e 46%, #0f1620 74%, #070b12 100%);
+  -webkit-mask: radial-gradient(var(--canopy), transparent 0 var(--canopy-edge), rgba(0, 0, 0, 0.92) 66%, #000 73%);
+  mask: radial-gradient(var(--canopy), transparent 0 var(--canopy-edge), rgba(0, 0, 0, 0.92) 66%, #000 73%);
 }
 
 .cockpit__hull::after {
@@ -217,8 +218,8 @@ a:focus-visible {
   inset: 0;
   content: "";
   background-image:
-    repeating-linear-gradient(90deg, rgba(163, 214, 240, 0.07) 0 1px, transparent 1px 84px),
-    repeating-linear-gradient(0deg, rgba(163, 214, 240, 0.05) 0 1px, transparent 1px 118px);
+    repeating-linear-gradient(90deg, rgba(178, 224, 248, 0.075) 0 1px, transparent 1px 78px),
+    repeating-linear-gradient(0deg, rgba(178, 224, 248, 0.055) 0 1px, transparent 1px 110px);
 }
 
 /* Lit bevel where the hull meets the glass, plus the soft bounce just inside it. */
@@ -227,8 +228,8 @@ a:focus-visible {
   inset: 0;
   mix-blend-mode: screen;
   background:
-    radial-gradient(var(--canopy), transparent 0 59.2%, rgba(184, 238, 255, 0.42) 60.4%, transparent 61.8%),
-    radial-gradient(var(--canopy), transparent 0 61%, rgba(86, 170, 214, 0.22) 66%, transparent 76%);
+    radial-gradient(var(--canopy), transparent 0 59.3%, rgba(196, 242, 255, 0.5) 60.4%, transparent 61.6%),
+    radial-gradient(var(--canopy), transparent 0 61%, rgba(92, 178, 220, 0.26) 65%, transparent 74%);
 }
 
 /* Structural ribs sitting on the hull, angled with the canopy taper. */
