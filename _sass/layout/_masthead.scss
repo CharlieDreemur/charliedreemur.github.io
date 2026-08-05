@@ -68,32 +68,25 @@
 }
 
 .masthead__brand {
+  --brand-mark-size: 2.65rem;
+
+  position: relative;
   display: inline-flex !important;
   align-items: center;
   gap: 0.7rem;
   padding: 0.15rem 0 !important;
   line-height: 1;
-
-  &:hover {
-    .masthead__brand-mark {
-      transform: translateY(-1px) rotate(-4deg);
-      box-shadow:
-        0 0 0 3px var(--global-bg-color),
-        0 0 0 5px var(--global-masthead-link-color-hover),
-        0 7px 18px rgba(#14262d, 0.2);
-    }
-
-    .masthead__brand-copy strong {
-      color: var(--global-masthead-link-color-hover);
-    }
-  }
 }
 
-.masthead__brand-mark {
+/* Selector is scoped to .masthead__brand so it outranks `.greedy-nav a`, which
+   would otherwise force display: block plus its own margin and padding. */
+.masthead__brand .masthead__brand-mark {
   display: grid;
-  width: 2.65rem;
-  height: 2.65rem;
-  flex: 0 0 2.65rem;
+  margin: 0;
+  padding: 0;
+  width: var(--brand-mark-size);
+  height: var(--brand-mark-size);
+  flex: 0 0 var(--brand-mark-size);
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
@@ -112,6 +105,182 @@
     object-fit: contain;
     image-rendering: pixelated;
   }
+}
+
+.greedy-nav .visible-links .masthead__brand-mark::before {
+  content: none;
+}
+
+.masthead__brand .masthead__brand-mark:hover,
+.masthead__brand .masthead__brand-mark:focus-visible {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 3px var(--global-bg-color),
+    0 0 0 5px var(--global-masthead-link-color-hover),
+    0 7px 18px rgba(#14262d, 0.2);
+}
+
+.masthead__space-launch {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+
+  &.is-holding {
+    transform: scale(0.96) !important;
+    box-shadow:
+      0 0 0 3px var(--global-bg-color),
+      0 0 0 5px var(--global-masthead-link-color-hover),
+      0 0 22px rgba(#33d6ff, 0.48) !important;
+  }
+
+  &.is-holding.is-gravity-active {
+    filter: brightness(1.12) saturate(1.25);
+    animation: masthead-gravity-well 720ms ease-in-out infinite;
+
+    img {
+      animation: masthead-earth-charge 2.4s linear infinite;
+    }
+  }
+
+  &.is-unlocked {
+    transform: scale(1.08) !important;
+    box-shadow:
+      0 0 0 3px var(--global-bg-color),
+      0 0 0 5px #8fffc1,
+      0 0 28px rgba(#8fffc1, 0.62) !important;
+  }
+
+  &.is-centering {
+    position: relative;
+    z-index: 40;
+    transform: translate(var(--launch-center-x), var(--launch-center-y)) scale(2.1) !important;
+    box-shadow:
+      0 0 0 3px var(--global-bg-color),
+      0 0 0 5px #8fffc1,
+      0 0 42px rgba(#33d6ff, 0.8) !important;
+    transition:
+      transform 900ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 320ms ease;
+  }
+}
+
+.masthead__space-launch.is-gravity-active ~ .masthead__launch-progress {
+  filter: drop-shadow(0 0 0.55rem rgba(#33d6ff, 0.9));
+  animation: masthead-gravity-ring 720ms ease-in-out infinite;
+}
+
+@keyframes masthead-gravity-well {
+  0%,
+  100% {
+    filter: brightness(1.05) saturate(1.15) drop-shadow(0 0 0.15rem rgba(#33d6ff, 0.55));
+  }
+
+  50% {
+    filter: brightness(1.3) saturate(1.5) drop-shadow(0 0 0.75rem rgba(#33d6ff, 0.95));
+  }
+}
+
+@keyframes masthead-earth-charge {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes masthead-gravity-ring {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .masthead__space-launch.is-centering {
+    transition-duration: 220ms;
+  }
+
+  .masthead__space-launch.is-gravity-active,
+  .masthead__space-launch.is-gravity-active img,
+  .masthead__space-launch.is-gravity-active ~ .masthead__launch-progress {
+    animation: none;
+  }
+}
+
+.masthead__launch-progress {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: -0.42rem;
+  width: calc(var(--brand-mark-size) + 0.84rem);
+  height: calc(var(--brand-mark-size) + 0.84rem);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) rotate(-90deg);
+  transition: opacity 160ms ease;
+
+  circle {
+    fill: none;
+    stroke-width: 3;
+  }
+}
+
+.masthead__space-launch.is-holding ~ .masthead__launch-progress,
+.masthead__space-launch.is-unlocked ~ .masthead__launch-progress {
+  opacity: 1;
+}
+
+.masthead__launch-track {
+  stroke: rgba(#d9f8ff, 0.3);
+}
+
+.masthead__launch-value {
+  stroke: #26d9ff;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(#26d9ff, 1));
+}
+
+.masthead__launch-hint {
+  visibility: hidden;
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.65rem);
+  left: 0;
+  padding: 0.42rem 0.6rem;
+  border: 1px solid var(--global-border-color);
+  border-radius: 0.25rem;
+  background: var(--global-bg-color);
+  box-shadow: 0 8px 24px rgba(#0d2028, 0.16);
+  color: var(--global-text-color-light);
+  font-family: $monospace;
+  font-size: 0.52rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.25rem);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
+}
+
+.masthead__space-launch:hover ~ .masthead__launch-hint,
+.masthead__space-launch:focus-visible ~ .masthead__launch-hint,
+.masthead__space-launch.is-holding ~ .masthead__launch-hint,
+.masthead__space-launch.is-unlocked ~ .masthead__launch-hint {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .masthead__brand-copy {
@@ -142,7 +311,7 @@
   }
 }
 
-.masthead__menu-item.selected a {
+.masthead__menu-item.selected a:not(.masthead__brand-mark) {
   color: var(--global-text-color);
   font-weight: 700;
   border-bottom: 2px solid var(--global-text-color);
@@ -163,7 +332,7 @@
   }
 }
 
-.masthead__menu-item.selected a:hover {
+.masthead__menu-item.selected a:not(.masthead__brand-mark):hover {
   color: var(--global-text-color);
   border-bottom: 2px solid var(--global-text-color);
   /* No need to repeat pointer-events and cursor here */
@@ -174,14 +343,12 @@
     display: none;
   }
 
-  .masthead__brand-mark {
-    width: 2.35rem;
-    height: 2.35rem;
-    flex-basis: 2.35rem;
+  .masthead__brand {
+    --brand-mark-size: 2.35rem;
+  }
 
-    img {
-      width: 2rem;
-      height: 2rem;
-    }
+  .masthead__brand .masthead__brand-mark img {
+    width: 2rem;
+    height: 2rem;
   }
 }

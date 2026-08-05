@@ -14,3 +14,6 @@
 
 <!-- For all browsers -->
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+{% if site.space_journey.enabled %}
+<link rel="stylesheet" href="{{ base_path }}/space-journey/launcher.css?v={{ site.time | date: '%s' }}">
+{% endif %}

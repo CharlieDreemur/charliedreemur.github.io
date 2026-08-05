@@ -41,7 +41,24 @@ My research interests center on LLM agents, especially next-generation AI agents
 
 Beyond research, I am a passoinate indie game developer, feel free to check my game work on the [game page](/game/). I am also willing to discuss the future of AI X Game.
 
+{% if site.space_journey.enabled %}
+<aside class="home-easter-egg-hint" aria-label="Easter egg hint">
+  <span class="home-easter-egg-hint__icon" aria-hidden="true">🌍</span>
+  <span><strong>Psst&hellip; a hidden journey awaits.</strong> Hold the Earth logo in the top-left corner for 5 seconds.</span>
+</aside>
+{% endif %}
+
 {% include experience-cards.html %}
+
+<div class="home-callout" markdown="1">
+
+## Cooperate With Me
+<!-- 
+I keep a running list of research ideas on [Idea Planet](https://lead-cardamom-96f.notion.site/Dreeu2mr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link). -->
+
+Feel free to reach me via [email](mailto:zhangwj.charlie@gmail.com) or [LinkedIn](https://www.linkedin.com/in/weijia-charlie-zhang/).
+
+</div>
 
 <div class="home-schedule-panel">
   <div class="home-schedule-panel__header">
@@ -67,14 +84,4 @@ Beyond research, I am a passoinate indie game developer, feel free to check my g
     </a>
     <a class="home-schedule-panel__link" href="{{ schedule_view_embed_url }}" target="_blank" rel="noopener">Open full view</a>
   </div>
-</div>
-
-<div class="home-callout" markdown="1">
-
-## Cooperate With Me
-<!-- 
-I keep a running list of research ideas on [Idea Planet](https://lead-cardamom-96f.notion.site/Dreeu2mr-s-Idea-Planet-21752d1a5d76802da492e3d5d6a6be53?source=copy_link). -->
-
-Feel free to reach me via [email](mailto:zhangwj.charlie@gmail.com) or [LinkedIn](https://www.linkedin.com/in/weijia-charlie-zhang/).
-
 </div>

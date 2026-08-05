@@ -18,6 +18,12 @@ url                      : https://charliedreemur.github.io # The base hostname 
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "CharlieDreemur/CharlieDreemur.github.io"
 
+# Optional standalone experience. Set enabled to false to restore the original
+# avatar behavior without loading any of the space journey's CSS or JavaScript.
+space_journey:
+  enabled                 : true
+  url                     : "/space-journey/"
+
 # Site Author - The following control what appear as part of the author content on the side bar.
 #               If a field is blank the icon and link will not appear, otherwise it will be shown.
 #               Additional customization can be done by editing /_includes/author-profile.html
@@ -194,6 +200,7 @@ exclude:
   - log
   - node_modules
   - package.json*
+  - space-journey/tools
   - Rakefile
   - README
   - old_personal_website
