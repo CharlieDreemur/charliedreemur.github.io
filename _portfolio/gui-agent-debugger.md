@@ -4,6 +4,7 @@ excerpt: "Self-evolving VLM-agent debugging framework with a GUI-agent error tax
 collection: portfolio
 permalink: /projects/gui-agent-debugger/
 date: 2026-01-01
+paperurl: "https://arxiv.org/abs/2608.02643"
 showcase_group: agent-systems
 badge: "First Author · Lead"
 date_label: "Jan 2026 – Present"
