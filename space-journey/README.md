@@ -125,6 +125,37 @@ they are built after the planets so the occluder list is complete. The nebulae
 are billboards, which cannot be flown through, so each one dissolves as the
 camera closes in rather than washing out whatever lies beyond it.
 
+Each star carries its own magnitude and colour temperature, because a field drawn
+at one size and one colour reads as noise. A tenth of them also pulse; the rest
+are a separate draw with the animation compiled out. Nothing out here has air for
+a star to twinkle through, so the pulse is a lens conceit and is kept small — a
+seventh of the field pulsing hard enough to change its own point size looked like
+static across the whole backdrop. The size modulation is what did most of that
+damage: these sprites are a few pixels across, so scaling one snaps it between
+whole pixels of coverage and it blinks rather than shimmers. Point size is now
+fixed and brightness alone carries the pulse.
+
+None of that was what the field's fast shimmer actually was, though. The pulse
+runs a roughly four-second cycle, far too slow to read as flicker, and compiling
+it out entirely changes the frame-to-frame variation of the empty sky by nothing
+measurable. The shimmer is a rasterisation artefact. Point sprites here are a
+pixel or less across — the faint majority are well under one pixel once the 0.67
+render scale is applied, and the driver floors them at a single pixel — so a star
+does not slide across the screen, it jumps from one pixel to the next as it
+drifts, at frame rate. Removing the render scale cut the variation from 34% to
+26% and halved the number of pixels changing between frames; removing the
+sharpening upscale on top of it reached 12%.
+
+Neither is worth giving up, so the sprites are widened to a two-pixel floor
+instead and dimmed by the area they gain, which leaves the same light in the
+frame but enough footprint to interpolate across as it moves. That reaches the
+same 9% variation as dropping both passes would, at unchanged total star light
+and a starfield that measures within 2% of its previous brightness. The
+compensation is held above a floor so the faintest stars widen rather than being
+extinguished. The galaxy points take the same treatment for the same reason, and
+need it more: they carry a permanent sub-pixel drift of their own, which without
+this turns into a standing flicker across the whole arm.
+
 The galaxy is two arms, as in a grand-design spiral, on a logarithmic winding
 that turns about three quarters from core to rim. It was five arms on a fixed
 angle-per-unit-radius — an Archimedean spiral, not the shape a galaxy forms — and

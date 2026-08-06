@@ -2191,6 +2191,9 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
     uniforms: {
       uColor: { value: new THREE.Color(color) },
       uSize: { value: size * renderer.getPixelRatio() },
+      // In pixels of the render target the stars are rasterised into, which is
+      // not the canvas: see the widening in the vertex shader.
+      uMinSize: { value: 2 },
       uTime: frameUniforms.time,
       uFade: { value: 1 },
     },
@@ -2199,6 +2202,7 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
       attribute float aMagnitude;
       attribute float aTemperature;
       uniform float uSize;
+      uniform float uMinSize;
       uniform float uTime;
       varying float vBrightness;
       varying float vGlint;
@@ -2209,7 +2213,7 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
         #ifdef STATIC_STARS
           float pulse = 0.86;
         #else
-          float pulse = 0.86 + 0.14 * sin(uTime * (0.7 + aTwinkle) + aTwinkle * 31.4);
+          float pulse = 0.86 + 0.07 * sin(uTime * (0.7 + aTwinkle) + aTwinkle * 31.4);
         #endif
         // Faint stars are dim as well as small; size alone reads as a resolution
         // artefact rather than distance.
@@ -2225,7 +2229,28 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
           ? mix(cool, neutral, aTemperature * 2.0)
           : mix(neutral, warm, (aTemperature - 0.5) * 2.0);
 
-        gl_PointSize = uSize * aMagnitude * pulse * clamp(260.0 / -viewPosition.z, 0.55, 3.2);
+        // Deliberately not scaled by the pulse. These sprites are only a few
+        // pixels across, so scaling one snaps it between whole pixels of
+        // coverage and the star reads as a hard blink rather than a shimmer —
+        // that size step, not the brightness, was carrying most of what the
+        // twinkle looked like. The constant is the pulse's own centre, so every
+        // star keeps the size it had.
+        float pointSize = uSize * aMagnitude * 0.86 * clamp(260.0 / -viewPosition.z, 0.55, 3.2);
+
+        // A sprite narrower than about two pixels cannot drift smoothly: its
+        // coverage snaps from one pixel to the next and the star flickers at
+        // frame rate, which is far faster and harsher than any twinkle and was
+        // what the field's shimmer actually was. Most of the field sits under
+        // that width, because the scene rasterises at two thirds of the output
+        // resolution and the faint majority are well below a pixel there — the
+        // driver floors them at one, so they render as a single hard pixel that
+        // jumps. Widening the sprite gives it enough footprint to interpolate
+        // across instead. Dimming it by the area it gains keeps the same light
+        // in the frame, held above a floor so the faintest stars widen without
+        // being extinguished.
+        float widened = max(pointSize, uMinSize);
+        vBrightness *= max((pointSize * pointSize) / (widened * widened), 0.24);
+        gl_PointSize = widened;
         gl_Position = projectionMatrix * viewPosition;
       }
     `,
@@ -2276,7 +2301,11 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
   const bucketCounts = new Uint32Array(sliceCount * 2);
   const sliceFor = (z) =>
     Math.min(sliceCount - 1, Math.max(0, Math.floor(((depth.near - z) / depthSpan) * sliceCount)));
-  const bucketFor = (index) => sliceFor(positions[index * 3 + 2]) * 2 + (twinkle[index] >= 0.8 ? 1 : 0);
+  // Threshold on how large a share of the field animates at all. There is no air
+  // out here for a star to twinkle through, so this is a lens conceit rather
+  // than an observation, and a fifth of the sky doing it at once was enough to
+  // read as noise across the whole backdrop.
+  const bucketFor = (index) => sliceFor(positions[index * 3 + 2]) * 2 + (twinkle[index] >= 0.9 ? 1 : 0);
 
   for (let index = 0; index < written; index += 1) {
     bucketCounts[bucketFor(index)] += 1;
@@ -2862,7 +2891,14 @@ function addSpiralGalaxy(centerZ) {
           cos(uTime * 0.13 + position.x * 0.03)
         ) * 0.16;
         vec4 viewPosition = modelViewMatrix * vec4(animatedPosition, 1.0);
-        gl_PointSize = aSize * uPixelRatio * clamp(290.0 / -viewPosition.z, 0.55, 4.5);
+        // Widened and dimmed for the same reason as the star layers: below a
+        // couple of pixels a sprite's coverage snaps between pixels instead of
+        // sliding, which the drift above would otherwise turn into a permanent
+        // frame-rate flicker across the whole arm.
+        float pointSize = aSize * uPixelRatio * clamp(290.0 / -viewPosition.z, 0.55, 4.5);
+        float widened = max(pointSize, 2.0);
+        vColor *= max((pointSize * pointSize) / (widened * widened), 0.24);
+        gl_PointSize = widened;
         gl_Position = projectionMatrix * viewPosition;
       }
     `,
