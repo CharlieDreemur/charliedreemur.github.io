@@ -119,6 +119,13 @@ const DISC_CROP_MARGIN = 1.04;
 // How far the prominences reach past the limb, in solar radii.
 const PROMINENCE_REACH = 1.75;
 
+// Multiplier on how far each flyby body sits from the flight axis. The corridor
+// runs down x = y = 0, so this only opens the bodies out sideways and leaves the
+// pacing — which is set by their depth — untouched. Earth is the destination and
+// stays on the axis regardless.
+const LATERAL_SPREAD = 1.2;
+const offAxis = (x, y, z) => [x * LATERAL_SPREAD, y * LATERAL_SPREAD, z];
+
 // Kept well off the flight axis so every body shows a terminator instead of flat front lighting.
 const sunDirection = new THREE.Vector3(-0.78, 0.36, 0.36).normalize();
 const sunUniform = { value: sunDirection };
@@ -2677,7 +2684,7 @@ async function buildScene() {
     radius: 78,
     // Below the flight axis on purpose: the sun sits up and to the left, and at
     // this size the planet and its rings eclipse it for the whole first half.
-    position: [-302, -148, -648],
+    position: offAxis(-302, -148, -648),
     // Saturn's belts are far lower contrast than Jupiter's; a dark end near
     // black turns the zonal banding into humbug stripes.
     surface: createPlanetSurface("gas", 8, [
@@ -2709,7 +2716,7 @@ async function buildScene() {
   // so it swells to fill most of the frame before falling behind.
   addCelestialBody({
     radius: 118,
-    position: [204, -54, -430],
+    position: offAxis(204, -54, -430),
     surface:
       surfaces.jupiter ??
       createPlanetSurface("gas", 17, [
@@ -2737,7 +2744,7 @@ async function buildScene() {
   setLoading(64, "RENDERING THE RED PLANET…");
   addCelestialBody({
     radius: 30,
-    position: [-149, -66, -742],
+    position: offAxis(-149, -66, -742),
     surface:
       surfaces.mars ??
       createPlanetSurface("rock", 29, [
@@ -2760,14 +2767,14 @@ async function buildScene() {
     seed: 29,
   });
 
-  addAsteroidBelt([31, 4, -812], 34, 96, 613);
+  addAsteroidBelt(offAxis(31, 4, -812), 34, 96, 613);
   await nextFrame();
 
   setLoading(74, "RECEIVING EARTH IMAGERY…");
 
   addCelestialBody({
     radius: 16,
-    position: [168, -48, -930],
+    position: offAxis(168, -48, -930),
     surface:
       surfaces.moon ??
       createPlanetSurface("rock", 2, [
@@ -2822,7 +2829,10 @@ async function buildScene() {
   const sunDistance = 420;
   addStellarBeacon(
     [sunDirection.x * sunDistance, sunDirection.y * sunDistance, -1048 + sunDirection.z * sunDistance],
-    260,
+    // Everything about the star is expressed as a fraction of this — corona,
+    // photosphere, prominence reach, occluder — so growing it here keeps all the
+    // ratios those were calibrated against.
+    325,
     {
       // Keep the unresolved core white; the resolved disc below uses NASA's
       // red-orange AIA 304 Å data so its surface and eruptions remain visible.

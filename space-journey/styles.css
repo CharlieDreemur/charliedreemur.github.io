@@ -1880,14 +1880,21 @@ html:-webkit-full-screen #space-canvas {
 
 /* ---------------------------------------------------------------- loader */
 
+/* The launch transition centres the masthead Earth in the viewport and fires its
+   white burst on that exact point, so the badge is pinned there instead of being
+   centred as one item of the column. Centring the column puts the avatar most of
+   a hundred pixels higher, and since it is the same picture on both sides of the
+   navigation, that gap reads as the Earth jumping out from under the explosion.
+   The readouts hang below the badge, half its height plus the column gap down. */
 .loader {
   position: fixed;
   z-index: 100;
   inset: 0;
   display: grid;
-  place-content: center;
+  align-content: start;
   justify-items: center;
   gap: 1.3rem;
+  padding-top: calc(50vh + 5.05rem);
   background: #02040b;
   transition: opacity 0.9s ease, visibility 0.9s;
 }
@@ -1898,11 +1905,14 @@ html:-webkit-full-screen #space-canvas {
 }
 
 .loader__badge {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
   display: grid;
   width: 7.5rem;
   aspect-ratio: 1;
   place-items: center;
+  translate: -50% -50%;
 }
 
 .loader__badge i {
@@ -1914,8 +1924,9 @@ html:-webkit-full-screen #space-canvas {
   animation: loader-spin 2.6s linear infinite;
 }
 
+/* 2.1x the 2.25rem masthead avatar, which is the scale the launch leaves it at. */
 .loader__badge img {
-  width: 4.2rem;
+  width: 4.72rem;
   filter: drop-shadow(0 0 20px rgba(105, 219, 255, 0.45));
   image-rendering: pixelated;
   animation: loader-float 2.2s ease-in-out infinite;
@@ -2012,6 +2023,23 @@ html:-webkit-full-screen #space-canvas {
 .loader__credit a:hover {
   color: var(--cyan);
   border-bottom-color: rgba(126, 232, 255, 0.5);
+}
+
+/* Not enough height to hang the readouts under a centred badge without pushing
+   the licence credit off the bottom, so the column is centred as a whole again
+   and the match with the launch burst is given up. */
+@media (max-height: 34rem) {
+  .loader {
+    align-content: center;
+    padding-top: 0;
+  }
+
+  .loader__badge {
+    position: relative;
+    top: auto;
+    left: auto;
+    translate: none;
+  }
 }
 
 .fallback {
