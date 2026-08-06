@@ -2951,7 +2951,10 @@ function initRenderer() {
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(getTargetPixelRatio(profile, width, height));
-  renderer.setSize(width, height);
+  // CSS owns the display size (including the fullscreen letterbox). Do not bake
+  // the initial window dimensions into inline canvas styles, or they survive the
+  // fullscreen resize and stretch/crop an otherwise-correct backing buffer.
+  renderer.setSize(width, height, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Scene renders linear into the HDR buffer; tone mapping happens in the composite pass.
   renderer.toneMapping = THREE.NoToneMapping;

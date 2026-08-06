@@ -90,6 +90,14 @@ html:-webkit-full-screen #experience {
   transform: translateZ(0);
 }
 
+html:fullscreen #space-canvas,
+html:-webkit-full-screen #space-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .is-camera-dragging #space-canvas {
   cursor: grabbing;
 }
