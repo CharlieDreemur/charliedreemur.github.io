@@ -34,25 +34,24 @@
   "work": [
     {
       "company": "TikTok",
-      "position": "Research Intern",
+      "position": "Research Scientist Intern, Multimodal LLMs/Agents",
       "startDate": "Jun 2026",
       "endDate": "Present",
       "summary": "Researching self-evolving multimodal agents for content moderation.",
       "highlights": [
-        "Designed a ReAct-based moderation agent that combines frame sampling, ASR/OCR, metadata, originality scoring, and visual detection tools into policy-grounded decisions.",
-        "Built a reflection-and-evolution loop that distills solver failures into reusable skills, improving overall F1 score by 15.5%."
+        "Designed a self-evolving content-moderation agent framework centered on a ReAct agent that autonomously analyzes individual videos using specialized tools for frame sampling, ASR/OCR, metadata extraction, originality scoring, and watermark/celebrity detection; integrated multimodal evidence with policy-grounded reasoning to produce structured moderation decisions.",
+        "Built a self-evolution loop where a Reflector aggregates Solver failures into root-cause attribution reports and an Evolver adds, revises, or merges case-relevant skills to refine the Solver, improving the overall F1 score by 15.5%."
       ]
     },
     {
-      "company": "Microsoft Research Asia, Microsoft",
-      "position": "Research Intern",
+      "company": "Microsoft",
+      "position": "Research Scientist Intern",
       "startDate": "Jul 2025",
       "endDate": "Sep 2025",
-      "summary": "Worked on VLM/LLM agent research to improve Microsoft Excel Copilot capabilities.",
+      "summary": "Conducted LLM research for Microsoft 365 Excel Copilot, focusing on spreadsheet text analysis and Office.js code generation.",
       "highlights": [
-        "Built the TextAnalysisSFT data pipeline for SFT data generation for the new TextAnalysis API in Excel Copilot.",
-        "Mined 2000+ real Kaggle samples, filtered heavy-text sheets, generated queries and Office.js code, and validated outputs with SheetEngine.",
-        "Delivered a dataset that improved Office Script code-generation accuracy by 75%."
+        "Developed the TextAnalysisSFT data pipeline for Excel Copilot's TextAnalysis API: mined 2,000+ real-world examples from Kaggle, filtered text-heavy spreadsheets, generated user queries and Office.js programs, and validated executions with SheetEngine.",
+        "The resulting dataset improved Office Scripts code-generation accuracy by 15%."
       ]
     },
     {

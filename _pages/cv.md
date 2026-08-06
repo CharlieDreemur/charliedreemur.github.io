@@ -26,11 +26,14 @@ Education
 Work Experience
 ======
 
-- Research Intern, Microsoft Research Asia, Microsoft, Jul 2025 - Sep 2025
-  - Worked on VLM/LLM agent research to improve Microsoft Excel Copilot capabilities.
-  - Built the TextAnalysisSFT data pipeline for SFT data generation for the new TextAnalysis API in Excel Copilot.
-  - Mined 2000+ real Kaggle samples, filtered heavy-text sheets, generated queries and Office.js code, and validated outputs with SheetEngine.
-  - Delivered a dataset that improved Office Script code-generation accuracy by 75%.
+- Research Scientist Intern, Multimodal LLMs/Agents, TikTok, Jun 2026 - Present
+  - Designed a self-evolving content-moderation agent framework centered on a ReAct agent that autonomously analyzes individual videos using specialized tools for frame sampling, ASR/OCR, metadata extraction, originality scoring, and watermark/celebrity detection; integrated multimodal evidence with policy-grounded reasoning to produce structured moderation decisions.
+  - Built a self-evolution loop where a Reflector aggregates Solver failures into root-cause attribution reports and an Evolver adds, revises, or merges case-relevant skills to refine the Solver, improving the overall F1 score by 15.5%.
+
+- Research Scientist Intern, Microsoft, Jul 2025 - Sep 2025
+  - Conducted LLM research for Microsoft 365 Excel Copilot, focusing on spreadsheet text analysis and Office.js code generation.
+  - Developed the TextAnalysisSFT data pipeline for Excel Copilot's TextAnalysis API: mined 2,000+ real-world examples from Kaggle, filtered text-heavy spreadsheets, generated user queries and Office.js programs, and validated executions with SheetEngine.
+  - The resulting dataset improved Office Scripts code-generation accuracy by 15%.
 
 - AI Engineer, Reborn Network, May 2023 - Jul 2023
   - Developed a role-playing agent Unity VR game enabling agents to interact through text, voice, and VR actions in real time with under 1s latency.
