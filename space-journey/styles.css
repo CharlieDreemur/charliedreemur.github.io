@@ -68,6 +68,28 @@ a:focus-visible {
   -webkit-user-select: none;
 }
 
+/* Fullscreen keeps the composition at its authored 16:9 ratio. transform
+   establishes #experience as the containing block for every fixed cockpit/HUD
+   descendant, so the complete interface stays inside the same letterbox. */
+html:fullscreen,
+html:fullscreen body,
+html:-webkit-full-screen,
+html:-webkit-full-screen body {
+  background: #000;
+}
+
+html:fullscreen #experience,
+html:-webkit-full-screen #experience {
+  position: fixed;
+  inset: 0;
+  width: min(100vw, 177.7778vh);
+  height: min(100vh, 56.25vw);
+  margin: auto;
+  overflow: hidden;
+  background: #02040b;
+  transform: translateZ(0);
+}
+
 .is-camera-dragging #space-canvas {
   cursor: grabbing;
 }
@@ -560,6 +582,28 @@ a:focus-visible {
 .quality-toggle[data-mode="eco"] i {
   background: var(--amber);
   box-shadow: 0 0 8px var(--amber);
+}
+
+.fullscreen-toggle[hidden] {
+  display: none;
+}
+
+.fullscreen-toggle__icon {
+  width: 0.68rem;
+  height: 0.68rem;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 0.28rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 0 / 1px 0.28rem no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 0.28rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 1px 0.28rem no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 0.28rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 1px 0.28rem no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 0.28rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 1px 0.28rem no-repeat;
+}
+
+.fullscreen-toggle[aria-pressed="true"] {
+  color: var(--cyan);
 }
 
 .icon-button__wave {
@@ -1882,11 +1926,80 @@ a:focus-visible {
   transition: width 0.3s ease;
 }
 
-.loader span {
+#loader-label {
   color: var(--muted);
   font-family: var(--mono);
   font-size: 0.55rem;
   letter-spacing: 0.16em;
+}
+
+#loader-fullscreen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+  padding: 0.62rem 0.9rem;
+  border: 1px solid rgba(126, 232, 255, 0.24);
+  color: var(--cyan);
+  background: rgba(10, 36, 52, 0.4);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.13em;
+  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+}
+
+#loader-fullscreen[hidden] {
+  display: none;
+}
+
+#loader-fullscreen i {
+  width: 0.56rem;
+  height: 0.56rem;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 0.22rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 0 / 1px 0.22rem no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 0.22rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 1px 0.22rem no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 0.22rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 1px 0.22rem no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 0.22rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 1px 0.22rem no-repeat;
+}
+
+#loader-fullscreen:hover {
+  border-color: rgba(126, 232, 255, 0.62);
+  color: var(--cyan-bright);
+  background: rgba(18, 62, 82, 0.52);
+}
+
+.loader > small {
+  margin-top: -0.65rem;
+  color: rgba(126, 151, 172, 0.66);
+  font-family: var(--mono);
+  font-size: 0.43rem;
+  letter-spacing: 0.11em;
+}
+
+/* CC-BY on the score requires a credit a visitor can actually find, and the
+   licence obliges us to flag that the track was trimmed. */
+.loader__credit {
+  margin-top: 0.9rem;
+  color: rgba(126, 151, 172, 0.42);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.loader__credit a {
+  color: rgba(126, 151, 172, 0.62);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(126, 151, 172, 0.24);
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+.loader__credit a:hover {
+  color: var(--cyan);
+  border-bottom-color: rgba(126, 232, 255, 0.5);
 }
 
 .fallback {
@@ -2123,7 +2236,7 @@ a:focus-visible {
   }
 }
 
-@media (max-width: 700px) {
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 900px) {
   .topbar {
     grid-template-columns: 1fr 1fr;
   }
@@ -2209,6 +2322,17 @@ a:focus-visible {
 
   .arrival__actions {
     flex-direction: column;
+  }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 700px) {
+  .topbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mission-id,
+  .quality-toggle {
+    display: none;
   }
 }
 

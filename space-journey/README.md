@@ -19,10 +19,14 @@ small `launcher.css` and `launcher.js` transition; Three.js and the full
 experience remain isolated until the visitor enters `/space-journey/`.
 
 Hold the masthead avatar for three seconds to charge the launch ring. The page
-then folds like a three-dimensional sheet into a portal before navigation. Once
-`/space-journey/` finishes loading, the flight starts on its own — there is no
-intro screen or launch button. Audio stays muted until the visitor presses
-`SOUND ON`, because browsers block autoplay without a gesture.
+then folds like a three-dimensional sheet into a portal before navigation. The
+loading screen offers optional fullscreen while resources are prepared, but the
+flight starts automatically when ready whether or not it is pressed. Supported
+mobile browsers also lock fullscreen to landscape; otherwise the visitor must
+rotate the device manually. The top-bar control can enter or leave fullscreen
+again. Audio stays muted until the visitor presses `SOUND ON` when autoplay is
+blocked. Fullscreen preserves the authored 16:9 composition and uses black
+letterboxing on displays with a different aspect ratio.
 
 Dragging with the left button or one finger swings the view, up to 54° of yaw and
 34° of pitch, and a double click or double tap recentres it. The range is set by
@@ -43,9 +47,10 @@ http://localhost:4000/space-journey/
 
 Three.js is loaded by this module only from jsDelivr. All planets, stars,
 nebulae, and cockpit graphics are generated at runtime. The soundtrack is
-**Cosmic Navigation**, released under CC0 / Public Domain on
-[OpenGameArt](https://opengameart.org/content/cosmic-navigation). Everything
-else in the mix is synthesised — see below.
+*Aphelion* by Scott Buckley — released under CC-BY 4.0.
+[www.scottbuckley.com.au](https://www.scottbuckley.com.au/library/aphelion/) —
+edited (trimmed and faded) for this page. Everything else in the mix is
+synthesised — see below.
 
 The page preloads the pinned minified Three.js module. Google Fonts are linked
 directly from the document head instead of through a render-blocking CSS import.
@@ -153,12 +158,36 @@ the cone has a floor of about 2.4° to aim into, and a locked target keeps its
 lock slightly past that cone, which stops the card from flickering when the
 crosshair rides a limb. When cones overlap the nearest body wins.
 
+Aim is not enough on its own: a body also has to be close. The reach is twelve of
+its own radii, so a caption is offered once the body is a resolved world rather
+than a point of light, and Earth stays unnamed until roughly the halfway mark
+even though it sits dead ahead the whole way. That reach has a floor of 700
+units, because the small bodies are the ones the rule would otherwise lock out.
+Look range stops 36° off the nose, and the moon swings further outboard than that
+long before it is twelve radii away, so on the radii alone its card would only
+unlock onto a bearing the pilot cannot turn to. The two rules together pace the
+introductions along the route: Jupiter, Saturn and the sun early, Mars and the
+moon through the middle, Earth for the run-in.
+
 The copy lives next to the geometry it describes, in the `info` block passed to
 `addCelestialBody`, so a body cannot be moved or resized without its readout
 following. Every body on the route is a real one, and the stated radii are the
 real figures rather than measurements of a scene that was never built to scale.
 
 ### Sound
+
+The score is a 66-second excerpt rather than the seven-minute original, and the
+cut is the point of it. *Aphelion* opens contemplative and does not reach full
+power until 2:06; dropped in whole against a 60-second flight, the only thing a
+visitor would ever hear is the quiet introduction. Measuring the track's loudness
+per second puts its first summit at 2:18, so the excerpt runs from 1:22 to 2:28 —
+which lands that summit 56 seconds in, inside the 52.8 s–60 s re-entry window,
+with the build occupying the cruise before it. Cosine fades at both ends, and
+`launch()` rewinds the element, because an excerpt aligned to one timeline is
+wrong for a replay that resumes mid-fade. It is also 0.99 MB against the previous
+2.05 MB. The fader sits at 0.55 rather than the old 0.72: this is a far hotter
+master (0.10 RMS against 0.06) and matching the old setting would have put the
+score 1.7x over the drive and the cues.
 
 One downloaded file, the score; everything else is Web Audio. The drive is two
 oscillators through a lowpass whose cutoff opens over the first four seconds and
@@ -293,29 +322,33 @@ And the sun opts out of the diffraction spikes every other beacon draws: those
 are a point-source artifact, and on a star resolved to several hundred pixels
 they put a hard cross over the disc that reads as a reticle.
 
-Prominences climb off the limb from a camera-facing quad, sized in solar radii
-and shaded entirely by noise — modelled geometry would be sub-pixel across at
-this range. The angle enters the noise field as a point on the unit circle so it
-wraps without a seam, and radius rides the third axis scrolling with time, which
-is what stretches the features along the radius and makes them climb rather than
-swirl. Two scales do the work: a coarse field decides which sectors erupt and how
-high they throw, a fine one breaks each eruption into filaments, and a narrow
-core inside each tongue supplies something bright enough to read as burning
-instead of as smoke. A single scale gives an evenly spaced fringe the whole way
-round, which reads as fur.
+Prominences come from a camera-facing quad sized in solar radii and shaded
+entirely in the fragment shader — modelled geometry would be sub-pixel across at
+this range. Angle enters the noise field as a point on the unit circle, so the
+field wraps without a seam where `atan` would fold. Three layers sit on top of
+each other: a thin broken chromosphere tying the disc to the gas above it, ridged
+sector-gated noise for the hair-thin coronal streamers, and five elliptical
+magnetic arches. The arches are what sell it — an ellipse with two feet at the
+limb reads as solar plasma, where a third noise field would only have added more
+fringe. The chromosphere is deliberately irregular for the same reason the corona
+is: anything continuous and bright at the limb turns the disc's own darkening
+into a ring by contrast, and this layer is additive and nearly pure red, so bloom
+carrying it inward drags the limb's blue channel down and makes that ring maroon.
 
-The one thing that matters for correctness is where the roots start. Bright
-plasma laid against a limb that is meant to be darkening turns the falloff into
-a ring by contrast, and because this plasma is additive and nearly pure red, the
-bloom carrying it inward drags the limb's blue channel to nothing and makes that
-ring a hard maroon band — the same artifact the corona produced, arriving from
-the other side. Ramping the roots in over a wide band starting just outside the
-limb is the whole fix: with it the angle-averaged disc profile is identical to
-the same frame rendered with the plumes switched off, so brightness can then be
-set by eye. The roots also keep some blue, since they are the end whose bloom
-reaches the disc; the tips carry the colour, and what they bloom onto is sky.
-Filament octaves follow the quality tier, and the layer costs about 1.5% of frame
-time even on the software rasteriser.
+Every scroll rate here has to be read against how much of its axis the plume
+actually spans, not taken as a speed. Altitude runs 0 to 1, so a flow term of
+0.11 moves a feature from limb to tip in twenty seconds, and a sector gate
+spanning 0.45 of a noise unit at 0.025 needs the better part of a minute to open
+— both far longer than the star is ever on screen, which is why the layer first
+shipped looking like a still image. The arches mattered most: they are the
+largest thing on the star and their geometry was fixed constants, animated only
+by a faint shimmer threaded through them. Each one now runs its own inflate-and-
+subside cycle over twelve to twenty seconds on an unrelated rate, reaching zero
+amplitude at the trough so events genuinely come and go, and all of it is
+evaluated in a slowly turning frame so the whole crown rides around the limb with
+the star. Octaves follow the quality tier. Toggling the layer moves the frame
+rate less than the run-to-run spread on the software rasteriser the captures use,
+so its cost is small but has not been pinned down to a figure.
 
 Source imagery is NASA public-domain material: Blue Marble Next Generation
 topography/bathymetry and cloud composites, Black Marble 2012 night lights (all

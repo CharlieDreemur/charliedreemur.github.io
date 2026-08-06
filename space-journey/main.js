@@ -7,6 +7,9 @@ const loaderBar = document.querySelector("#loader-bar");
 const loaderLabel = document.querySelector("#loader-label");
 const replayButton = document.querySelector("#replay-button");
 const soundToggle = document.querySelector("#sound-toggle");
+const fullscreenToggle = document.querySelector("#fullscreen-toggle");
+const fullscreenLabel = document.querySelector("#fullscreen-label");
+const loaderFullscreen = document.querySelector("#loader-fullscreen");
 const qualityToggle = document.querySelector("#quality-toggle");
 const qualityLabel = document.querySelector("#quality-label");
 const hud = document.querySelector("#hud");
@@ -39,7 +42,10 @@ const systemBars = ["thrust", "reactor", "hull"].map((key) => ({
 }));
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const compactDevice = window.matchMedia("(max-width: 700px)").matches;
+const mobileDevice = window.matchMedia(
+  "(pointer: coarse) and (max-width: 900px), (pointer: coarse) and (max-height: 900px)",
+).matches;
+const compactDevice = mobileDevice;
 const flightDuration = reducedMotion ? 20 : 60;
 const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 const constrainedDevice =
@@ -176,8 +182,15 @@ let noiseBuffer = null;
 let launchCueArmed = false;
 let plasmaRoar = 0;
 // Restored on replay, since the touchdown mix pulls both of these to silence.
-const MUSIC_LEVEL = 0.72;
+// The score sits lower than the old ambient bed did because it is a far hotter
+// master: 0.10 RMS against the previous 0.06, so matching the old fader would
+// have put it 1.7x over the drive and the cues.
+const MUSIC_LEVEL = 0.55;
 const ENGINE_LEVEL = 0.045;
+// The score drifts up out of the drive rather than being present from the first
+// frame. It rides the music fader alone: the master carries the ignition cue in
+// the same instant, and slowing that would blunt the one sound that needs an attack.
+const MUSIC_FADE_IN = 5.5;
 let qualityMode = "auto";
 let qualityLevel = connection?.saveData ? "eco" : constrainedDevice ? "balanced" : "high";
 
@@ -195,12 +208,16 @@ let slowWindows = 0;
 let fastWindows = 0;
 let adaptivePixelScale = 1;
 let resizeFrame = 0;
+let viewportSettleTimer = 0;
+let viewportObserver = null;
 let journeyVisualState = "";
 let hullAlarm = false;
+let frameVisuallyBlank = false;
 const drawingBufferSize = new THREE.Vector2();
 const sphereGeometryCache = new Map();
 const stellarTextureCache = new Map();
 const stellarMaterialCache = new Map();
+const flightOcclusionSamples = [];
 
 const waypoints = [
   // Status lines stay under about 27 characters: the readout is right-aligned to
@@ -245,25 +262,41 @@ const attitude = { heading: NaN, pitch: NaN, roll: NaN, px: NaN, py: NaN };
 // slightly past its own cone, otherwise the card flickers on the limb.
 const LOCK_FLOOR = 0.042;
 const LOCK_RELEASE = 1.45;
+// A body only introduces itself once it is close enough to read as a world, at
+// twelve of its own radii. The floor is what keeps that reachable for the small
+// ones: look range stops 36 degrees off the nose, and Mars and the moon swing
+// abeam of the ship well before they are twelve radii away, so on the radii
+// alone their cards would open onto a bearing the pilot cannot turn to.
+const LOCK_REACH = 12;
+const LOCK_REACH_FLOOR = 700;
 const targets = [];
 const aimDirection = new THREE.Vector3();
 const aimOffset = new THREE.Vector3();
 let lockedTarget = null;
 
 function registerTarget(info, position, radius) {
-  targets.push({ ...info, center: new THREE.Vector3(...position), radius });
+  targets.push({
+    ...info,
+    center: new THREE.Vector3(...position),
+    radius,
+    reach: Math.max(radius * LOCK_REACH, LOCK_REACH_FLOOR),
+  });
 }
 
 function updateTargeting() {
   if (state !== "flying" || !targets.length) return;
-  camera.getWorldDirection(aimDirection);
+  // Rendering has already updated matrixWorld for this exact frame. Reading its
+  // forward axis avoids getWorldDirection updating the camera and its ancestors
+  // a second time.
+  const cameraMatrix = camera.matrixWorld.elements;
+  aimDirection.set(-cameraMatrix[8], -cameraMatrix[9], -cameraMatrix[10]).normalize();
 
   let best = null;
   let bestRange = Infinity;
   for (const target of targets) {
     aimOffset.subVectors(target.center, camera.position);
     const range = aimOffset.length();
-    if (range < 1 || range >= bestRange) continue;
+    if (range < 1 || range > target.reach || range >= bestRange) continue;
     const offset = Math.acos(
       THREE.MathUtils.clamp(aimOffset.dot(aimDirection) / range, -1, 1),
     );
@@ -383,6 +416,105 @@ function setLoading(percent, label) {
   if (label) loaderLabel.textContent = label;
 }
 
+function getFullscreenElement() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function updateFullscreenUi() {
+  const active = Boolean(getFullscreenElement());
+  fullscreenToggle.setAttribute("aria-pressed", String(active));
+  fullscreenToggle.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+  fullscreenLabel.textContent = active ? "WINDOWED" : "FULLSCREEN";
+}
+
+function lockMobileLandscape() {
+  if (!mobileDevice || !screen.orientation?.lock) return;
+  try {
+    const lock = screen.orientation.lock("landscape");
+    Promise.resolve(lock)
+      .then(refreshViewportAfterModeChange)
+      .catch(() => {
+        // Orientation locking is optional and unavailable on several mobile browsers.
+      });
+  } catch {
+    // Fullscreen still works when orientation locking is unsupported.
+  }
+}
+
+function requestImmersiveMode() {
+  if (getFullscreenElement()) {
+    lockMobileLandscape();
+    return;
+  }
+
+  // Fullscreen the document root rather than #experience itself. Some mobile
+  // browsers keep fixed descendants of an element-fullscreen container tied to
+  // the pre-fullscreen containing block, stretching the canvas after rotation.
+  const fullscreenTarget = document.documentElement;
+  let request;
+  try {
+    request = fullscreenTarget.requestFullscreen
+      ? fullscreenTarget.requestFullscreen({ navigationUI: "hide" })
+      : fullscreenTarget.webkitRequestFullscreen?.();
+  } catch {
+    return;
+  }
+  Promise.resolve(request).then(lockMobileLandscape).catch(() => {
+    // A denied fullscreen request must never prevent the journey from starting.
+  });
+}
+
+function exitImmersiveMode() {
+  try {
+    const exit = document.exitFullscreen
+      ? document.exitFullscreen()
+      : document.webkitExitFullscreen?.();
+    Promise.resolve(exit).catch(() => {});
+  } catch {
+    // The browser may already be leaving fullscreen via its own controls.
+  }
+}
+
+function toggleFullscreen() {
+  if (getFullscreenElement()) exitImmersiveMode();
+  else requestImmersiveMode();
+}
+
+function initFullscreenControls() {
+  fullscreenToggle.addEventListener("click", toggleFullscreen);
+  loaderFullscreen.addEventListener("click", requestImmersiveMode);
+  const fullscreenTarget = document.documentElement;
+  const fullscreenSupported = Boolean(
+    fullscreenTarget.requestFullscreen || fullscreenTarget.webkitRequestFullscreen,
+  );
+  if (!fullscreenSupported) {
+    fullscreenToggle.hidden = true;
+    loaderFullscreen.hidden = true;
+  }
+
+  const onFullscreenChange = () => {
+    updateFullscreenUi();
+    refreshViewportAfterModeChange();
+    if (!getFullscreenElement()) {
+      try {
+        screen.orientation?.unlock?.();
+      } catch {
+        // Some browsers expose unlock but reject it outside installed apps.
+      }
+    }
+  };
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+  screen.orientation?.addEventListener?.("change", refreshViewportAfterModeChange);
+  window.addEventListener("orientationchange", refreshViewportAfterModeChange);
+  window.visualViewport?.addEventListener("resize", onResize);
+  if ("ResizeObserver" in window) {
+    viewportObserver = new ResizeObserver(onResize);
+    viewportObserver.observe(experience);
+  }
+  updateFullscreenUi();
+}
+
 function easeInOutCubic(value) {
   return value < 0.5
     ? 4 * value * value * value
@@ -403,6 +535,14 @@ function getSphereGeometry(widthSegments, heightSegments) {
   );
 }
 
+function getCompositeDefines(profile) {
+  const defines = {};
+  if (profile.bloomScale > 0) defines.USE_BLOOM = "";
+  if (profile.aberration > 0) defines.USE_ABERRATION = "";
+  if (profile.grain > 0) defines.USE_GRAIN = "";
+  return defines;
+}
+
 function updateQualityUi() {
   const label = qualityMode === "auto" ? `AUTO · ${qualityLevel.toUpperCase()}` : qualityLevel.toUpperCase();
   qualityLabel.textContent = label;
@@ -411,9 +551,25 @@ function updateQualityUi() {
   experience.classList.toggle("quality-eco", qualityLevel === "eco");
 }
 
-function getTargetPixelRatio(profile) {
+function getViewportSize() {
+  // Fullscreen intentionally letterboxes #experience to 16:9. Render at that
+  // box's real dimensions so WebGL, the camera, and the DOM overlay share one
+  // aspect ratio rather than stretching a full-screen buffer into the box.
+  if (getFullscreenElement()) {
+    return {
+      width: Math.max(1, experience.clientWidth),
+      height: Math.max(1, experience.clientHeight),
+    };
+  }
+  return {
+    width: Math.max(1, window.innerWidth || document.documentElement.clientWidth),
+    height: Math.max(1, window.innerHeight || document.documentElement.clientHeight),
+  };
+}
+
+function getTargetPixelRatio(profile, width, height) {
   const pixelBudgets = { high: 4600000, balanced: 2600000, eco: 1500000 };
-  const budgetRatio = Math.sqrt(pixelBudgets[qualityLevel] / (window.innerWidth * window.innerHeight));
+  const budgetRatio = Math.sqrt(pixelBudgets[qualityLevel] / (width * height));
   return Math.min(
     window.devicePixelRatio,
     profile.dpr * adaptivePixelScale,
@@ -430,11 +586,12 @@ function syncPixelRatioUniforms(pixelRatio) {
 
 function applyViewportResolution({ force = false } = {}) {
   if (!renderer) return;
-  const pixelRatio = getTargetPixelRatio(qualityProfiles[qualityLevel]);
+  const { width, height } = getViewportSize();
+  const pixelRatio = getTargetPixelRatio(qualityProfiles[qualityLevel], width, height);
   if (!force && Math.abs(renderer.getPixelRatio() - pixelRatio) < 0.01) return;
 
   renderer.setPixelRatio(pixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  renderer.setSize(width, height, false);
   syncPixelRatioUniforms(pixelRatio);
   updatePostResolution();
 }
@@ -448,7 +605,9 @@ function applyQualityLevel(level) {
   const profile = qualityProfiles[level];
   refreshRenderResolution();
   starLayers.forEach((layer) => {
-    layer.visible = level !== "eco" || !layer.userData.optional;
+    layer.visible =
+      (level !== "eco" || !layer.userData.optional) &&
+      layer.material.uniforms.uFade.value > 0;
   });
   nebulaDim = level === "eco" ? 0.62 : 1;
   nebulaSprites.forEach((sprite) => {
@@ -464,8 +623,7 @@ function applyQualityLevel(level) {
     compositeMaterial.uniforms.uStreakStrength.value = profile.streak;
     compositeMaterial.uniforms.uAberration.value = profile.aberration;
     compositeMaterial.uniforms.uGrain.value = profile.grain;
-    if (profile.bloomScale > 0) compositeMaterial.defines.USE_BLOOM = "";
-    else delete compositeMaterial.defines.USE_BLOOM;
+    compositeMaterial.defines = getCompositeDefines(profile);
     compositeMaterial.needsUpdate = true;
     updatePostResolution();
   }
@@ -701,7 +859,7 @@ function initPostProcessing() {
   });
 
   compositeMaterial = new THREE.ShaderMaterial({
-    defines: profile.bloomScale > 0 ? { USE_BLOOM: "" } : {},
+    defines: getCompositeDefines(profile),
     uniforms: {
       tDiffuse: { value: sceneTarget.texture },
       tBloom: { value: bloomTargetA.texture },
@@ -769,15 +927,18 @@ function initPostProcessing() {
 
         // Slight barrel distortion mimics a wide cinema prime.
         vec2 distorted = frameUv + centered * edgeDistance * edgeDistance * 0.028;
-        // Keep the frame centre clean; fringing only builds up toward the corners.
-        float aberrationFalloff = smoothstep(0.22, 0.72, edgeDistance);
-        vec2 chromaOffset =
-          centered * uAberration * (1.0 + uFlight * 1.4) * aberrationFalloff * (1.0 - uPixelate);
-
         vec3 color;
-        color.r = texture2D(tDiffuse, distorted + chromaOffset).r;
-        color.g = texture2D(tDiffuse, distorted).g;
-        color.b = texture2D(tDiffuse, distorted - chromaOffset).b;
+        #ifdef USE_ABERRATION
+          // Keep the frame centre clean; fringing only builds up toward the corners.
+          float aberrationFalloff = smoothstep(0.22, 0.72, edgeDistance);
+          vec2 chromaOffset =
+            centered * uAberration * (1.0 + uFlight * 1.4) * aberrationFalloff * (1.0 - uPixelate);
+          color.r = texture2D(tDiffuse, distorted + chromaOffset).r;
+          color.g = texture2D(tDiffuse, distorted).g;
+          color.b = texture2D(tDiffuse, distorted - chromaOffset).b;
+        #else
+          color = texture2D(tDiffuse, distorted).rgb;
+        #endif
 
         #ifdef USE_BLOOM
           vec3 bloom = texture2D(tBloom, distorted).rgb;
@@ -819,10 +980,12 @@ function initPostProcessing() {
         // The vignette would otherwise crush the plasma exactly where it burns.
         color *= mix(mix(0.42, 0.82, uEntryHeat), 1.0, vignette);
 
-        if (uGrain > 0.0001) {
-          float grain = (randomNoise(gl_FragCoord.xy) - 0.5) * uGrain;
-          color += grain * (1.2 - level * 0.7) * (1.0 - uPixelate);
-        }
+        #ifdef USE_GRAIN
+          if (uGrain > 0.0001) {
+            float grain = (randomNoise(gl_FragCoord.xy) - 0.5) * uGrain;
+            color += grain * (1.2 - level * 0.7) * (1.0 - uPixelate);
+          }
+        #endif
 
         // The avatar has to land on black. Earth fills the frame edge to edge by
         // touchdown, so without this the pixel portrait ends up sitting on a
@@ -851,8 +1014,35 @@ function initPostProcessing() {
   updatePostResolution();
 }
 
+function compilePostMaterials() {
+  // A post scene contains one quad, so compile() only sees whichever material is
+  // currently attached to it. Warm every pass under the opaque loader to avoid
+  // compiling bright, blur, or streak shaders during the first visible frame.
+  const originalMaterial = postQuad.material;
+  for (const material of [brightMaterial, blurMaterial, streakMaterial, compositeMaterial]) {
+    postQuad.material = material;
+    renderer.compile(postScene, postCamera);
+  }
+  postQuad.material = originalMaterial;
+}
+
 function renderCinematicFrame() {
   const profile = qualityProfiles[qualityLevel];
+  const { uFadeOut, uPixelate } = compositeMaterial.uniforms;
+
+  // Once the hand-off has reached black, the composite result is guaranteed to
+  // be black regardless of every scene and post-process input. Draw that black
+  // result once, then leave the canvas untouched while the DOM avatar finishes
+  // its transition instead of spending the final seconds rendering invisible
+  // pixels.
+  if (uFadeOut.value <= 0) {
+    if (!frameVisuallyBlank) {
+      renderPass(compositeMaterial, null);
+      frameVisuallyBlank = true;
+    }
+    return;
+  }
+  frameVisuallyBlank = false;
 
   renderer.setRenderTarget(sceneTarget);
   // Only the 3D pass needs a clear. Every post-process pass is an opaque
@@ -860,7 +1050,10 @@ function renderCinematicFrame() {
   renderer.clear(true, true, false);
   renderer.render(scene, camera);
 
-  if (profile.bloomScale > 0) {
+  // Pixelation reaches exactly one shortly before the frame fades fully out.
+  // At that point the composite shader multiplies both optical buffers by zero,
+  // so refreshing five invisible fullscreen passes has no effect on the image.
+  if (profile.bloomScale > 0 && uPixelate.value < 1) {
     brightMaterial.uniforms.tDiffuse.value = sceneTarget.texture;
     renderPass(brightMaterial, bloomTargetA);
 
@@ -1440,28 +1633,46 @@ function mulberry32(seed) {
  * planet's silhouette. Stars are meant to read as an infinitely distant
  * backdrop, so one drawn across a nearby gas giant destroys the sense of scale.
  */
-const cameraSample = new THREE.Vector3();
 const toStar = new THREE.Vector3();
 const toBody = new THREE.Vector3();
 
-function overlapsOccluder(star) {
-  // Stepped over the whole path, run-in included, at roughly the spacing the
-  // shorter path used before it was extended.
+function prepareFlightOcclusionSamples() {
+  flightOcclusionSamples.length = 0;
+  // Body direction and angular radius depend only on the sampled camera point,
+  // not on the thousands of candidate stars. Cache them once instead of
+  // repeating the same vector normalisation and trigonometry for every point.
   const steps = 20;
   for (let step = 0; step <= steps; step += 1) {
-    cameraSample.set(0, 0, journeyStartZ - (step / steps) * (journeyStartZ - journeyEndZ));
-    toStar.subVectors(star, cameraSample);
+    const cameraPosition = new THREE.Vector3(
+      0,
+      0,
+      journeyStartZ - (step / steps) * (journeyStartZ - journeyEndZ),
+    );
+    const blockers = [];
+    for (const occluder of occluders) {
+      toBody.subVectors(occluder.center, cameraPosition);
+      const distance = toBody.length();
+      if (distance <= occluder.radius) continue;
+      blockers.push({
+        distance,
+        direction: toBody.clone().multiplyScalar(1 / distance),
+        cosRadius: Math.cos(Math.asin(occluder.radius / distance) * 1.2),
+      });
+    }
+    flightOcclusionSamples.push({ cameraPosition, blockers });
+  }
+}
+
+function overlapsOccluder(star) {
+  for (const sample of flightOcclusionSamples) {
+    toStar.subVectors(star, sample.cameraPosition);
     const starDistance = toStar.length();
 
-    for (const occluder of occluders) {
-      toBody.subVectors(occluder.center, cameraSample);
-      const bodyDistance = toBody.length();
-      if (starDistance >= bodyDistance || bodyDistance <= occluder.radius) continue;
-
-      const cosSeparation = toStar.dot(toBody) / (starDistance * bodyDistance);
+    for (const blocker of sample.blockers) {
+      if (starDistance >= blocker.distance) continue;
       // A small margin keeps stars from clinging to the limb.
-      const cosBodyRadius = Math.cos(Math.asin(occluder.radius / bodyDistance) * 1.2);
-      if (cosSeparation > cosBodyRadius) return true;
+      const cosSeparation = toStar.dot(blocker.direction) / starDistance;
+      if (cosSeparation > blocker.cosRadius) return true;
     }
   }
   return false;
@@ -1636,7 +1847,7 @@ function createAtmosphereMaterial(glowColor, intensity, thickness) {
 }
 
 function createRingMaterial(radius, seed, center) {
-  return new THREE.ShaderMaterial({
+  const material = new THREE.ShaderMaterial({
     uniforms: {
       uRingMap: { value: createRingTexture(seed) },
       uInnerRadius: { value: radius * 1.32 },
@@ -1670,6 +1881,9 @@ function createRingMaterial(radius, seed, center) {
         float span = (vRingRadius - uInnerRadius) / (uOuterRadius - uInnerRadius);
         if (span < 0.0 || span > 1.0) discard;
         vec4 ring = texture2D(uRingMap, vec2(span, 0.5));
+        // Zero-alpha gaps cannot affect either color or depth. Reject them before
+        // the shadow and backlight math rather than shading invisible ring space.
+        if (ring.a == 0.0) discard;
 
         // Approximate the planet shadow as a cylinder cast along the sun direction.
         vec3 toFragment = vWorldPosition - uPlanetCenter;
@@ -1692,6 +1906,10 @@ function createRingMaterial(radius, seed, center) {
     depthWrite: false,
     side: THREE.DoubleSide,
   });
+  // The ring is one flat, non-self-intersecting sheet. Double-sided transparent
+  // materials otherwise render back and front in separate passes in Three.js.
+  material.forceSinglePass = true;
+  return material;
 }
 
 function applyNightLights(material, nightMap) {
@@ -1714,7 +1932,9 @@ function applyNightLights(material, nightMap) {
         `#include <emissivemap_fragment>
          float sunFacing = dot(normalize(vSurfaceNormalW), uSunDirection);
          float nightMask = smoothstep(0.14, -0.24, sunFacing);
-         totalEmissiveRadiance += texture2D(uNightMap, vMapUv).rgb * nightMask * 2.6;`,
+         if (nightMask > 0.0) {
+           totalEmissiveRadiance += texture2D(uNightMap, vMapUv).rgb * nightMask * 2.6;
+         }`,
       );
   };
   material.customProgramCacheKey = () => "space-journey-night-lights";
@@ -2144,8 +2364,21 @@ function addSolarProminences(position, solarRadius, intensity) {
         float angle,
         float halfWidth,
         float height,
-        float seed
+        float seed,
+        float rate,
+        float phase
       ) {
+        // An arch inflates, rises, and subsides again over a few tens of
+        // seconds. The amplitude reaches zero at the trough so events genuinely
+        // come and go rather than merely breathing in place: as fixed geometry
+        // these five arches are the most salient thing on the star, and while
+        // they hold still the whole limb reads as a still image however much
+        // the noise threaded through them is moving.
+        float life = sin(uTime * rate + phase);
+        float amplitude = smoothstep(-0.55, 0.5, life);
+        if (amplitude <= 0.0) return 0.0;
+        height *= 0.7 + 0.36 * life;
+
         vec2 radial = vec2(cos(angle), sin(angle));
         vec2 tangent = vec2(-radial.y, radial.x);
         float x = dot(point, tangent);
@@ -2155,9 +2388,9 @@ function addSolarProminences(position, solarRadius, intensity) {
         float arch = 1.0 - smoothstep(0.035, 0.12, loopDistance);
         float aboveLimb = smoothstep(-0.012, 0.025, y);
         float crown = 1.0 - smoothstep(1.02, 1.16, loopPoint.y);
-        float strands = fbm(vec3(loopPoint * vec2(3.2, 1.7), seed + uTime * 0.055));
+        float strands = fbm(vec3(loopPoint * vec2(3.2, 1.7), seed + uTime * 0.3));
         strands = 0.42 + smoothstep(0.28, 0.82, strands) * 0.9;
-        return arch * aboveLimb * crown * strands;
+        return arch * aboveLimb * crown * strands * amplitude;
       }
 
       void main() {
@@ -2167,22 +2400,37 @@ function addSolarProminences(position, solarRadius, intensity) {
         // inside the limb, so neither is worth shading.
         if (radius > 1.0 || radius < uLimb * 0.9) discard;
 
-        vec2 heading = offset / max(radius, 0.0001);
+        // The star turns and the plumes turn with it. Everything else here only
+        // breathes in place — tongues change shape but never travel — and a
+        // silhouette that stays put reads as a still image no matter how much
+        // the inside of it is moving.
+        float spin = uTime * 0.05;
+        vec2 turned = vec2(
+          offset.x * cos(spin) - offset.y * sin(spin),
+          offset.x * sin(spin) + offset.y * cos(spin)
+        );
+        vec2 heading = turned / max(radius, 0.0001);
 
         float altitude = max(0.0, (radius - uLimb) / (1.0 - uLimb));
 
         // A very thin, broken chromosphere connects the disc to the outer gas.
         // It is deliberately irregular so it never becomes a perfect neon ring.
-        float rimNoise = fbm(vec3(heading * 4.8, uTime * 0.035));
+        float rimNoise = fbm(vec3(heading * 4.8, uTime * 0.19));
         float chromosphere = exp(-altitude * 32.0);
         chromosphere *= 0.22 + smoothstep(0.32, 0.78, rimNoise) * 0.7;
         chromosphere *= smoothstep(uLimb * 0.995, uLimb + 0.018, radius);
 
         // Long, hair-thin coronal streamers. Coarse noise opens only a handful
         // of active sectors; ridged fine noise splits each one into strands.
-        float curl = noise3(vec3(heading * 1.35, altitude * 0.8 + uTime * 0.035));
-        vec3 flow = vec3(heading * 3.1, altitude * 2.2 - uTime * 0.11);
-        float coarse = fbm(vec3(heading * 1.2, altitude * 0.45 - uTime * 0.025));
+        // Scroll rates have to be read against how much of each axis the plume
+        // actually spans, not taken as speeds. Altitude runs 0 to 1 here, so at
+        // the 0.11 the flow started on, a feature needed twenty seconds to climb
+        // from limb to tip; the sector gate, spanning 0.45 of a unit at 0.025,
+        // took the better part of a minute to open or close. Both were slower
+        // than the star is ever on screen for.
+        float curl = noise3(vec3(heading * 1.35, altitude * 0.8 + uTime * 0.13));
+        vec3 flow = vec3(heading * 3.1, altitude * 2.2 - uTime * 0.55);
+        float coarse = fbm(vec3(heading * 1.2, altitude * 0.45 - uTime * 0.13));
         float fine = fbm(flow + (curl - 0.5) * 2.8);
         float ridges = 1.0 - abs(fine * 2.0 - 1.0);
         float sectorGate = smoothstep(0.5, 0.76, coarse);
@@ -2193,12 +2441,16 @@ function addSolarProminences(position, solarRadius, intensity) {
 
         // Several differently sized magnetic arches keep the silhouette
         // asymmetric. Paired nearby arcs make the larger events look braided.
+        // Evaluated in the turned frame with everything else, so the arches ride
+        // around the limb with the star rather than hanging off a fixed point of
+        // the screen. Rates are deliberately unrelated, so the five never fall
+        // into step with each other.
         float loops = 0.0;
-        loops += magneticLoop(offset, 0.18, 0.105, 0.16, 1.2);
-        loops += magneticLoop(offset, 0.22, 0.078, 0.125, 2.7) * 0.72;
-        loops += magneticLoop(offset, 1.72, 0.068, 0.10, 4.1) * 0.74;
-        loops += magneticLoop(offset, 3.42, 0.135, 0.205, 6.3) * 0.9;
-        loops += magneticLoop(offset, 4.92, 0.085, 0.13, 8.8) * 0.78;
+        loops += magneticLoop(turned, 0.18, 0.105, 0.16, 1.2, 0.37, 0.0);
+        loops += magneticLoop(turned, 0.22, 0.078, 0.125, 2.7, 0.52, 2.1) * 0.72;
+        loops += magneticLoop(turned, 1.72, 0.068, 0.10, 4.1, 0.44, 4.3) * 0.74;
+        loops += magneticLoop(turned, 3.42, 0.135, 0.205, 6.3, 0.31, 1.2) * 0.9;
+        loops += magneticLoop(turned, 4.92, 0.085, 0.13, 8.8, 0.48, 5.6) * 0.78;
 
         float plasma = chromosphere + streamers * 0.82 + loops * 1.25;
         if (plasma < 0.004) discard;
@@ -2402,6 +2654,7 @@ function addWarpTunnel() {
   });
   warpLines = new THREE.LineSegments(geometry, material);
   warpLines.frustumCulled = false;
+  warpLines.visible = false;
   camera.add(warpLines);
 }
 
@@ -2622,6 +2875,7 @@ async function buildScene() {
   // Built last so every planet and the sun are registered as occluders. The
   // flythrough layers also stop short of Earth; a separate backdrop sits behind it.
   setLoading(92, "LIGHTING THE STAR FIELD…");
+  prepareFlightOcclusionSamples();
   addSpiralGalaxy(-190);
   // Near-white layer tints: each star now carries its own colour temperature,
   // and a saturated layer colour would multiply the warm ones into mud.
@@ -2656,8 +2910,35 @@ async function buildScene() {
   await nextFrame();
 }
 
+function freezeStaticSceneTransforms() {
+  // Object3D.updateMatrixWorld calls updateMatrix on every object whose local
+  // transform is automatic, even when that transform has never changed. Most of
+  // this scene is static; shader time and parent camera motion provide its
+  // animation. Bake those local matrices once while leaving the small set of
+  // genuinely moving objects automatic.
+  const movingObjects = new Set([
+    camera,
+    galaxy,
+    asteroidField,
+    warpLines,
+    ...starLayers,
+  ]);
+  celestialBodies.forEach(({ group, mesh, cloudMesh }) => {
+    movingObjects.add(group);
+    movingObjects.add(mesh);
+    if (cloudMesh) movingObjects.add(cloudMesh);
+  });
+
+  scene.traverse((object) => {
+    if (movingObjects.has(object)) return;
+    object.updateMatrix();
+    object.matrixAutoUpdate = false;
+  });
+}
+
 function initRenderer() {
   const profile = qualityProfiles[qualityLevel];
+  const { width, height } = getViewportSize();
   renderer = new THREE.WebGLRenderer({
     canvas,
     // The scene is rendered into a non-MSAA post target. Enabling MSAA on the
@@ -2667,8 +2948,8 @@ function initRenderer() {
     depth: false,
     powerPreference: "high-performance",
   });
-  renderer.setPixelRatio(getTargetPixelRatio(profile));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(getTargetPixelRatio(profile, width, height));
+  renderer.setSize(width, height);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Scene renders linear into the HDR buffer; tone mapping happens in the composite pass.
   renderer.toneMapping = THREE.NoToneMapping;
@@ -2681,7 +2962,7 @@ function initRenderer() {
 
   camera = new THREE.PerspectiveCamera(
     compactDevice ? 66 : 58,
-    window.innerWidth / window.innerHeight,
+    width / height,
     0.1,
     // Far enough to hold the backdrop star layer from the new start point. Star
     // materials carry no fog, so anything the frustum cuts there would visibly
@@ -2718,7 +2999,7 @@ function createAudioEngine() {
   const filter = context.createBiquadFilter();
   const oscillatorA = context.createOscillator();
   const oscillatorB = context.createOscillator();
-  const music = new Audio("./cosmic-navigation.mp3");
+  const music = new Audio("./aphelion-flight.mp3");
   const musicSource = context.createMediaElementSource(music);
 
   master.gain.value = 0;
@@ -2940,6 +3221,16 @@ function launch() {
   experience.classList.remove("is-arrived");
   experience.classList.add("is-flying", "is-launching", "is-booting");
   launchCueArmed = true;
+  // The excerpt is cut so its summit lands on re-entry, which only holds if the
+  // score starts where the flight does. Replays would otherwise pick up in the
+  // closing fade and loop back to the quiet opening under the descent.
+  if (audio?.music) {
+    try {
+      audio.music.currentTime = 0;
+    } catch {
+      // Not seekable until it has buffered, and the first launch is at zero anyway.
+    }
+  }
   setSound(true);
 
   if (audio) {
@@ -2947,6 +3238,9 @@ function launch() {
     audio.filter.frequency.cancelScheduledValues(now);
     audio.filter.frequency.setValueAtTime(140, now);
     audio.filter.frequency.exponentialRampToValueAtTime(520, now + 4);
+    audio.musicGain.gain.cancelScheduledValues(now);
+    audio.musicGain.gain.setValueAtTime(0, now);
+    audio.musicGain.gain.linearRampToValueAtTime(MUSIC_LEVEL, now + MUSIC_FADE_IN);
   }
 
   window.setTimeout(() => experience.classList.remove("is-booting"), 1400);
@@ -2954,6 +3248,7 @@ function launch() {
 }
 
 function replay() {
+  const animationWasPaused = frameVisuallyBlank;
   camera.position.set(0, 0, journeyStartZ);
   camera.rotation.set(0, 0, 0);
   resetCameraView();
@@ -2987,7 +3282,11 @@ function replay() {
     compositeMaterial.uniforms.uEntryHeat.value = 0;
     compositeMaterial.uniforms.uFadeOut.value = 1;
   }
+  frameVisuallyBlank = false;
   state = "idle";
+  if (animationWasPaused && !document.hidden) {
+    frameId = requestAnimationFrame(animate);
+  }
   window.setTimeout(launch, 500);
 }
 
@@ -3131,7 +3430,9 @@ function updateJourney(progress, now) {
   }
 
   if (warpLines) {
-    const cruiseIntensity = Math.sin(Math.min(progress * 1.15, 1) * Math.PI);
+    const cruisePhase = Math.min(progress * 1.15, 1);
+    const cruiseIntensity = cruisePhase >= 1 ? 0 : Math.sin(cruisePhase * Math.PI);
+    warpLines.visible = cruiseIntensity > 0;
     warpLines.material.opacity = Math.max(0, cruiseIntensity * 0.14);
     warpLines.scale.z = 1 + cruiseIntensity * 2.4;
     warpLines.rotation.z = progress * 0.08;
@@ -3147,10 +3448,18 @@ function updateJourney(progress, now) {
   // The corridor layers are behind the camera by the time Earth fills the frame;
   // fading them out avoids any straggler drawing over the planet.
   const starFade = 1 - THREE.MathUtils.smoothstep(progress, 0.72, 0.92);
-  starMaterials.forEach((material) => {
-    if (material.userData.fadesNearEarth) material.uniforms.uFade.value = starFade;
+  starLayers.forEach((layer) => {
+    const { material } = layer;
+    if (!material.userData.fadesNearEarth) return;
+    material.uniforms.uFade.value = starFade;
+    layer.visible =
+      starFade > 0 &&
+      (qualityLevel !== "eco" || !layer.userData.optional);
   });
-  if (galaxyMaterial) galaxyMaterial.uniforms.uFade.value = starFade;
+  if (galaxyMaterial) {
+    galaxyMaterial.uniforms.uFade.value = starFade;
+    galaxy.visible = starFade > 0;
+  }
 
   nebulaSprites.forEach((sprite) => {
     const { fadeRadius, baseOpacity } = sprite.userData;
@@ -3160,6 +3469,7 @@ function updateJourney(progress, now) {
       fadeRadius * 0.3,
       fadeRadius,
     );
+    sprite.visible = proximity > 0;
     sprite.material.opacity = baseOpacity * nebulaDim * proximity;
   });
 
@@ -3260,11 +3570,22 @@ function animate(now) {
     updateHandoff(now);
   }
 
-  // After the render, so the crosshair is tested against the same camera matrix
-  // the frame was actually drawn with.
-  renderCinematicFrame();
-  updateTargeting();
-  monitorPerformance(now);
+  // The loader is fully opaque until its exit transition starts. Keep animation
+  // state advancing underneath it, but avoid rendering frames nobody can see.
+  if (loader.classList.contains("is-hidden")) {
+    // After the render, so the crosshair is tested against the same camera
+    // matrix the frame was actually drawn with.
+    renderCinematicFrame();
+    if (frameVisuallyBlank) {
+      // Web Audio automation, CSS transitions, and the navigation timeout are
+      // independent of RAF. Once the final black frame is present, the remaining
+      // hand-off needs no JavaScript frame loop.
+      frameId = 0;
+      return;
+    }
+    updateTargeting();
+    monitorPerformance(now);
+  }
   frameId = requestAnimationFrame(animate);
 }
 
@@ -3272,17 +3593,27 @@ function animate(now) {
 // the same shot. lensZoom rides on top of it so the hand-off punch survives a
 // resize instead of being reset to the base focal length mid-move.
 function applyCameraLens() {
-  camera.fov = (window.innerWidth <= 700 ? 66 : 58) * lensZoom;
+  camera.fov = (compactDevice ? 66 : 58) * lensZoom;
   camera.updateProjectionMatrix();
 }
 
 function onResize() {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    const { width, height } = getViewportSize();
+    camera.aspect = width / height;
     applyCameraLens();
     applyViewportResolution({ force: true });
   });
+}
+
+function refreshViewportAfterModeChange() {
+  // Fullscreen and orientation APIs can report their final layout one or two
+  // frames after the mode-change event. Refresh immediately, then once more
+  // after browser chrome and the orientation transition have settled.
+  onResize();
+  window.clearTimeout(viewportSettleTimer);
+  viewportSettleTimer = window.setTimeout(onResize, 320);
 }
 
 function resetCameraView() {
@@ -3358,13 +3689,16 @@ async function init() {
   try {
     buildInstruments();
     initRenderer();
+    initFullscreenControls();
     // Built here rather than at launch. The context stays suspended until the
     // visitor allows sound, but constructing it costs the best part of a second
     // on a loaded machine, and paying that at ignition put the cue behind the
     // launch it belongs to. It also gives the score the whole loading window to
     // buffer, so it opens with the flight instead of a few seconds into it.
+    const scenePromise = buildScene();
     createAudioEngine();
-    await buildScene();
+    await scenePromise;
+    freezeStaticSceneTransforms();
     initPostProcessing();
     setLoading(100, "FLIGHT PATH READY");
 
@@ -3385,7 +3719,13 @@ async function init() {
     });
     canvas.addEventListener("webglcontextrestored", () => window.location.reload());
     window.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") window.location.href = "../";
+      if (event.key !== "Escape") return;
+      if (getFullscreenElement()) {
+        event.preventDefault();
+        exitImmersiveMode();
+      } else {
+        window.location.href = "../";
+      }
     });
     replayButton.addEventListener("click", replay);
     qualityToggle.addEventListener("click", cycleQuality);
@@ -3399,15 +3739,18 @@ async function init() {
         if (audio?.enabled) audio.context.resume();
         performanceWindowStart = performance.now();
         performanceFrames = 0;
-        frameId = requestAnimationFrame(animate);
+        if (!frameVisuallyBlank) frameId = requestAnimationFrame(animate);
       }
     });
 
     renderer.compile(scene, camera);
-    renderer.compile(postScene, postCamera);
+    compilePostMaterials();
     frameId = requestAnimationFrame(animate);
     window.setTimeout(() => {
       loader.classList.add("is-hidden");
+      // Loading and shader warm-up are not rendering performance samples.
+      performanceWindowStart = performance.now();
+      performanceFrames = 0;
       launch();
     }, 500);
   } catch (error) {

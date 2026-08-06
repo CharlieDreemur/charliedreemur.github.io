@@ -63,6 +63,10 @@
           <small>RETURN VOYAGE 01</small>
         </div>
         <div class="topbar__controls">
+          <button id="fullscreen-toggle" class="icon-button fullscreen-toggle" type="button" aria-label="Enter fullscreen" aria-pressed="false">
+            <i class="fullscreen-toggle__icon" aria-hidden="true"></i>
+            <span id="fullscreen-label">FULLSCREEN</span>
+          </button>
           <button id="quality-toggle" class="icon-button quality-toggle" type="button" aria-label="Switch graphics quality" title="Switch graphics quality">
             <i aria-hidden="true"></i><span id="quality-label">AUTO</span>
           </button>
@@ -201,13 +205,23 @@
         </div>
       </section>
 
-      <div id="loader" class="loader" role="status">
+      <div id="loader" class="loader">
         <div class="loader__badge">
           <i></i>
           <img src="../images/github_avatar.png" alt="">
         </div>
         <div class="loader__track"><i id="loader-bar"></i></div>
-        <span id="loader-label">CALIBRATING STAR CHARTS…</span>
+        <span id="loader-label" role="status" aria-live="polite">CALIBRATING STAR CHARTS…</span>
+        <button id="loader-fullscreen" type="button">
+          <i aria-hidden="true"></i>
+          <span>ENTER FULLSCREEN</span>
+        </button>
+        <small>OPTIONAL · MOBILE FLIGHT USES LANDSCAPE</small>
+        <small class="loader__credit">
+          MUSIC ·
+          <a href="https://www.scottbuckley.com.au/library/aphelion/" target="_blank" rel="noopener">“APHELION” BY SCOTT BUCKLEY</a>
+          · CC-BY 4.0 · EDITED FOR THIS FLIGHT
+        </small>
       </div>
 
       <noscript>
