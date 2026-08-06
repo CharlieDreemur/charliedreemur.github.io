@@ -196,6 +196,11 @@ let dustField;
 let warpLines;
 let sharedSurfaceGeometry;
 let sharedShellGeometry;
+let earthBody;
+let earthTextureTier = 0;
+let earthLodPromise;
+let pendingEarthLod;
+let earthLodAttemptedTier = 0;
 let flightStartedAt = 0;
 let flightProgress = 0;
 let handoffStartedAt = 0;
@@ -931,6 +936,7 @@ class GpuFrameBenchmark {
       native: nativeRendering,
       quality: qualityLevel,
       internalScale: getInternalRenderScale(),
+      earthTextureTier,
       estimatedFrameMs: Number(estimatedFrameMs.toFixed(3)),
       stages,
     };
@@ -1702,6 +1708,29 @@ function loadTexture(loader, url, srgb) {
   });
 }
 
+function loadEarthSurfaceTier(tier, loader = new THREE.TextureLoader()) {
+  return Promise.all([
+    loadTexture(loader, `textures/earth-day-${tier}.webp`, true),
+    loadTexture(loader, `textures/earth-night-${tier}.webp`, true),
+    // R holds elevation relief for the bump map, G holds ocean-aware roughness.
+    loadTexture(loader, `textures/earth-orm-${tier}.webp`, false),
+    loadTexture(loader, `textures/earth-clouds-${tier}.webp`, false),
+  ]).then(([day, night, orm, clouds]) => {
+    if (day && orm) {
+      return {
+        map: day,
+        bumpMap: orm,
+        roughnessMap: orm,
+        nightMap: night,
+        cloudMap: clouds,
+        tier,
+      };
+    }
+    for (const texture of [day, night, orm, clouds]) texture?.dispose();
+    return null;
+  });
+}
+
 /*
  * Earth and the Moon use compressed photographic maps baked from NASA imagery.
  * The fetch is kicked off before the procedural planets are generated so the
@@ -1709,28 +1738,17 @@ function loadTexture(loader, url, srgb) {
  */
 function loadPhotographicSurfaces() {
   const tier = qualityProfiles[qualityLevel].textureTier;
+  // Earth is still a small disc for most of the flight. Start one tier lower
+  // and stream its final map only as the destination becomes screen-filling.
+  const earthTier = Math.min(tier, 1024);
   const loader = new THREE.TextureLoader();
   return Promise.all([
-    loadTexture(loader, `textures/earth-day-${tier}.webp`, true),
-    loadTexture(loader, `textures/earth-night-${tier}.webp`, true),
-    // R holds elevation relief for the bump map, G holds ocean-aware roughness.
-    loadTexture(loader, `textures/earth-orm-${tier}.webp`, false),
-    loadTexture(loader, `textures/earth-clouds-${tier}.webp`, false),
+    loadEarthSurfaceTier(earthTier, loader),
     loadTexture(loader, `textures/moon-${tier}.webp`, true),
     loadTexture(loader, `textures/sun-${tier}.webp`, true),
     loadTexture(loader, `textures/jupiter-${tier}.webp`, true),
     loadTexture(loader, `textures/mars-${tier}.webp`, true),
-  ]).then(([day, night, orm, clouds, moon, sun, jupiter, mars]) => {
-    let earth = null;
-    if (day && orm) {
-      earth = { map: day, bumpMap: orm, roughnessMap: orm, nightMap: night, cloudMap: clouds };
-    } else {
-      // A partial Earth set cannot be rendered by the photographic path. Release
-      // any successfully uploaded partners before falling back to the procedural
-      // surface, otherwise a transient request failure strands GPU memory.
-      for (const texture of [day, night, orm, clouds]) texture?.dispose();
-    }
-
+  ]).then(([earth, moon, sun, jupiter, mars]) => {
     return {
       sun,
       jupiter: jupiter ? { map: jupiter } : null,
@@ -2481,9 +2499,11 @@ function createRingMaterial(radius, seed, center) {
 }
 
 function applyNightLights(material, nightMap) {
+  const nightMapUniform = { value: nightMap };
+  material.userData.nightMapUniform = nightMapUniform;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uSunDirection = sunUniform;
-    shader.uniforms.uNightMap = { value: nightMap };
+    shader.uniforms.uNightMap = nightMapUniform;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", "#include <common>\nvarying vec3 vSurfaceNormalW;")
       .replace(
@@ -2639,12 +2659,90 @@ function addCelestialBody({
   }
 
   scene.add(group);
-  celestialBodies.push({ group, mesh, cloudMesh, rotationSpeed });
+  const body = { group, mesh, cloudMesh, rotationSpeed };
+  celestialBodies.push(body);
   // Recorded so the star field can carve itself out of the volume in front of
   // each body; see addStarLayer.
   occluders.push({ center: new THREE.Vector3(...position), radius: radius * 1.04 });
   if (info) registerTarget(info, position, radius);
-  return group;
+  return body;
+}
+
+function requestEarthTextureLod() {
+  const targetTier = qualityLevel === "eco" ? 1024 : 2048;
+  if (
+    !earthBody ||
+    earthTextureTier >= targetTier ||
+    earthLodAttemptedTier >= targetTier ||
+    earthLodPromise
+  ) {
+    return;
+  }
+
+  earthLodAttemptedTier = targetTier;
+  earthLodPromise = loadEarthSurfaceTier(targetTier)
+    .then((surface) => {
+      if (surface && surface.tier > earthTextureTier) pendingEarthLod = surface;
+    })
+    .finally(() => {
+      earthLodPromise = null;
+    });
+}
+
+function applyPendingEarthTextureLod() {
+  if (!earthBody || !pendingEarthLod) return;
+  const surface = pendingEarthLod;
+  pendingEarthLod = null;
+  const allowedTier = qualityLevel === "eco" ? 1024 : 2048;
+  if (surface.tier > allowedTier) {
+    for (const texture of new Set([
+      surface.map,
+      surface.bumpMap,
+      surface.roughnessMap,
+      surface.nightMap,
+      surface.cloudMap,
+    ])) {
+      texture?.dispose();
+    }
+    return;
+  }
+
+  const { material } = earthBody.mesh;
+  const oldTextures = new Set([
+    material.map,
+    material.bumpMap,
+    material.roughnessMap,
+    material.userData.nightMapUniform?.value,
+    earthBody.cloudMesh?.material.alphaMap,
+  ]);
+
+  material.map = surface.map;
+  material.bumpMap = surface.bumpMap;
+  material.roughnessMap = surface.roughnessMap;
+  if (material.userData.nightMapUniform && surface.nightMap) {
+    material.userData.nightMapUniform.value = surface.nightMap;
+  }
+  if (earthBody.cloudMesh && surface.cloudMap) {
+    earthBody.cloudMesh.material.alphaMap = surface.cloudMap;
+    earthBody.cloudMesh.material.needsUpdate = true;
+  }
+  material.needsUpdate = true;
+  earthTextureTier = surface.tier;
+
+  // All replacement maps were uploaded by configureSurfaceTexture. The old LOD
+  // can now leave GPU memory; Set avoids disposing the packed ORM map twice.
+  for (const texture of oldTextures) {
+    if (
+      texture &&
+      texture !== surface.map &&
+      texture !== surface.bumpMap &&
+      texture !== surface.roughnessMap &&
+      texture !== surface.nightMap &&
+      texture !== surface.cloudMap
+    ) {
+      texture.dispose();
+    }
+  }
 }
 
 function addNebula(position, scale, color, opacity = 0.36, seed = 5) {
@@ -3457,10 +3555,12 @@ async function buildScene() {
   });
 
   setLoading(80, "RESTORING EARTH…");
-  addCelestialBody({
+  const earthSurface = surfaces.earth ?? createPlanetSurface("earth", 1984);
+  earthTextureTier = surfaces.earth?.tier ?? 0;
+  earthBody = addCelestialBody({
     radius: 38,
     position: [0, 0, -1048],
-    surface: surfaces.earth ?? createPlanetSurface("earth", 1984),
+    surface: earthSurface,
     glowColor: "#4fc7ff",
     info: {
       name: "EARTH",
@@ -4108,6 +4208,8 @@ function updateJourney(progress, now) {
   const landingBlend = THREE.MathUtils.smoothstep(progress, 0.86, 1);
   const flightPulse = Math.sin(Math.min(progress, 1) * Math.PI);
   const entry = THREE.MathUtils.smoothstep(progress, 0.88, 1);
+  if (progress >= 0.72) requestEarthTextureLod();
+  if (progress >= 0.84) applyPendingEarthTextureLod();
   // The cruise easing is already decelerating by the time Earth fills the frame,
   // so the descent contributes its own accelerating term. Without it the last
   // three seconds park in orbit and the "atmospheric entry" callout has nothing
