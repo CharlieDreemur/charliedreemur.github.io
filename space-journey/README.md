@@ -18,9 +18,28 @@ has its own HTML, CSS, and JavaScript. When enabled, normal pages load only the
 small `launcher.css` and `launcher.js` transition; Three.js and the full
 experience remain isolated until the visitor enters `/space-journey/`.
 
-Hold the masthead avatar for three seconds to charge the launch ring. The page
-then folds like a three-dimensional sheet into a portal before navigation. The
-loading screen offers optional fullscreen while resources are prepared, but the
+Hold the masthead avatar for five seconds to charge the launch ring. The avatar
+glides to the middle of the viewport, and the page then folds like a
+three-dimensional sheet into a portal opened underneath it before navigation.
+
+Everything in that fold is placed from one measured point: the centre of the
+avatar once it has finished travelling. The measurement is in viewport
+coordinates, which is what the fixed overlay wants, and `--portal-origin-*` adds
+the scroll offset for the document-space `transform-origin` the collapsing
+`<body>` needs. Depth is why the two spaces have to be kept apart. Giving `<html>`
+a `perspective` would be the natural way to make the sheet recede, but any
+`perspective` — like any `transform` or `will-change: transform` — turns an
+element into the containing block for its fixed descendants, and the overlay
+would silently start resolving those viewport pixels against the full height of
+the document. Launching from the top of the page hid it; launching from anywhere
+else threw the portal, the lens, the streaks and the white burst off by exactly
+the scroll offset while the avatar stayed centred. So the perspective lives
+inside the body's own collapse transform, whose origin is already the portal, and
+the same trap on the page side — a fixed masthead re-anchored by the collapse it
+is riding on — is paid for by handing the scroll offset back through
+`.space-fixed-anchor`.
+
+The loading screen offers optional fullscreen while resources are prepared, but the
 flight starts automatically when ready whether or not it is pressed. Supported
 mobile browsers also lock fullscreen to landscape; otherwise the visitor must
 rotate the device manually. The top-bar control can enter or leave fullscreen
@@ -184,7 +203,10 @@ per second puts its first summit at 2:18, so the excerpt runs from 1:22 to 2:28 
 which lands that summit 56 seconds in, inside the 52.8 s–60 s re-entry window,
 with the build occupying the cruise before it. Cosine fades at both ends, and
 `launch()` rewinds the element, because an excerpt aligned to one timeline is
-wrong for a replay that resumes mid-fade. It is also 0.99 MB against the previous
+wrong for a replay that resumes mid-fade. The score also rises over its own
+8-second fader at launch, which is deliberately not the master: the ignition cue
+fires in the same instant and fading the master with it would flatten the one
+sound that needs an attack. It is also 0.99 MB against the previous
 2.05 MB. The fader sits at 0.55 rather than the old 0.72: this is a far hotter
 master (0.10 RMS against 0.06) and matching the old setting would have put the
 score 1.7x over the drive and the cues.
@@ -194,6 +216,13 @@ oscillators through a lowpass whose cutoff opens over the first four seconds and
 whose pitch tracks the flight, and the two cues at either end of the trip are
 synthesised on the same principle — nothing has to stay in sync with a recording,
 and there is no second asset to license.
+
+Cockpit boot is four spatialised relay-and-servo gestures at 0, 140, 280, and
+420 ms, using the same delays as propulsion, navigation, gunsight, and trajectory
+tape in CSS. A two-note electronic acknowledgement closes the sequence rather
+than adding a beep to every panel. The cue is deliberately quieter than ignition,
+and is skipped if sound is enabled after the panels have already opened or the
+visitor requests reduced motion.
 
 Ignition is three layers: a sub dropping from 126 Hz to 34 Hz as the drive
 catches, a noise band opening from 170 Hz to 2.6 kHz for the acceleration, and a

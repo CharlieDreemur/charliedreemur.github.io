@@ -189,8 +189,10 @@ const MUSIC_LEVEL = 0.55;
 const ENGINE_LEVEL = 0.045;
 // The score drifts up out of the drive rather than being present from the first
 // frame. It rides the music fader alone: the master carries the ignition cue in
-// the same instant, and slowing that would blunt the one sound that needs an attack.
-const MUSIC_FADE_IN = 5.5;
+// the same instant, and slowing that would blunt the one sound that needs an
+// attack. Eight seconds because the excerpt opens busy enough that a shorter ramp
+// disappears into the music's own dynamics — at 5.5 s it measured as noise.
+const MUSIC_FADE_IN = 8;
 let qualityMode = "auto";
 let qualityLevel = connection?.saveData ? "eco" : constrainedDevice ? "balanced" : "high";
 
@@ -3068,6 +3070,80 @@ function createAudioEngine() {
   return audio;
 }
 
+// Four compact "systems online" gestures mirror the panel boot delays in CSS:
+// left propulsion, right navigation, gunsight, then the trajectory tape. Each
+// combines a relay snap with a short descending servo; the final two-note chirp
+// confirms the cockpit as a whole rather than making every panel beep.
+function playCockpitBootCue() {
+  if (!audio || audio.context.state !== "running") return;
+  const { context, sfxGain } = audio;
+  const start = context.currentTime + 0.04;
+  const stages = [
+    { at: 0, pan: -0.62, pitch: 138 },
+    { at: 0.14, pan: 0.62, pitch: 156 },
+    { at: 0.28, pan: 0, pitch: 174 },
+    { at: 0.42, pan: 0, pitch: 118 },
+  ];
+
+  stages.forEach(({ at, pan, pitch }, index) => {
+    const when = start + at;
+    const relay = context.createBufferSource();
+    const relayFilter = context.createBiquadFilter();
+    const relayGain = context.createGain();
+    const servo = context.createOscillator();
+    const servoFilter = context.createBiquadFilter();
+    const servoGain = context.createGain();
+    const output = context.createGain();
+    const panner = typeof context.createStereoPanner === "function" ? context.createStereoPanner() : null;
+
+    relay.buffer = getNoiseBuffer(context);
+    relayFilter.type = "bandpass";
+    relayFilter.frequency.value = 1900 + index * 420;
+    relayFilter.Q.value = 2.4;
+    relayGain.gain.setValueAtTime(0.13, when);
+    relayGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.055);
+
+    servo.type = index === 3 ? "triangle" : "sawtooth";
+    servo.frequency.setValueAtTime(pitch, when);
+    servo.frequency.exponentialRampToValueAtTime(pitch * 0.46, when + 0.34);
+    servoFilter.type = "lowpass";
+    servoFilter.frequency.setValueAtTime(920, when);
+    servoFilter.frequency.exponentialRampToValueAtTime(260, when + 0.34);
+    servoGain.gain.setValueAtTime(0.0001, when);
+    servoGain.gain.exponentialRampToValueAtTime(index === 3 ? 0.055 : 0.075, when + 0.025);
+    servoGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.38);
+
+    output.gain.value = 0.62;
+    relay.connect(relayFilter).connect(relayGain).connect(output);
+    servo.connect(servoFilter).connect(servoGain).connect(output);
+    if (panner) {
+      panner.pan.value = pan;
+      output.connect(panner).connect(sfxGain);
+    } else {
+      output.connect(sfxGain);
+    }
+
+    relay.start(when);
+    relay.stop(when + 0.065);
+    servo.start(when);
+    servo.stop(when + 0.4);
+  });
+
+  [659.25, 987.77].forEach((frequency, index) => {
+    const tone = context.createOscillator();
+    const toneGain = context.createGain();
+    const when = start + 0.78 + index * 0.11;
+    tone.type = "sine";
+    tone.frequency.value = frequency;
+    toneGain.gain.setValueAtTime(0.0001, when);
+    toneGain.gain.exponentialRampToValueAtTime(0.105, when + 0.025);
+    toneGain.gain.exponentialRampToValueAtTime(0.0001, when + 0.22);
+    tone.connect(toneGain).connect(sfxGain);
+    tone.start(when);
+    tone.stop(when + 0.24);
+  });
+}
+
 // Ignition, in three layers: a sub that drops as the drive catches, a noise band
 // that opens upward for the acceleration, and a short bright transient so the cue
 // has an attack rather than only a swell.
@@ -3208,7 +3284,11 @@ function setSound(enabled) {
 function fireArmedLaunchCue() {
   if (!launchCueArmed) return;
   launchCueArmed = false;
-  if (state !== "flying" || performance.now() - flightStartedAt > 5000) return;
+  const launchAge = performance.now() - flightStartedAt;
+  if (state !== "flying" || launchAge > 5000) return;
+  // A late manual unmute may still reasonably reveal the engine, but replaying
+  // panel actuators after the panels are already open would be disconnected.
+  if (!reducedMotion && launchAge < 1600) playCockpitBootCue();
   playLaunchCue();
 }
 

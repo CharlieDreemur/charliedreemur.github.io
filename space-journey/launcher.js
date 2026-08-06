@@ -46,6 +46,22 @@
     root.style.setProperty("--portal-y", `${portal.y}px`);
     root.style.setProperty("--portal-origin-x", `${portal.x + window.scrollX}px`);
     root.style.setProperty("--portal-origin-y", `${portal.y + window.scrollY}px`);
+    root.style.setProperty("--portal-scroll-x", `${window.scrollX}px`);
+    root.style.setProperty("--portal-scroll-y", `${window.scrollY}px`);
+  }
+
+  /* The collapsing <body> becomes the containing block for its own fixed
+     children, so they stop following the viewport and jump by the scroll offset
+     the moment the portal opens. Tagging them lets the stylesheet hand that
+     offset back, which keeps the masthead — and the Earth centred in it — on the
+     sheet of page that folds into the portal. */
+  function anchorFixedChrome() {
+    if (!window.scrollX && !window.scrollY) return;
+    for (const element of document.body.querySelectorAll("*")) {
+      if (getComputedStyle(element).position === "fixed") {
+        element.classList.add("space-fixed-anchor");
+      }
+    }
   }
 
   function playReturnArrival() {
@@ -250,6 +266,7 @@
     }
 
     clearChargeField();
+    anchorFixedChrome();
     root.append(overlay, flash);
     requestAnimationFrame(() => root.classList.add("space-transition-active"));
   }

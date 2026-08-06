@@ -1662,17 +1662,21 @@ html:-webkit-full-screen #experience {
 /* -------------------------------------------------------- boot / shutdown */
 
 .is-booting .cluster,
-.is-booting .tape,
-.is-booting .gunsight {
+.is-booting .gunsight,
+.is-booting .tape {
   animation: instrument-boot 0.9s var(--ease-cinematic) both;
 }
 
 .is-booting .cluster--right {
-  animation-delay: 0.12s;
+  animation-delay: 0.14s;
+}
+
+.is-booting .gunsight {
+  animation-delay: 0.28s;
 }
 
 .is-booting .tape {
-  animation-delay: 0.22s;
+  animation-delay: 0.42s;
 }
 
 .cinema-bars::before,

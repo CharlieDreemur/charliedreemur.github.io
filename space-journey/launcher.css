@@ -95,12 +95,15 @@ html.space-launch-charging::after {
   animation: space-trail-streak 860ms var(--trail-delay) cubic-bezier(0.5, 0, 0.85, 0.4) forwards;
 }
 
-/* Beat 3 — the page is pulled apart by gravity and swallowed. */
+/* Beat 3 — the page is pulled apart by gravity and swallowed.
+   <html> deliberately carries no perspective: that would make it the containing
+   block for the fixed overlay below, which would then resolve --portal-x/y
+   against the document instead of the viewport and throw the whole portal off by
+   the scroll offset. The depth lives in the body's own transform instead, where
+   its transform-origin already supplies the vanishing point. */
 html.space-transition-active {
   overflow: hidden;
   background: #01030a;
-  perspective: 1500px;
-  perspective-origin: var(--portal-origin-x, 50vw) var(--portal-origin-y, 3rem);
 }
 
 html.space-transition-active body {
@@ -110,6 +113,13 @@ html.space-transition-active body {
   will-change: transform, opacity, filter, border-radius;
   animation: space-gravity-collapse 1350ms 700ms cubic-bezier(0.6, 0, 0.85, 0.3) forwards;
   backface-visibility: visible;
+}
+
+/* Fixed chrome follows the viewport until the line above hands <body> a
+   containing block, from which point it is laid out in document space. Adding
+   the scroll offset leaves it standing where the reader last saw it. */
+html.space-transition-active .space-fixed-anchor {
+  translate: var(--portal-scroll-x, 0px) var(--portal-scroll-y, 0px);
 }
 
 .space-transition-overlay {
@@ -412,26 +422,26 @@ html.space-return-active [data-space-launch] {
     border-radius: 0;
     filter: brightness(1) saturate(1);
     opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(0) scale(1);
+    transform: perspective(1500px) translate3d(0, 0, 0) rotate(0) scale(1);
   }
 
   35% {
     border-radius: 6vw;
     filter: brightness(0.82) saturate(1.32) blur(0.4px);
-    transform: translate3d(0, 0, -120px) rotate(-7deg) scale(0.86);
+    transform: perspective(1500px) translate3d(0, 0, -120px) rotate(-7deg) scale(0.86);
   }
 
   70% {
     border-radius: 26vw;
     filter: brightness(0.42) saturate(1.7) blur(2px);
-    transform: translate3d(0, 0, -430px) rotate(-27deg) scale(0.4);
+    transform: perspective(1500px) translate3d(0, 0, -430px) rotate(-27deg) scale(0.4);
   }
 
   100% {
     border-radius: 50%;
     filter: brightness(0.05) saturate(2.4) blur(7px);
     opacity: 0;
-    transform: translate3d(0, 0, -900px) rotate(-74deg) scale(0.02);
+    transform: perspective(1500px) translate3d(0, 0, -900px) rotate(-74deg) scale(0.02);
   }
 }
 
