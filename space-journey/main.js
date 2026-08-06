@@ -64,7 +64,9 @@ const qualityProfiles = {
     texture: 768,
     textureTier: 2048,
     octaves: 5,
-    postScale: 1,
+    // Heavy HDR and grading work runs at half the pixel area, then an
+    // edge-adaptive full-resolution pass reconstructs the final image.
+    postScale: 0.67,
     bloomScale: 0.25,
     bloom: 0.9,
     streak: 0.42,
@@ -73,6 +75,8 @@ const qualityProfiles = {
     dust: 900,
     asteroids: 260,
     clouds: true,
+    shaftSamples: 32,
+    shafts: 0.85,
   },
   balanced: {
     dpr: 1.3,
@@ -91,6 +95,8 @@ const qualityProfiles = {
     dust: 420,
     asteroids: 120,
     clouds: true,
+    shaftSamples: 20,
+    shafts: 0.8,
   },
   eco: {
     dpr: 1,
@@ -110,6 +116,9 @@ const qualityProfiles = {
     asteroids: 0,
     // Cloud cover is a 9 KB texture at this tier, cheap enough to keep everywhere.
     clouds: true,
+    // The shafts ride on the bright pass, which this tier does not run at all.
+    shaftSamples: 0,
+    shafts: 0,
   },
 };
 
@@ -149,12 +158,20 @@ let bloomTargetA;
 let bloomTargetB;
 let streakTargetA;
 let streakTargetB;
+let shaftTarget;
 let brightMaterial;
 let blurMaterial;
 let streakMaterial;
+let shaftMaterial;
 let compositeMaterial;
+let gradedTarget;
+let upscaleMaterial;
+let gpuBenchmark;
+// Where the light shafts converge. Set when the sun is placed.
+let sunWorldPosition = null;
 let starLayers = [];
 let starMaterials = [];
+let starLayerSequence = 0;
 let celestialBodies = [];
 let occluders = [];
 let nebulaSprites = [];
@@ -205,11 +222,20 @@ let qualityMode = "auto";
 let qualityLevel = connection?.saveData ? "eco" : constrainedDevice ? "balanced" : "high";
 
 // ?quality=high|balanced|eco pins the tier, which is handy for capturing reference frames.
-const requestedQuality = new URLSearchParams(window.location.search).get("quality");
+const queryParameters = new URLSearchParams(window.location.search);
+const requestedQuality = queryParameters.get("quality");
 if (requestedQuality && qualityProfiles[requestedQuality]) {
   qualityMode = requestedQuality;
   qualityLevel = requestedQuality;
 }
+const benchmarkMode = queryParameters.get("benchmark") === "1";
+const nativeRendering = queryParameters.get("native") === "1";
+const benchmarkFreeze = benchmarkMode && queryParameters.get("freeze") === "1";
+const benchmarkSeek = THREE.MathUtils.clamp(
+  Number.parseFloat(queryParameters.get("seek") || "0"),
+  0,
+  0.99,
+);
 let currentWaypointIndex = -1;
 let lastHudUpdate = 0;
 let performanceWindowStart = performance.now();
@@ -302,18 +328,19 @@ function updateTargeting() {
   aimDirection.set(-cameraMatrix[8], -cameraMatrix[9], -cameraMatrix[10]).normalize();
 
   let best = null;
-  let bestRange = Infinity;
+  let bestRangeSq = Infinity;
   for (const target of targets) {
     aimOffset.subVectors(target.center, camera.position);
-    const range = aimOffset.length();
-    if (range < 1 || range > target.reach || range >= bestRange) continue;
+    const rangeSq = aimOffset.lengthSq();
+    if (rangeSq < 1 || rangeSq > target.reach * target.reach || rangeSq >= bestRangeSq) continue;
+    const range = Math.sqrt(rangeSq);
     const offset = Math.acos(
       THREE.MathUtils.clamp(aimOffset.dot(aimDirection) / range, -1, 1),
     );
     const cone = Math.max(Math.asin(Math.min(target.radius / range, 1)), LOCK_FLOOR);
     if (offset > (target === lockedTarget ? cone * LOCK_RELEASE : cone)) continue;
     best = target;
-    bestRange = range;
+    bestRangeSq = rangeSq;
   }
 
   if (best === lockedTarget) return;
@@ -606,8 +633,24 @@ function getCompositeDefines(profile) {
   const defines = {};
   if (profile.bloomScale > 0) defines.USE_BLOOM = "";
   if (profile.aberration > 0) defines.USE_ABERRATION = "";
-  if (profile.grain > 0) defines.USE_GRAIN = "";
+  if (profile.grain > 0 && !usesReconstruction(profile)) defines.USE_GRAIN = "";
+  if (profile.bloomScale > 0 && profile.shaftSamples > 0) defines.USE_SHAFTS = "";
   return defines;
+}
+
+function getInternalRenderScale(profile = qualityProfiles[qualityLevel]) {
+  return nativeRendering ? 1 : profile.postScale;
+}
+
+function usesReconstruction(profile = qualityProfiles[qualityLevel]) {
+  return getInternalRenderScale(profile) < 0.999;
+}
+
+function getUpscaleDefines() {
+  // The DOM optical layer already supplies display-resolution grain. Reapplying
+  // the WebGL grain after reconstruction lifts linear near-black space because
+  // it no longer passes through the original composite/tone-map ordering.
+  return {};
 }
 
 function updateQualityUi() {
@@ -645,9 +688,10 @@ function getTargetPixelRatio(profile, width, height) {
 }
 
 function syncPixelRatioUniforms(pixelRatio) {
-  viewportUniforms.pixelRatio.value = pixelRatio;
+  const internalPixelRatio = pixelRatio * getInternalRenderScale();
+  viewportUniforms.pixelRatio.value = internalPixelRatio;
   starMaterials.forEach((material) => {
-    material.uniforms.uSize.value = material.userData.baseSize * pixelRatio;
+    material.uniforms.uSize.value = material.userData.baseSize * internalPixelRatio;
   });
 }
 
@@ -692,6 +736,9 @@ function applyQualityLevel(level) {
     compositeMaterial.uniforms.uGrain.value = profile.grain;
     compositeMaterial.defines = getCompositeDefines(profile);
     compositeMaterial.needsUpdate = true;
+    upscaleMaterial.uniforms.uGrain.value = profile.grain;
+    upscaleMaterial.defines = getUpscaleDefines(profile);
+    upscaleMaterial.needsUpdate = true;
     updatePostResolution();
   }
   updateQualityUi();
@@ -752,10 +799,15 @@ function updatePostResolution() {
   const profile = qualityProfiles[qualityLevel];
   renderer.getDrawingBufferSize(drawingBufferSize);
 
-  const sceneWidth = Math.max(1, Math.floor(drawingBufferSize.x * profile.postScale));
-  const sceneHeight = Math.max(1, Math.floor(drawingBufferSize.y * profile.postScale));
+  const internalScale = getInternalRenderScale(profile);
+  const reconstruct = usesReconstruction(profile);
+  const sceneWidth = Math.max(1, Math.floor(drawingBufferSize.x * internalScale));
+  const sceneHeight = Math.max(1, Math.floor(drawingBufferSize.y * internalScale));
   sceneTarget.setSize(sceneWidth, sceneHeight);
+  gradedTarget.setSize(reconstruct ? sceneWidth : 1, reconstruct ? sceneHeight : 1);
   compositeMaterial.uniforms.uResolution.value.set(sceneWidth, sceneHeight);
+  upscaleMaterial.uniforms.uSourceResolution.value.set(sceneWidth, sceneHeight);
+  upscaleMaterial.uniforms.uOutputResolution.value.copy(drawingBufferSize);
 
   // Bloom and streaks run at a fraction of the frame, which is where the savings come from.
   const bloomScale = profile.bloomScale;
@@ -765,6 +817,7 @@ function updatePostResolution() {
   bloomTargetB.setSize(bloomWidth, bloomHeight);
   streakTargetA.setSize(bloomWidth, Math.max(1, Math.floor(bloomHeight * 0.5)));
   streakTargetB.setSize(bloomWidth, Math.max(1, Math.floor(bloomHeight * 0.5)));
+  shaftTarget.setSize(bloomWidth, bloomHeight);
 }
 
 function createPostTarget(type = THREE.HalfFloatType, depthBuffer = false) {
@@ -781,6 +834,94 @@ function renderPass(material, target) {
   postQuad.material = material;
   renderer.setRenderTarget(target);
   renderer.render(postScene, postCamera);
+}
+
+class GpuFrameBenchmark {
+  constructor(webglRenderer) {
+    this.gl = webglRenderer.getContext();
+    this.extension =
+      benchmarkMode && webglRenderer.capabilities.isWebGL2
+        ? this.gl.getExtension("EXT_disjoint_timer_query_webgl2")
+        : null;
+    this.pending = [];
+    this.samples = new Map();
+    this.active = null;
+    this.frames = 0;
+
+    window.spaceJourneyBenchmark = {
+      supported: Boolean(this.extension),
+      native: nativeRendering,
+      snapshot: () => this.snapshot(),
+    };
+    if (benchmarkMode && !this.extension) {
+      console.warn("GPU timer queries are unavailable; benchmark results will contain CPU frame data only.");
+    }
+  }
+
+  begin(label) {
+    if (!this.extension || this.active || this.pending.length > 96) return;
+    const query = this.gl.createQuery();
+    this.gl.beginQuery(this.extension.TIME_ELAPSED_EXT, query);
+    this.active = { label, query };
+  }
+
+  end() {
+    if (!this.active) return;
+    this.gl.endQuery(this.extension.TIME_ELAPSED_EXT);
+    this.pending.push(this.active);
+    this.active = null;
+  }
+
+  poll() {
+    if (!this.extension) return;
+    const disjoint = this.gl.getParameter(this.extension.GPU_DISJOINT_EXT);
+    for (let index = this.pending.length - 1; index >= 0; index -= 1) {
+      const entry = this.pending[index];
+      if (!this.gl.getQueryParameter(entry.query, this.gl.QUERY_RESULT_AVAILABLE)) continue;
+      if (!disjoint) {
+        const milliseconds = this.gl.getQueryParameter(entry.query, this.gl.QUERY_RESULT) / 1e6;
+        const values = this.samples.get(entry.label) ?? [];
+        values.push(milliseconds);
+        if (values.length > 600) values.shift();
+        this.samples.set(entry.label, values);
+      }
+      this.gl.deleteQuery(entry.query);
+      this.pending.splice(index, 1);
+    }
+  }
+
+  finishFrame() {
+    if (!benchmarkMode) return;
+    this.frames += 1;
+    if (this.frames % 180 === 0) {
+      console.info("Space Journey GPU benchmark", this.snapshot());
+    }
+  }
+
+  snapshot() {
+    const stages = {};
+    let estimatedFrameMs = 0;
+    for (const [label, values] of this.samples) {
+      if (!values.length) continue;
+      const sorted = [...values].sort((a, b) => a - b);
+      const median = sorted[Math.floor(sorted.length * 0.5)];
+      const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))];
+      stages[label] = {
+        samples: sorted.length,
+        medianMs: Number(median.toFixed(3)),
+        p95Ms: Number(p95.toFixed(3)),
+      };
+      estimatedFrameMs += median;
+    }
+    return {
+      supported: Boolean(this.extension),
+      native: nativeRendering,
+      quality: qualityLevel,
+      internalScale: getInternalRenderScale(),
+      estimatedFrameMs: Number(estimatedFrameMs.toFixed(3)),
+      stages,
+    };
+  }
 }
 
 function createFilmGrainTexture() {
@@ -830,6 +971,11 @@ function initPostProcessing() {
   bloomTargetB = createPostTarget(bufferType);
   streakTargetA = createPostTarget(bufferType);
   streakTargetB = createPostTarget(bufferType);
+  shaftTarget = createPostTarget(bufferType);
+  // Keep the graded source in half-float. Quantising linear shadows to 8-bit
+  // before the final sRGB conversion lifts near-black space into visible grey
+  // steps even though the display output itself is only 8-bit.
+  gradedTarget = createPostTarget(bufferType);
 
   postScene = new THREE.Scene();
   postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -890,6 +1036,55 @@ function initPostProcessing() {
     toneMapped: false,
   });
 
+  // Crepuscular rays. The bright pass already holds the star and nothing else
+  // that is not a highlight, so marching each pixel back toward the star and
+  // accumulating what it crosses builds the shafts directly — and anything
+  // opaque in the way contributes nothing, which is what carves them. Sampling
+  // the bright pass before the bloom blur keeps the rays defined instead of
+  // arriving pre-smeared.
+  shaftMaterial = new THREE.ShaderMaterial({
+    defines: { SHAFT_SAMPLES: profile.shaftSamples || 1 },
+    uniforms: {
+      tDiffuse: { value: bloomTargetA.texture },
+      uOrigin: { value: new THREE.Vector2(0.5, 0.5) },
+      uStrength: { value: 0 },
+    },
+    vertexShader: fullscreenVertexShader,
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform vec2 uOrigin;
+      uniform float uStrength;
+      varying vec2 vUv;
+
+      void main() {
+        if (uStrength <= 0.0) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+          return;
+        }
+
+        // Density below one stops the march short of the star, so the rays stay
+        // rays rather than converging into a second disc on top of it.
+        vec2 delta = (vUv - uOrigin) * (0.72 / float(SHAFT_SAMPLES));
+        vec2 coordinate = vUv;
+        float weight = 1.0;
+        vec3 total = vec3(0.0);
+        float sum = 0.0;
+
+        for (int index = 0; index < SHAFT_SAMPLES; index += 1) {
+          coordinate -= delta;
+          total += texture2D(tDiffuse, coordinate).rgb * weight;
+          sum += weight;
+          weight *= 0.94;
+        }
+
+        gl_FragColor = vec4(total / max(sum, 0.0001) * uStrength, 1.0);
+      }
+    `,
+    depthTest: false,
+    depthWrite: false,
+    toneMapped: false,
+  });
+
   streakMaterial = new THREE.ShaderMaterial({
     uniforms: {
       tDiffuse: { value: bloomTargetA.texture },
@@ -925,15 +1120,18 @@ function initPostProcessing() {
     toneMapped: false,
   });
 
+  const grainTexture = createFilmGrainTexture();
   compositeMaterial = new THREE.ShaderMaterial({
     defines: getCompositeDefines(profile),
     uniforms: {
       tDiffuse: { value: sceneTarget.texture },
       tBloom: { value: bloomTargetA.texture },
       tStreak: { value: streakTargetB.texture },
+      tShaft: { value: shaftTarget.texture },
+      uShaftStrength: { value: profile.shafts },
       uResolution: { value: new THREE.Vector2(1, 1) },
       uTime: frameUniforms.time,
-      tNoise: { value: createFilmGrainTexture() },
+      tNoise: { value: grainTexture },
       uBloomStrength: { value: profile.bloom },
       uStreakStrength: { value: profile.streak },
       uAberration: { value: profile.aberration },
@@ -949,6 +1147,8 @@ function initPostProcessing() {
       uniform sampler2D tDiffuse;
       uniform sampler2D tBloom;
       uniform sampler2D tStreak;
+      uniform sampler2D tShaft;
+      uniform float uShaftStrength;
       uniform vec2 uResolution;
       uniform float uTime;
       uniform sampler2D tNoise;
@@ -1000,16 +1200,20 @@ function initPostProcessing() {
           float aberrationFalloff = smoothstep(0.22, 0.72, edgeDistance);
           vec2 chromaOffset =
             centered * uAberration * (1.0 + uFlight * 1.4) * aberrationFalloff * (1.0 - uPixelate);
-          color.r = texture2D(tDiffuse, distorted + chromaOffset).r;
-          color.g = texture2D(tDiffuse, distorted).g;
-          color.b = texture2D(tDiffuse, distorted - chromaOffset).b;
+          if (aberrationFalloff <= 0.0 || uPixelate >= 1.0) {
+            // The three channel coordinates are identical in the clean centre
+            // and at full pixelation, so one fetch produces the same sample.
+            color = texture2D(tDiffuse, distorted).rgb;
+          } else {
+            color.r = texture2D(tDiffuse, distorted + chromaOffset).r;
+            color.g = texture2D(tDiffuse, distorted).g;
+            color.b = texture2D(tDiffuse, distorted - chromaOffset).b;
+          }
         #else
           color = texture2D(tDiffuse, distorted).rgb;
         #endif
 
         #ifdef USE_BLOOM
-          vec3 bloom = texture2D(tBloom, distorted).rgb;
-          vec3 streak = texture2D(tStreak, distorted).rgb;
           // Both come from blurred buffers, so they smear straight across the
           // quantisation and leave the frame looking merely out of focus. They
           // retire as the grid closes in, which is what lets the blocks read.
@@ -1018,8 +1222,25 @@ function initPostProcessing() {
           // deck spanning every pixel into flat haze. uEntryHeat already tracks
           // exactly that stretch of the descent.
           float optics = (1.0 - uPixelate) * (1.0 - uEntryHeat * 0.62);
-          color += bloom * uBloomStrength * (1.0 + uFlight * 0.5) * optics;
-          color += streak * vec3(0.55, 0.78, 1.0) * uStreakStrength * (1.0 + uFlight) * optics;
+          if (optics > 0.0) {
+            vec3 bloom = texture2D(tBloom, distorted).rgb;
+            vec3 streak = texture2D(tStreak, distorted).rgb;
+            color += bloom * uBloomStrength * (1.0 + uFlight * 0.5) * optics;
+            color += streak * vec3(0.55, 0.78, 1.0) * uStreakStrength * (1.0 + uFlight) * optics;
+          }
+        #endif
+
+        #ifdef USE_SHAFTS
+          // Warmed a little against the star's own colour: the rays are sunlight
+          // scattered through dust, so they should read hotter than the highlight
+          // that threw them. Retired alongside the other optics for the same
+          // reasons — a blurred buffer smears across the pixelation grid, and a
+          // full-frame planet turns any of this into flat haze.
+          if (uShaftStrength > 0.0) {
+            vec3 shaft = texture2D(tShaft, distorted).rgb;
+            color += shaft * vec3(1.0, 0.86, 0.66) * uShaftStrength
+              * (1.0 - uPixelate) * (1.0 - uEntryHeat * 0.62);
+          }
         #endif
 
         if (uEntryHeat > 0.0001) {
@@ -1048,7 +1269,7 @@ function initPostProcessing() {
         color *= mix(mix(0.42, 0.82, uEntryHeat), 1.0, vignette);
 
         #ifdef USE_GRAIN
-          if (uGrain > 0.0001) {
+          if (uGrain > 0.0001 && uPixelate < 1.0) {
             float grain = (randomNoise(gl_FragCoord.xy) - 0.5) * uGrain;
             color += grain * (1.2 - level * 0.7) * (1.0 - uPixelate);
           }
@@ -1058,6 +1279,89 @@ function initPostProcessing() {
         // touchdown, so without this the pixel portrait ends up sitting on a
         // bloomed grey field instead of the empty sky the home page opens on.
         gl_FragColor = vec4(max(color, 0.0) * uFadeOut, 1.0);
+        #include <colorspace_fragment>
+      }
+    `,
+    depthTest: false,
+    depthWrite: false,
+    toneMapped: false,
+  });
+
+  upscaleMaterial = new THREE.ShaderMaterial({
+    defines: getUpscaleDefines(profile),
+    uniforms: {
+      tDiffuse: { value: gradedTarget.texture },
+      tNoise: { value: grainTexture },
+      uSourceResolution: { value: new THREE.Vector2(1, 1) },
+      uOutputResolution: { value: new THREE.Vector2(1, 1) },
+      uTime: frameUniforms.time,
+      uGrain: { value: profile.grain },
+      uPixelate: compositeMaterial.uniforms.uPixelate,
+      uSharpness: { value: 0.14 },
+    },
+    vertexShader: fullscreenVertexShader,
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform sampler2D tNoise;
+      uniform vec2 uSourceResolution;
+      uniform vec2 uOutputResolution;
+      uniform float uTime;
+      uniform float uGrain;
+      uniform float uPixelate;
+      uniform float uSharpness;
+      varying vec2 vUv;
+
+      float sjLuminance(vec3 color) {
+        return dot(color, vec3(0.2126, 0.7152, 0.0722));
+      }
+
+      float randomNoise(vec2 coordinate) {
+        vec2 offset = vec2(fract(uTime * 0.75487766), fract(uTime * 0.56984029));
+        return texture2D(tNoise, fract(coordinate / 64.0 + offset)).r;
+      }
+
+      void main() {
+        vec2 texel = 1.0 / max(uSourceResolution, vec2(1.0));
+        vec3 center = texture2D(tDiffuse, vUv).rgb;
+        vec3 color = center;
+        // Smooth sky and broad gradients are already reconstructed exactly by
+        // the texture unit's bilinear filter. Detail only needs the neighbour
+        // pair along its dominant gradient; sampling the perpendicular pair
+        // produced almost no visible recovery but doubled reconstruction reads.
+        float centerLuma = sjLuminance(center);
+        float gradientX = abs(dFdx(centerLuma));
+        float gradientY = abs(dFdy(centerLuma));
+        float localGradient = gradientX + gradientY;
+        if (localGradient > 0.0025) {
+          vec2 axis = gradientX >= gradientY ? vec2(texel.x, 0.0) : vec2(0.0, texel.y);
+          vec3 forward = texture2D(tDiffuse, vUv + axis).rgb;
+          vec3 backward = texture2D(tDiffuse, vUv - axis).rgb;
+          vec3 neighborMin = min(center, min(forward, backward));
+          vec3 neighborMax = max(center, max(forward, backward));
+          vec3 laplacian = center * 2.0 - forward - backward;
+          float contrast = max(
+            abs(centerLuma - sjLuminance(forward)),
+            abs(centerLuma - sjLuminance(backward))
+          );
+          // Stronger restoration on low-contrast texture detail, gentler at
+          // hard silhouettes where overshoot would create a halo.
+          float adaptiveStrength = uSharpness * mix(1.0, 0.48, smoothstep(0.06, 0.34, contrast));
+          color = clamp(
+            center + laplacian * adaptiveStrength,
+            neighborMin - vec3(0.018),
+            neighborMax + vec3(0.018)
+          );
+        }
+
+        #ifdef USE_GRAIN
+          if (uGrain > 0.0001 && uPixelate < 1.0) {
+            float level = sjLuminance(color);
+            float grain = (randomNoise(gl_FragCoord.xy) - 0.5) * uGrain;
+            color += grain * (1.2 - level * 0.7) * (1.0 - uPixelate);
+          }
+        #endif
+
+        gl_FragColor = vec4(max(color, 0.0), 1.0);
         #include <colorspace_fragment>
       }
     `,
@@ -1086,16 +1390,64 @@ function compilePostMaterials() {
   // currently attached to it. Warm every pass under the opaque loader to avoid
   // compiling bright, blur, or streak shaders during the first visible frame.
   const originalMaterial = postQuad.material;
-  for (const material of [brightMaterial, blurMaterial, streakMaterial, compositeMaterial]) {
+  for (const material of [
+    brightMaterial,
+    blurMaterial,
+    streakMaterial,
+    shaftMaterial,
+    compositeMaterial,
+    upscaleMaterial,
+  ]) {
     postQuad.material = material;
     renderer.compile(postScene, postCamera);
   }
   postQuad.material = originalMaterial;
 }
 
+const shaftProjection = new THREE.Vector3();
+
+function updateLightShafts() {
+  const { uOrigin, uStrength } = shaftMaterial.uniforms;
+  if (!sunWorldPosition) {
+    uStrength.value = 0;
+    return;
+  }
+
+  // project() divides by w, which for a point behind the camera flips the sign
+  // and lands it back inside the frame mirrored through the centre. The rays
+  // would then stream out of empty sky opposite the star.
+  shaftProjection.copy(sunWorldPosition).applyMatrix4(camera.matrixWorldInverse);
+  if (shaftProjection.z >= 0) {
+    uStrength.value = 0;
+    return;
+  }
+
+  shaftProjection.applyMatrix4(camera.projectionMatrix);
+  uOrigin.value.set(shaftProjection.x * 0.5 + 0.5, shaftProjection.y * 0.5 + 0.5);
+
+  // Held at full strength while the star is in frame and released over the next
+  // half-frame's worth of travel past the edge. Cutting at the edge instead pops
+  // a full set of rays out of the image in one frame.
+  const excursion = Math.max(Math.abs(shaftProjection.x), Math.abs(shaftProjection.y));
+  uStrength.value = 1 - THREE.MathUtils.smoothstep(excursion, 1, 2);
+}
+
+function renderFinalComposite() {
+  const reconstruct = usesReconstruction();
+  gpuBenchmark?.begin("composite");
+  renderPass(compositeMaterial, reconstruct ? gradedTarget : null);
+  gpuBenchmark?.end();
+  if (reconstruct) {
+    gpuBenchmark?.begin("upscale");
+    renderPass(upscaleMaterial, null);
+    gpuBenchmark?.end();
+  }
+}
+
 function renderCinematicFrame() {
   const profile = qualityProfiles[qualityLevel];
   const { uFadeOut, uPixelate } = compositeMaterial.uniforms;
+  gpuBenchmark?.poll();
 
   // Once the hand-off has reached black, the composite result is guaranteed to
   // be black regardless of every scene and post-process input. Draw that black
@@ -1104,25 +1456,34 @@ function renderCinematicFrame() {
   // pixels.
   if (uFadeOut.value <= 0) {
     if (!frameVisuallyBlank) {
-      renderPass(compositeMaterial, null);
+      renderFinalComposite();
       frameVisuallyBlank = true;
     }
     return;
   }
   frameVisuallyBlank = false;
 
+  gpuBenchmark?.begin("scene");
   renderer.setRenderTarget(sceneTarget);
   // Only the 3D pass needs a clear. Every post-process pass is an opaque
   // fullscreen draw, so clearing those targets first is pure bandwidth waste.
   renderer.clear(true, true, false);
   renderer.render(scene, camera);
+  gpuBenchmark?.end();
 
   // Pixelation reaches exactly one shortly before the frame fades fully out.
   // At that point the composite shader multiplies both optical buffers by zero,
   // so refreshing five invisible fullscreen passes has no effect on the image.
   if (profile.bloomScale > 0 && uPixelate.value < 1) {
+    gpuBenchmark?.begin("optics");
     brightMaterial.uniforms.tDiffuse.value = sceneTarget.texture;
     renderPass(brightMaterial, bloomTargetA);
+
+    // Before the blur passes below overwrite bloomTargetA with their result.
+    if (profile.shaftSamples > 0) {
+      updateLightShafts();
+      renderPass(shaftMaterial, shaftTarget);
+    }
 
     const streakTexel = 1 / bloomTargetA.width;
     streakMaterial.uniforms.tDiffuse.value = bloomTargetA.texture;
@@ -1138,9 +1499,11 @@ function renderCinematicFrame() {
     blurMaterial.uniforms.tDiffuse.value = bloomTargetB.texture;
     blurMaterial.uniforms.uDirection.value.set(0, 1 / bloomTargetA.height);
     renderPass(blurMaterial, bloomTargetA);
+    gpuBenchmark?.end();
   }
 
-  renderPass(compositeMaterial, null);
+  renderFinalComposite();
+  gpuBenchmark?.finishFrame();
 }
 
 function releaseCpuTextureSourceAfterUpload(texture) {
@@ -1196,21 +1559,38 @@ function createCanvasTexture(draw, size = 512) {
   return createImmutableCanvasTexture(textureCanvas, { anisotropy: true });
 }
 
+function discardStrictlyTransparentFragments(material, cacheKey) {
+  const previousCompile = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, webglRenderer) => {
+    previousCompile.call(material, shader, webglRenderer);
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <alphatest_fragment>",
+      "if (diffuseColor.a == 0.0) discard;\n#include <alphatest_fragment>",
+    );
+  };
+  const previousCacheKey = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${previousCacheKey()}|zero-alpha:${cacheKey}`;
+  return material;
+}
+
 function getStellarMaterial(texture, color, opacity) {
   const key = `${texture.uuid}|${color}|${opacity}`;
   return getOrCreate(
     stellarMaterialCache,
     key,
     () =>
-      new THREE.SpriteMaterial({
-        map: texture,
-        color,
-        transparent: true,
-        opacity,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        fog: false,
-      }),
+      discardStrictlyTransparentFragments(
+        new THREE.SpriteMaterial({
+          map: texture,
+          color,
+          transparent: true,
+          opacity,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          fog: false,
+        }),
+        "stellar",
+      ),
   );
 }
 
@@ -1327,15 +1707,27 @@ function loadPhotographicSurfaces() {
     loadTexture(loader, `textures/sun-${tier}.webp`, true),
     loadTexture(loader, `textures/jupiter-${tier}.webp`, true),
     loadTexture(loader, `textures/mars-${tier}.webp`, true),
-  ]).then(([day, night, orm, clouds, moon, sun, jupiter, mars]) => ({
-    sun,
-    jupiter: jupiter ? { map: jupiter } : null,
-    // Martian albedo tracks its terrain closely enough to double as a height field.
-    mars: mars ? { map: mars, bumpMap: mars } : null,
-    earth: day && orm ? { map: day, bumpMap: orm, roughnessMap: orm, nightMap: night, cloudMap: clouds } : null,
-    // The lunar albedo doubles as its own height field, which avoids a second download.
-    moon: moon ? { map: moon, bumpMap: moon } : null,
-  }));
+  ]).then(([day, night, orm, clouds, moon, sun, jupiter, mars]) => {
+    let earth = null;
+    if (day && orm) {
+      earth = { map: day, bumpMap: orm, roughnessMap: orm, nightMap: night, cloudMap: clouds };
+    } else {
+      // A partial Earth set cannot be rendered by the photographic path. Release
+      // any successfully uploaded partners before falling back to the procedural
+      // surface, otherwise a transient request failure strands GPU memory.
+      for (const texture of [day, night, orm, clouds]) texture?.dispose();
+    }
+
+    return {
+      sun,
+      jupiter: jupiter ? { map: jupiter } : null,
+      // Martian albedo tracks its terrain closely enough to double as a height field.
+      mars: mars ? { map: mars, bumpMap: mars } : null,
+      earth,
+      // The lunar albedo doubles as its own height field, which avoids a second download.
+      moon: moon ? { map: moon, bumpMap: moon } : null,
+    };
+  });
 }
 
 function finalizeTexture(source, { srgb = true, repeat = true } = {}) {
@@ -1353,6 +1745,17 @@ function mixChannel(a, b, amount) {
 function smootherstep(edge0, edge1, value) {
   const t = Math.min(Math.max((value - edge0) / (edge1 - edge0), 0), 1);
   return t * t * (3 - 2 * t);
+}
+
+function createLongitudeLookup(width) {
+  const cosine = new Float64Array(width);
+  const sine = new Float64Array(width);
+  for (let column = 0; column < width; column += 1) {
+    const longitude = (column / width) * Math.PI * 2;
+    cosine[column] = Math.cos(longitude);
+    sine[column] = Math.sin(longitude);
+  }
+  return { cosine, sine };
 }
 
 /*
@@ -1383,17 +1786,18 @@ function createPlanetSurface(kind, seed, palette) {
   const random = mulberry32(seed);
   const stormLongitude = random() * Math.PI * 2;
   const stormLatitude = (random() - 0.5) * 0.5;
+  const longitude = createLongitudeLookup(width);
 
   for (let row = 0; row < height; row += 1) {
     const latitude = (row / (height - 1)) * Math.PI;
     const sinLatitude = Math.sin(latitude);
     const cosLatitude = Math.cos(latitude);
+    const gasZonal = cosLatitude * 34 + Math.sin(cosLatitude * 5.2) * 3.8;
 
     for (let column = 0; column < width; column += 1) {
-      const longitude = (column / width) * Math.PI * 2;
-      const dirX = sinLatitude * Math.cos(longitude);
+      const dirX = sinLatitude * longitude.cosine[column];
       const dirY = cosLatitude;
-      const dirZ = sinLatitude * Math.sin(longitude);
+      const dirZ = sinLatitude * longitude.sine[column];
       const index = (row * width + column) * 4;
 
       let red = 0;
@@ -1472,11 +1876,10 @@ function createPlanetSurface(kind, seed, palette) {
         const swirl = sphereFbm(dirX, dirY, dirZ, 8.2, 3, seed + 53);
         const shear = sphereFbm(dirX, dirY, dirZ, 17, 2, seed + 131);
         // Belt widths vary with latitude, as the zonal jets do on a real giant.
-        const zonal = dirY * 34 + Math.sin(dirY * 5.2) * 3.8;
-        const band = Math.sin(zonal + warp * 2 + swirl * 0.8 + shear * 0.35) * 0.5 + 0.5;
+        const band = Math.sin(gasZonal + warp * 2 + swirl * 0.8 + shear * 0.35) * 0.5 + 0.5;
         // A weaker second harmonic splits the major belts into the finer ribbons
         // a real giant shows between its zones.
-        const ribbon = Math.sin(zonal * 2.7 + swirl * 1.4) * 0.5 + 0.5;
+        const ribbon = Math.sin(gasZonal * 2.7 + swirl * 1.4) * 0.5 + 0.5;
         const stripe = smootherstep(0.14, 0.86, band * 0.76 + ribbon * 0.24);
         const paletteIndex = stripe * (palette.length - 1);
         const lowIndex = Math.floor(paletteIndex);
@@ -1551,21 +1954,21 @@ function createCloudTexture(seed) {
   const context = cloudCanvas.getContext("2d");
   const image = context.createImageData(width, height);
   const octaves = Math.min(4, Math.max(3, profile.octaves));
+  const longitude = createLongitudeLookup(width);
 
   for (let row = 0; row < height; row += 1) {
     const latitude = (row / (height - 1)) * Math.PI;
     const sinLatitude = Math.sin(latitude);
     const cosLatitude = Math.cos(latitude);
+    // Thin the cover near the equator so the ocean and city lights stay visible.
+    const belt = 0.62 + Math.abs(Math.sin(latitude * 3.1)) * 0.24;
 
     for (let column = 0; column < width; column += 1) {
-      const longitude = (column / width) * Math.PI * 2;
-      const dirX = sinLatitude * Math.cos(longitude);
+      const dirX = sinLatitude * longitude.cosine[column];
       const dirY = cosLatitude;
-      const dirZ = sinLatitude * Math.sin(longitude);
+      const dirZ = sinLatitude * longitude.sine[column];
       const swirl = sphereFbm(dirX, dirY, dirZ, 2.4, octaves, seed);
       const wisps = sphereFbm(dirX + swirl * 0.4, dirY, dirZ + swirl * 0.4, 6.4, 3, seed + 271);
-      // Thin the cover near the equator so the ocean and city lights stay visible.
-      const belt = 0.62 + Math.abs(Math.sin(latitude * 3.1)) * 0.24;
       const coverage = smootherstep(belt - 0.16, belt + 0.2, swirl * 0.6 + wisps * 0.4);
       const value = Math.round(255 * coverage);
       const index = (row * width + column) * 4;
@@ -1642,13 +2045,18 @@ function createNebulaTexture(color, seed = 5) {
   const image = context.createImageData(size, size);
   const octaves = qualityLevel === "high" ? 5 : 4;
   const random = mulberry32(seed * 977);
+  const coordinates = new Float64Array(size);
+  for (let index = 0; index < size; index += 1) {
+    coordinates[index] = (index / size - 0.5) * 2;
+  }
 
   for (let row = 0; row < size; row += 1) {
+    const y = coordinates[row];
+    const rowOffset = row * size;
     for (let column = 0; column < size; column += 1) {
-      const x = (column / size - 0.5) * 2;
-      const y = (row / size - 0.5) * 2;
+      const x = coordinates[column];
       const distance = Math.hypot(x, y);
-      const index = (row * size + column) * 4;
+      const index = (rowOffset + column) * 4;
 
       if (distance > 1) {
         image.data[index + 3] = 0;
@@ -1779,11 +2187,6 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
     written += 1;
   }
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions.subarray(0, written * 3), 3));
-  geometry.setAttribute("aTwinkle", new THREE.BufferAttribute(twinkle.subarray(0, written), 1));
-  geometry.setAttribute("aMagnitude", new THREE.BufferAttribute(magnitudes.subarray(0, written), 1));
-  geometry.setAttribute("aTemperature", new THREE.BufferAttribute(temperatures.subarray(0, written), 1));
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uColor: { value: new THREE.Color(color) },
@@ -1803,9 +2206,11 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
 
       void main() {
         vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
-        float twinkleMask = step(0.8, aTwinkle);
-        float animatedPulse = 0.86 + 0.14 * sin(uTime * (0.7 + aTwinkle) + aTwinkle * 31.4);
-        float pulse = mix(0.86, animatedPulse, twinkleMask);
+        #ifdef STATIC_STARS
+          float pulse = 0.86;
+        #else
+          float pulse = 0.86 + 0.14 * sin(uTime * (0.7 + aTwinkle) + aTwinkle * 31.4);
+        #endif
         // Faint stars are dim as well as small; size alone reads as a resolution
         // artefact rather than distance.
         vBrightness = pulse * mix(0.68, 1.16, clamp((aMagnitude - 0.55) / 4.4, 0.0, 1.0));
@@ -1853,12 +2258,69 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
-  material.userData.baseSize = size;
-  material.userData.fadesNearEarth = depth.far > -1000;
-  const stars = new THREE.Points(geometry, material);
-  scene.add(stars);
-  starLayers.push(stars);
-  starMaterials.push(material);
+  const animatedMaterial = material;
+  const staticMaterial = material.clone();
+  staticMaterial.defines = { ...staticMaterial.defines, STATIC_STARS: "" };
+  for (const starMaterial of [staticMaterial, animatedMaterial]) {
+    starMaterial.userData.baseSize = size;
+    starMaterial.userData.fadesNearEarth = depth.far > -1000;
+    starMaterials.push(starMaterial);
+  }
+  const rotationRate = (starLayerSequence + 1) * 0.000012;
+  starLayerSequence += 1;
+  // One giant buffer keeps every vertex alive until its final star leaves the
+  // frustum. Depth slices preserve the exact point data and shared shader while
+  // allowing Three.js to reject corridor sections already behind the camera.
+  const depthSpan = Math.max(1, depth.near - depth.far);
+  const sliceCount = Math.min(6, Math.max(1, Math.ceil(depthSpan / 240)));
+  const bucketCounts = new Uint32Array(sliceCount * 2);
+  const sliceFor = (z) =>
+    Math.min(sliceCount - 1, Math.max(0, Math.floor(((depth.near - z) / depthSpan) * sliceCount)));
+  const bucketFor = (index) => sliceFor(positions[index * 3 + 2]) * 2 + (twinkle[index] >= 0.8 ? 1 : 0);
+
+  for (let index = 0; index < written; index += 1) {
+    bucketCounts[bucketFor(index)] += 1;
+  }
+
+  const slices = Array.from({ length: sliceCount * 2 }, (_, index) => ({
+    position: new Float32Array(bucketCounts[index] * 3),
+    twinkle: new Float32Array(bucketCounts[index]),
+    magnitude: new Float32Array(bucketCounts[index]),
+    temperature: new Float32Array(bucketCounts[index]),
+    written: 0,
+  }));
+  for (let index = 0; index < written; index += 1) {
+    const slice = slices[bucketFor(index)];
+    const target = slice.written;
+    slice.position[target * 3] = positions[index * 3];
+    slice.position[target * 3 + 1] = positions[index * 3 + 1];
+    slice.position[target * 3 + 2] = positions[index * 3 + 2];
+    slice.twinkle[target] = twinkle[index];
+    slice.magnitude[target] = magnitudes[index];
+    slice.temperature[target] = temperatures[index];
+    slice.written += 1;
+  }
+
+  const createdLayers = [];
+  for (let bucket = 0; bucket < slices.length; bucket += 1) {
+    const slice = slices[bucket];
+    if (!slice.written) continue;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(slice.position, 3));
+    geometry.setAttribute("aTwinkle", new THREE.BufferAttribute(slice.twinkle, 1));
+    geometry.setAttribute("aMagnitude", new THREE.BufferAttribute(slice.magnitude, 1));
+    geometry.setAttribute("aTemperature", new THREE.BufferAttribute(slice.temperature, 1));
+    geometry.computeBoundingSphere();
+    const stars = new THREE.Points(
+      geometry,
+      bucket % 2 === 0 ? staticMaterial : animatedMaterial,
+    );
+    stars.userData.rotationRate = rotationRate;
+    scene.add(stars);
+    starLayers.push(stars);
+    createdLayers.push(stars);
+  }
+  return createdLayers;
 }
 
 function createAtmosphereMaterial(glowColor, intensity, thickness) {
@@ -1895,13 +2357,19 @@ function createAtmosphereMaterial(glowColor, intensity, thickness) {
         float sunAlignment = dot(normalDirection, uSunDirection);
 
         // Daylight drives the shell, with a warm band held at the terminator.
-        float daylight = smoothstep(-0.42, 0.42, sunAlignment);
-        float terminator = 1.0 - smoothstep(0.0, 0.34, abs(sunAlignment));
+        float daylight = smoothstep(-0.26, 0.4, sunAlignment);
+        float terminator = 1.0 - smoothstep(0.0, 0.3, abs(sunAlignment));
         float forwardScatter = pow(max(dot(viewDirection, -uSunDirection), 0.0), 7.0);
 
         vec3 sunsetColor = vec3(1.0, 0.52, 0.26);
         vec3 tint = mix(uGlowColor, sunsetColor, terminator * 0.65);
-        float alpha = fresnel * uIntensity * (0.18 + daylight * 0.95);
+        // The floor under the daylight term used to be high enough to keep the
+        // shell alight around the unlit limb as well. On a gas giant lit from
+        // three-quarters behind the camera, that closed into an unbroken bright
+        // outline around the whole disc and the planet read as a decal cut from
+        // the sky. An atmosphere is only visible where the sun is in it, so this
+        // must decay to nothing: the glow should end in an arc.
+        float alpha = fresnel * uIntensity * (0.012 + daylight * 1.05);
         vec3 color = tint * (0.9 + fresnel * 1.7 + forwardScatter * 2.4 + terminator * 0.6);
         gl_FragColor = vec4(color, alpha);
       }
@@ -2007,6 +2475,39 @@ function applyNightLights(material, nightMap) {
   material.customProgramCacheKey = () => "space-journey-night-lights";
 }
 
+/*
+ * The star that lights this scene sits almost behind the camera, so the flyby
+ * bodies are nearly full discs with the terminator swung round out of sight.
+ * That is what a photographic map on a sphere needs least: with no shadow to
+ * shape it, the disc reads as a sticker cut from the sky. A real atmosphere
+ * darkens toward the limb, where a line of sight leaves it at a grazing angle
+ * and less light is scattered back — Jupiter's limb is visibly dimmer than its
+ * centre in every Cassini frame. Reproducing it restores the roundness the
+ * lighting angle cannot give, and it works on a fully lit disc, which is
+ * exactly the case that has nothing else to shape it.
+ */
+function applyLimbDarkening(material, amount) {
+  const previousCompile = material.onBeforeCompile;
+  const previousKey = material.customProgramCacheKey?.() ?? "";
+  material.onBeforeCompile = (shader, webglRenderer) => {
+    if (previousCompile) previousCompile(shader, webglRenderer);
+    shader.uniforms.uLimbDarkening = { value: amount };
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\nuniform float uLimbDarkening;")
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+         // The classic linear limb-darkening law, on the cosine of the angle
+         // between the surface and the line of sight.
+         float grazingAngle = clamp(dot(normalize(vNormal), normalize(vViewPosition)), 0.0, 1.0);
+         diffuseColor.rgb *= 1.0 - uLimbDarkening * (1.0 - grazingAngle);`,
+      );
+  };
+  // Two bodies sharing a limb coefficient can share a compiled program; two on
+  // different ones cannot, since it is baked in as a uniform default here.
+  material.customProgramCacheKey = () => `${previousKey}|limb-${amount.toFixed(2)}`;
+}
+
 function addCelestialBody({
   radius,
   position,
@@ -2021,6 +2522,9 @@ function addCelestialBody({
   atmosphereIntensity = 0.72,
   atmosphereThickness = 3.2,
   rotationSpeed = 0.0007,
+  // Gas giants scatter through a deep atmosphere and darken hard at the limb;
+  // airless rock falls off far less.
+  limbDarkening = 0.42,
   seed = 1,
   // Bodies that fill a large part of the frame need a finer silhouette,
   // otherwise the limb reads as a polygon.
@@ -2041,6 +2545,7 @@ function addCelestialBody({
     emissiveIntensity: emissive,
   });
   if (surface.nightMap) applyNightLights(material, surface.nightMap);
+  if (limbDarkening > 0) applyLimbDarkening(material, limbDarkening);
 
   const geometry =
     detail === 1
@@ -2057,8 +2562,7 @@ function addCelestialBody({
   let cloudMesh = null;
   if (clouds && profile.clouds) {
     const cloudMap = surface.cloudMap ?? createCloudTexture(seed + 61);
-    cloudMesh = new THREE.Mesh(
-      sharedShellGeometry,
+    const cloudMaterial = discardStrictlyTransparentFragments(
       new THREE.MeshStandardMaterial({
         color: "#eef7ff",
         alphaMap: cloudMap,
@@ -2068,6 +2572,11 @@ function addCelestialBody({
         roughness: 1,
         metalness: 0,
       }),
+      "clouds",
+    );
+    cloudMesh = new THREE.Mesh(
+      sharedShellGeometry,
+      cloudMaterial,
     );
     cloudMesh.scale.setScalar(radius * 1.012);
     cloudMesh.rotation.z = 0.21;
@@ -2126,6 +2635,7 @@ function addNebula(position, scale, color, opacity = 0.36, seed = 5) {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
+    discardStrictlyTransparentFragments(material, "nebula");
     const sprite = new THREE.Sprite(material);
     sprite.position.set(
       position[0] + layer.offset[0],
@@ -2149,7 +2659,7 @@ function addAsteroidBelt(center, innerRadius, outerRadius, seed) {
   const material = new THREE.MeshStandardMaterial({
     // Asteroid albedo sits well below the pale tone used before, which made the
     // belt the brightest thing on screen, but charcoal loses it against space.
-    color: "#6f6553",
+    color: "#584f42",
     roughness: 0.96,
     metalness: 0.04,
     flatShading: true,
@@ -2179,7 +2689,13 @@ function addAsteroidBelt(center, innerRadius, outerRadius, seed) {
     mesh.setMatrixAt(index, matrix);
     // Instance colour only modulates the material albedo, so the belt still
     // darkens even where instancing colour is unavailable.
-    tone.setHSL(0.07 + random() * 0.04, 0.12 + random() * 0.14, 0.55 + Math.pow(random(), 1.5) * 0.4);
+    // Rock this far out reflects under a tenth of what falls on it. Lit by a key
+    // this strong, a mid-grey albedo came back near white and the belt crossed
+    // the frame as a field of evenly bright pebbles with no shadow in any of
+    // them — and it did it in front of Earth, which by then is the subject.
+    // Dark albedo under a hard light is what gives each one a lit face and a
+    // black one, which is the whole reason to draw them faceted.
+    tone.setHSL(0.07 + random() * 0.04, 0.05 + random() * 0.1, 0.2 + Math.pow(random(), 1.5) * 0.3);
     mesh.setColorAt(index, tone);
   }
 
@@ -2267,23 +2783,43 @@ function addSpiralGalaxy(centerZ) {
   const blue = new THREE.Color("#79c7ff");
   const violet = new THREE.Color("#a779ff");
   const color = new THREE.Color();
-  const armCount = 5;
+  // Two arms, as in a grand-design spiral. The previous five were wound at a
+  // fixed angle-per-unit-radius, which is an Archimedean spiral rather than the
+  // logarithmic one a galaxy actually forms, and at that pitch each arm closed a
+  // full turn every 120 units and came back around on top of itself. Five of
+  // them overlapping that way left no gap anywhere: the arms stopped reading as
+  // arms and the galaxy became a set of concentric dotted rings, which is the
+  // single thing in the frame that most looked like a diagram.
+  const armCount = 2;
+  const outerRadius = 184;
+  // Winds the arms about three quarters of a turn from core to rim — enough to
+  // curve clearly, not enough to wrap back over themselves.
+  const windingRate = 1.55;
   const candidate = new THREE.Vector3();
   let written = 0;
 
   for (let index = 0; index < count; index += 1) {
-    const arm = index % armCount;
-    const radius = 3 + Math.pow(random(), 0.58) * 180;
-    const angle =
-      (arm / armCount) * Math.PI * 2 +
-      radius * 0.052 +
-      (random() - 0.5) * (0.24 + radius * 0.0028);
+    // A quarter of the population ignores the arms: a bulge at the core and a
+    // thin scatter between the arms. Real spirals are not empty in between, and
+    // the gaps between two arms are wide enough to look cut out without it.
+    const isField = index % 4 === 3;
+    const radius = 3 + Math.pow(random(), isField ? 1.5 : 0.58) * outerRadius;
+    const normalizedRadius = radius / outerRadius;
+    // Arms broaden with distance from the core and blur out entirely at the rim,
+    // so they end by dissolving rather than stopping.
+    const spread = 0.16 + normalizedRadius * 0.85;
+    const angle = isField
+      ? random() * Math.PI * 2
+      : (index % armCount) * Math.PI +
+        Math.log(radius / 3) * windingRate +
+        (random() - 0.5) * spread;
     const thickness = (random() - 0.5) * (2.5 + radius * 0.055);
-    const normalizedRadius = radius / 180;
     if (normalizedRadius < 0.28) color.copy(warm).lerp(blue, normalizedRadius / 0.28);
     else color.copy(blue).lerp(violet, (normalizedRadius - 0.28) / 0.72);
-    color.multiplyScalar(0.74 + random() * 0.5);
-    const size = 0.55 + Math.pow(random(), 5) * 2.5;
+    // Arms are where the young, bright stars are; the field between them is
+    // older and dimmer. Without this the two populations read as one flat sheet.
+    color.multiplyScalar((0.74 + random() * 0.5) * (isField ? 0.5 : 1));
+    const size = (0.5 + Math.pow(random(), 5) * 2.3) * (isField ? 0.8 : 1);
 
     // The arms sit closer to the camera than the planets do, so without this
     // they would sparkle across every disc downstream.
@@ -2349,7 +2885,13 @@ function addSpiralGalaxy(centerZ) {
   galaxy.rotation.z = 0.18;
   scene.add(galaxy);
 
+  // A luminous bed under the arms. Points alone resolve as points at this range
+  // however many are drawn, and a galaxy that is only points reads as confetti;
+  // the unresolved light between the stars is most of what makes one look like a
+  // galaxy. Two broad, very faint sheets are enough to sit the stars in light.
   addNebula([0, 0, centerZ + 2], 185, "rgba(93,126,255,0.55)", 0.22, 31);
+  addNebula([-38, 22, centerZ + 6], 250, "rgba(120,150,255,0.42)", 0.1, 88);
+  addNebula([44, -26, centerZ + 5], 215, "rgba(150,120,255,0.42)", 0.085, 12);
   addStellarBeacon([0, 0, centerZ + 3], 15, { fadeRadius: 260 });
 }
 
@@ -2658,6 +3200,7 @@ function addStellarBeacon(position, size, options = {}) {
         "diffuseColor.a = smoothstep(0.2, 0.8, diffuseColor.a);\n#include <alphatest_fragment>",
       );
     };
+    discardStrictlyTransparentFragments(discMaterial, "photosphere");
     const disc = new THREE.Sprite(discMaterial);
     disc.position.set(...position);
     disc.scale.set(size * photosphereScale, size * photosphereScale, 1);
@@ -2762,6 +3305,7 @@ async function buildScene() {
     emissive: 0.03,
     atmosphereIntensity: 0.62,
     rotationSpeed: 0.0011,
+    limbDarkening: 0.6,
     detail: 1.3,
     seed: 8,
   });
@@ -2794,6 +3338,9 @@ async function buildScene() {
     atmosphereIntensity: 0.5,
     atmosphereThickness: 3.6,
     rotationSpeed: 0.0009,
+    // The largest disc in the film and the one lit closest to head-on, so it has
+    // the least shadow of its own to go on.
+    limbDarkening: 0.68,
     detail: 3,
     seed: 17,
   });
@@ -2822,6 +3369,7 @@ async function buildScene() {
     atmosphereIntensity: 0.3,
     atmosphereThickness: 4.2,
     rotationSpeed: 0.0006,
+    limbDarkening: 0.34,
     seed: 29,
   });
 
@@ -2851,6 +3399,9 @@ async function buildScene() {
     atmosphereIntensity: 0.16,
     atmosphereThickness: 4.6,
     rotationSpeed: 0.0004,
+    // Regolith backscatters strongly toward the light: a full moon really is
+    // close to uniformly bright across its disc.
+    limbDarkening: 0.12,
     seed: 2,
   });
 
@@ -2871,6 +3422,9 @@ async function buildScene() {
     atmosphereIntensity: 0.8,
     atmosphereThickness: 3.2,
     rotationSpeed: 0.0005,
+    // Held back: this disc fills the frame at the hand-off and has a terminator
+    // of its own to shape it, so the limb only needs settling, not darkening.
+    limbDarkening: 0.26,
     seed: 1984,
   });
   await nextFrame();
@@ -2885,8 +3439,13 @@ async function buildScene() {
   // 420 keeps the sun ~20 degrees off the flight axis and framed for the first
   // half of the trip; at 900 it sat on the frame edge and left within ten seconds.
   const sunDistance = 420;
+  sunWorldPosition = new THREE.Vector3(
+    sunDirection.x * sunDistance,
+    sunDirection.y * sunDistance,
+    -1048 + sunDirection.z * sunDistance,
+  );
   addStellarBeacon(
-    [sunDirection.x * sunDistance, sunDirection.y * sunDistance, -1048 + sunDirection.z * sunDistance],
+    sunWorldPosition.toArray(),
     // Everything about the star is expressed as a fraction of this — corona,
     // photosphere, prominence reach, occluder — so growing it here keeps all the
     // ratios those were calibrated against.
@@ -2952,8 +3511,9 @@ async function buildScene() {
   addStarLayer(profile.stars[0], 920, 0.72, "#f2f7ff", 12);
   addStarLayer(profile.stars[1], 680, 1.35, "#ffffff", 47);
   if (profile.stars[2] > 0) {
-    addStarLayer(profile.stars[2], 520, 1.8, "#e8f0ff", 91);
-    starLayers[starLayers.length - 1].userData.optional = true;
+    addStarLayer(profile.stars[2], 520, 1.8, "#e8f0ff", 91).forEach((layer) => {
+      layer.userData.optional = true;
+    });
   }
   addStarLayer(profile.stars[1], 1500, 1.05, "#f0f6ff", 173, { near: -1180, far: -1750 });
   // The run-in crosses empty sky, which is the point, but with nothing close
@@ -2969,12 +3529,18 @@ async function buildScene() {
   keyLight.position.copy(sunDirection).multiplyScalar(100);
   scene.add(keyLight);
 
-  // A dim opposing fill keeps night sides readable without flattening the terminator.
-  const rimLight = new THREE.DirectionalLight("#4d7bff", 0.34);
+  // There is nothing out here to bounce light back onto a night side, and the
+  // fill this used to carry was strong enough to raise each body's albedo out of
+  // shadow — Saturn's cloud bands were legible right across its dark face, in
+  // blue, which is the single thing that most made these read as lit models
+  // rather than worlds. What is left is a trace: enough that a silhouette does
+  // not fall to a flat black hole in the frame, not enough to compete with the
+  // key. Deep shadow is the point.
+  const rimLight = new THREE.DirectionalLight("#4d7bff", 0.06);
   rimLight.position.copy(sunDirection).multiplyScalar(-100);
   scene.add(rimLight);
-  scene.add(new THREE.AmbientLight("#2b466d", 0.12));
-  scene.add(new THREE.HemisphereLight("#4f9bf5", "#0d0722", 0.16));
+  scene.add(new THREE.AmbientLight("#2b466d", 0.028));
+  scene.add(new THREE.HemisphereLight("#4f9bf5", "#0d0722", 0.05));
 
   setLoading(95, "BRINGING SHIP SYSTEMS ONLINE…");
   await nextFrame();
@@ -3026,6 +3592,7 @@ function initRenderer() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Scene renders linear into the HDR buffer; tone mapping happens in the composite pass.
   renderer.toneMapping = THREE.NoToneMapping;
+  gpuBenchmark = new GpuFrameBenchmark(renderer);
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color("#01030a");
@@ -3366,9 +3933,9 @@ function fireArmedLaunchCue() {
 function launch() {
   if (state === "flying") return;
   state = "flying";
-  flightProgress = 0;
+  flightProgress = benchmarkMode ? benchmarkSeek : 0;
   currentWaypointIndex = -1;
-  flightStartedAt = performance.now();
+  flightStartedAt = performance.now() - flightProgress * flightDuration * 1000;
   experience.classList.remove("is-arrived");
   experience.classList.add("is-flying", "is-launching", "is-booting");
   launchCueArmed = true;
@@ -3681,8 +4248,9 @@ function updateHandoff(now) {
 
 function animate(now) {
   const elapsed = clock.getElapsedTime();
+  const visualElapsed = benchmarkFreeze ? benchmarkSeek * flightDuration : elapsed;
   const parallaxStrength = state === "flying" ? 0.012 : 0.026;
-  frameUniforms.time.value = elapsed;
+  frameUniforms.time.value = visualElapsed;
 
   if (!isCameraDragging) {
     viewYaw = THREE.MathUtils.clamp(viewYaw + yawVelocity, -cameraLimits.yaw, cameraLimits.yaw);
@@ -3697,25 +4265,36 @@ function animate(now) {
   const hoverPitch = isCameraDragging || cameraPointerType !== "mouse" ? 0 : -pointerY * parallaxStrength * 0.65;
   camera.rotation.y += (viewYaw + hoverYaw - camera.rotation.y) * 0.09;
   camera.rotation.x += (viewPitch + hoverPitch - camera.rotation.x) * 0.09;
-  camera.rotation.z = Math.sin(elapsed * 0.45) * 0.0025;
+  camera.rotation.z = Math.sin(visualElapsed * 0.45) * 0.0025;
   updateAttitude();
 
-  starLayers.forEach((layer, index) => {
-    layer.rotation.z += (index + 1) * 0.000012;
+  starLayers.forEach((layer) => {
+    if (benchmarkFreeze) layer.rotation.z = visualElapsed * 60 * layer.userData.rotationRate;
+    else layer.rotation.z += layer.userData.rotationRate;
   });
-  if (galaxy) galaxy.rotation.z += 0.000025;
-  if (asteroidField) asteroidField.rotation.y = elapsed * 0.004;
+  if (galaxy) {
+    if (benchmarkFreeze) galaxy.rotation.z = 0.18 + visualElapsed * 60 * 0.000025;
+    else galaxy.rotation.z += 0.000025;
+  }
+  if (asteroidField) asteroidField.rotation.y = visualElapsed * 0.004;
 
   celestialBodies.forEach(({ group, mesh, cloudMesh, rotationSpeed }, index) => {
-    mesh.rotation.y += rotationSpeed;
-    if (cloudMesh) cloudMesh.rotation.y += rotationSpeed * 1.35;
-    group.rotation.z = Math.sin(elapsed * 0.08 + index) * 0.02;
+    if (benchmarkFreeze) {
+      mesh.rotation.y = visualElapsed * 60 * rotationSpeed;
+      if (cloudMesh) cloudMesh.rotation.y = visualElapsed * 60 * rotationSpeed * 1.35;
+    } else {
+      mesh.rotation.y += rotationSpeed;
+      if (cloudMesh) cloudMesh.rotation.y += rotationSpeed * 1.35;
+    }
+    group.rotation.z = Math.sin(visualElapsed * 0.08 + index) * 0.02;
   });
 
   if (state === "idle") {
-    camera.position.y = Math.sin(elapsed * 0.3) * 0.18;
+    camera.position.y = Math.sin(visualElapsed * 0.3) * 0.18;
   } else if (state === "flying") {
-    flightProgress = Math.min((now - flightStartedAt) / (flightDuration * 1000), 1);
+    flightProgress = benchmarkFreeze
+      ? benchmarkSeek
+      : Math.min((now - flightStartedAt) / (flightDuration * 1000), 1);
     updateJourney(flightProgress, now);
   } else if (state === "returning") {
     updateHandoff(now);
@@ -3872,6 +4451,7 @@ async function init() {
     const scenePromise = buildScene();
     createAudioEngine();
     await scenePromise;
+    syncPixelRatioUniforms(renderer.getPixelRatio());
     freezeStaticSceneTransforms();
     initPostProcessing();
     setLoading(100, "FLIGHT PATH READY");

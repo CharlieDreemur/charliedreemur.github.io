@@ -87,6 +87,21 @@ streaks, an ACES filmic curve, split toning, mild barrel distortion, edge-only
 chromatic aberration, vignette, and film grain. Grain samples a reusable 64×64
 noise texture instead of evaluating a trigonometric hash for every screen pixel.
 
+A light-shaft pass marches the bright-pass buffer back toward the sun's projected
+position and adds the result, warmed, in the composite. It runs off the bright
+pass *before* the bloom blur, so the rays stay defined rather than arriving
+pre-smeared, and it reads the buffer that already contains only highlights, so
+anything opaque between a pixel and the star contributes nothing — that is what
+would carve the shafts if a planet crossed the disc. In the shipped layout
+nothing does, so what it actually buys is scattered volume around the corona
+rather than distinct rays; the star reads as having an atmosphere with depth
+instead of a flat halo. The origin is projected through the view matrix first and
+the pass is skipped when the star is behind the camera, because the perspective
+divide would otherwise mirror an off-screen star back into frame and stream rays
+out of empty sky. Strength releases over the half-frame of travel past the edge,
+since cutting at the edge pops a full set of rays out in one frame. Eco has no
+bright pass at all, so it has no shafts either.
+
 Earth, the Moon, Jupiter, and Mars use photographic maps baked from NASA imagery
 (see below). Jupiter is the hero of the flyby: the flight path skims about 90
 units above its cloud tops, so it swells past 45° of frame and gets three times
@@ -109,10 +124,49 @@ would fall inside a planet's silhouette from anywhere along the flight path, and
 they are built after the planets so the occluder list is complete. The nebulae
 are billboards, which cannot be flown through, so each one dissolves as the
 camera closes in rather than washing out whatever lies beyond it.
+
+The galaxy is two arms, as in a grand-design spiral, on a logarithmic winding
+that turns about three quarters from core to rim. It was five arms on a fixed
+angle-per-unit-radius — an Archimedean spiral, not the shape a galaxy forms — and
+at that pitch each arm closed a full turn every 120 units and came back around on
+top of itself. Five of them overlapping that way left no gap anywhere: the arms
+stopped reading as arms, and the galaxy became a set of concentric dotted rings,
+which was the single thing in frame that most looked like a diagram. A quarter of
+the points now ignore the arms entirely, forming a bulge at the core and a dimmer
+scatter between them, because two arms alone leave gaps wide enough to look cut
+out. Arms broaden with radius so they dissolve at the rim rather than stopping.
+Two broad, very faint sheets sit under the whole thing: points resolve as points
+at this range however many are drawn, and the unresolved light between the stars
+is most of what makes a galaxy look like one.
 Night lights are injected into Earth's standard material through
 `onBeforeCompile` and masked by the sun-facing term, so cities only glow past the
 terminator. Atmospheres are Fresnel shells that shift warm at the terminator, and
 Saturn casts an approximated cylindrical shadow onto its own rings.
+
+Three things decide whether these bodies read as worlds or as lit models, and all
+three were wrong at once. There is nothing in interplanetary space to bounce
+light back onto a night side, but the scene carried a blue opposing fill strong
+enough to raise each body's albedo out of shadow — Saturn's cloud bands were
+legible right across its dark face, in blue. The fill is now a trace, enough that
+a silhouette does not become a flat hole in the frame and no more. The atmosphere
+shells had a floor under their daylight term that kept them alight around the
+unlit limb as well; on a gas giant lit from three-quarters behind the camera that
+closed into an unbroken bright outline around the whole disc, and the planet read
+as a decal cut from the sky. An atmosphere is only visible where the sun is in
+it, so that term now decays to nothing and the glow ends in an arc.
+
+The third is the reason the first two were not enough on their own. The key light
+sits almost behind the camera — it has to, because Earth is approached head-on
+and a physically placed key would hand the finale a crescent — so the flyby
+bodies are near-full discs with the terminator swung out of sight, and a
+photographic map on a sphere with no shadow to shape it is a flat disc. Each body
+therefore carries a limb-darkening coefficient applied to its albedo through the
+classic linear law on the cosine of the angle to the line of sight. This is the
+one shaping term that works on a fully lit disc, which is exactly the case that
+has nothing else. Deep atmospheres get the most (Jupiter 0.68, the largest disc
+in the film and the one lit closest to head-on), thin ones far less, and the Moon
+almost none — regolith backscatters toward the light, so a full moon really is
+close to uniformly bright across its disc.
 Planet, cloud, and atmosphere meshes reuse two unit-sphere geometries. Identical
 stellar beacons also share their baked glow texture and sprite materials. Once
 immutable image and canvas textures are created, they are uploaded immediately
