@@ -146,15 +146,37 @@ drifts, at frame rate. Removing the render scale cut the variation from 34% to
 26% and halved the number of pixels changing between frames; removing the
 sharpening upscale on top of it reached 12%.
 
-Neither is worth giving up, so the sprites are widened to a two-pixel floor
-instead and dimmed by the area they gain, which leaves the same light in the
-frame but enough footprint to interpolate across as it moves. That reaches the
-same 9% variation as dropping both passes would, at unchanged total star light
-and a starfield that measures within 2% of its previous brightness. The
-compensation is held above a floor so the faintest stars widen rather than being
-extinguished. The galaxy points take the same treatment for the same reason, and
-need it more: they carry a permanent sub-pixel drift of their own, which without
-this turns into a standing flicker across the whole arm.
+Neither is worth giving up, so every point sprite is widened to a floor instead
+and dimmed by the area it gains, which leaves the same light in the frame but
+enough footprint to interpolate across as it moves. `SPRITE_MIN_PIXELS` and
+`SPRITE_DIM_FLOOR` hold the pair; stars, galaxy and dust all use them. The
+dimming is floored so the faintest sprites widen rather than being extinguished,
+and the two were tuned together against measured total star light, which sits
+within half a percent of what it was before any of this. The galaxy needs the
+treatment more than the stars do: its points carry a permanent drift of their
+own, so without it the whole arm holds a standing flicker.
+
+The width is worth more than anything else available. Simulating the pass on a
+single dot crossing one pixel — which the end-to-end captures cannot resolve,
+because page-to-page variation in camera phase swamps it — peak brightness swings
+54% at the roughly one pixel these sprites would otherwise be, 11% at two pixels
+and 8% at the 2.4 used now. It keeps improving past that, but the sprites
+visibly soften first. The same simulation ruled out the sharpening pass's
+`localGradient` cutoff, which looked like a candidate for the residue: an
+isolated star's gradient is orders of magnitude above that threshold, so the
+branch never toggles and ramping it changed nothing.
+
+Two other things fed the same shimmer. Dust motes wrap back to the far plane
+when they pass the camera, and the depth fade only covered the near end, so each
+one reappeared at full strength — with the whole field cycling, a steady scatter
+of specks blinking into existence, which reads as flickering stars. The fade now
+covers both ends. Separately, the star layers, galaxy and planets took their
+rotation as a fixed step added per frame, which ties the rate to the refresh
+rate: the same field drifts nearly two and a half times faster on a 144 Hz panel
+than on a 60 Hz one. Drift rate is exactly what sets how often a sprite crosses
+a pixel boundary, so on a high-refresh display this was driving the shimmer that
+much faster too. All of them are now driven from elapsed time, which also
+collapses the separate benchmark-freeze branch each had.
 
 The galaxy is two arms, as in a grand-design spiral, on a logarithmic winding
 that turns about three quarters from core to rim. It was five arms on a fixed

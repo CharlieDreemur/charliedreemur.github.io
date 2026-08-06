@@ -129,6 +129,19 @@ const DISC_CROP_MARGIN = 1.04;
 // How far the prominences reach past the limb, in solar radii.
 const PROMINENCE_REACH = 1.75;
 
+// Every point sprite in the scene — stars, galaxy, dust — is widened to at
+// least this many pixels of the buffer it rasterises into, and dimmed by the
+// area it gains so the frame keeps the same light. Narrower than this a sprite
+// cannot drift smoothly: its coverage snaps from one pixel to the next and it
+// flickers at frame rate. Measured on a dot crossing one pixel, peak brightness
+// swings 54% at the ~1px these would otherwise be, 11% at 2px and 8% here.
+// Raising it further keeps helping, but the sprites visibly soften first.
+const SPRITE_MIN_PIXELS = 2.4;
+// Floor on that dimming, so the faintest sprites widen rather than being
+// extinguished. Tuned with the width above to hold total star light where it
+// was before either existed.
+const SPRITE_DIM_FLOOR = 0.208;
+
 // Multiplier on how far each flyby body sits from the flight axis. The corridor
 // runs down x = y = 0, so this only opens the bodies out sideways and leaves the
 // pacing — which is set by their depth — untouched. Earth is the destination and
@@ -2191,9 +2204,6 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
     uniforms: {
       uColor: { value: new THREE.Color(color) },
       uSize: { value: size * renderer.getPixelRatio() },
-      // In pixels of the render target the stars are rasterised into, which is
-      // not the canvas: see the widening in the vertex shader.
-      uMinSize: { value: 2 },
       uTime: frameUniforms.time,
       uFade: { value: 1 },
     },
@@ -2202,7 +2212,6 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
       attribute float aMagnitude;
       attribute float aTemperature;
       uniform float uSize;
-      uniform float uMinSize;
       uniform float uTime;
       varying float vBrightness;
       varying float vGlint;
@@ -2237,19 +2246,14 @@ function addStarLayer(count, spread, size, color, seed, depth = { near: 80, far:
         // star keeps the size it had.
         float pointSize = uSize * aMagnitude * 0.86 * clamp(260.0 / -viewPosition.z, 0.55, 3.2);
 
-        // A sprite narrower than about two pixels cannot drift smoothly: its
-        // coverage snaps from one pixel to the next and the star flickers at
-        // frame rate, which is far faster and harsher than any twinkle and was
-        // what the field's shimmer actually was. Most of the field sits under
-        // that width, because the scene rasterises at two thirds of the output
-        // resolution and the faint majority are well below a pixel there — the
-        // driver floors them at one, so they render as a single hard pixel that
-        // jumps. Widening the sprite gives it enough footprint to interpolate
-        // across instead. Dimming it by the area it gains keeps the same light
-        // in the frame, held above a floor so the faintest stars widen without
-        // being extinguished.
-        float widened = max(pointSize, uMinSize);
-        vBrightness *= max((pointSize * pointSize) / (widened * widened), 0.24);
+        // Widened and dimmed per SPRITE_MIN_PIXELS. This, not the pulse above,
+        // is what the field's fast shimmer was: most of the field sits below a
+        // pixel here, because the scene rasterises at two thirds of the output
+        // resolution, and the driver floors those at one pixel — so they render
+        // as a single hard pixel that jumps to the next as it drifts rather
+        // than sliding between them.
+        float widened = max(pointSize, ${SPRITE_MIN_PIXELS});
+        vBrightness *= max((pointSize * pointSize) / (widened * widened), ${SPRITE_DIM_FLOOR});
         gl_PointSize = widened;
         gl_Position = projectionMatrix * viewPosition;
       }
@@ -2773,8 +2777,20 @@ function addSpaceDust() {
         animated.y += cos(uTime * 0.29 + aDrift * 9.0) * 1.2;
         animated.z = mod(animated.z + uTime * (2.0 + aDrift * 3.0) * (0.4 + uSpeed * 6.0), 150.0) - 150.0;
         vec4 viewPosition = modelViewMatrix * vec4(animated, 1.0);
-        vFade = smoothstep(-4.0, -30.0, viewPosition.z) * (0.35 + aDrift * 0.65);
-        gl_PointSize = (0.9 + aDrift * 1.7) * uPixelRatio * clamp(60.0 / -viewPosition.z, 0.4, 2.4);
+        // Faded at both ends of the corridor. The near ramp keeps a mote from
+        // swelling across the lens as it passes; the far one covers the wrap
+        // above, which teleports a mote that has gone by back to the far plane.
+        // Without it the mote reappears there at full strength, and with the
+        // whole field cycling that is a steady scatter of specks blinking into
+        // existence — the same read as a flickering star.
+        float depthFade = smoothstep(-4.0, -30.0, viewPosition.z)
+          * (1.0 - smoothstep(-130.0, -150.0, viewPosition.z));
+        vFade = depthFade * (0.35 + aDrift * 0.65);
+        // Widened and dimmed per SPRITE_MIN_PIXELS, as the star layers are.
+        float pointSize = (0.9 + aDrift * 1.7) * uPixelRatio * clamp(60.0 / -viewPosition.z, 0.4, 2.4);
+        float widened = max(pointSize, ${SPRITE_MIN_PIXELS});
+        vFade *= max((pointSize * pointSize) / (widened * widened), ${SPRITE_DIM_FLOOR});
+        gl_PointSize = widened;
         gl_Position = projectionMatrix * viewPosition;
       }
     `,
@@ -2891,13 +2907,12 @@ function addSpiralGalaxy(centerZ) {
           cos(uTime * 0.13 + position.x * 0.03)
         ) * 0.16;
         vec4 viewPosition = modelViewMatrix * vec4(animatedPosition, 1.0);
-        // Widened and dimmed for the same reason as the star layers: below a
-        // couple of pixels a sprite's coverage snaps between pixels instead of
-        // sliding, which the drift above would otherwise turn into a permanent
-        // frame-rate flicker across the whole arm.
+        // Widened and dimmed per SPRITE_MIN_PIXELS, and needed more here than in
+        // the star layers: the drift above never stops, so without it the whole
+        // arm carries a standing frame-rate flicker.
         float pointSize = aSize * uPixelRatio * clamp(290.0 / -viewPosition.z, 0.55, 4.5);
-        float widened = max(pointSize, 2.0);
-        vColor *= max((pointSize * pointSize) / (widened * widened), 0.24);
+        float widened = max(pointSize, ${SPRITE_MIN_PIXELS});
+        vColor *= max((pointSize * pointSize) / (widened * widened), ${SPRITE_DIM_FLOOR});
         gl_PointSize = widened;
         gl_Position = projectionMatrix * viewPosition;
       }
@@ -4304,24 +4319,22 @@ function animate(now) {
   camera.rotation.z = Math.sin(visualElapsed * 0.45) * 0.0025;
   updateAttitude();
 
+  // Driven from elapsed time rather than accumulated per frame. A fixed step
+  // added each frame ties the drift rate to the refresh rate: the same field
+  // crawls on a 60 Hz panel and runs at nearly two and a half times that on a
+  // 144 Hz one. Drift rate is also what sets how often a star crosses a pixel
+  // boundary, so on a high-refresh display it was driving the field's shimmer
+  // that much faster as well. The 60 preserves the old per-frame step's meaning
+  // at the rate it was tuned for.
   starLayers.forEach((layer) => {
-    if (benchmarkFreeze) layer.rotation.z = visualElapsed * 60 * layer.userData.rotationRate;
-    else layer.rotation.z += layer.userData.rotationRate;
+    layer.rotation.z = visualElapsed * 60 * layer.userData.rotationRate;
   });
-  if (galaxy) {
-    if (benchmarkFreeze) galaxy.rotation.z = 0.18 + visualElapsed * 60 * 0.000025;
-    else galaxy.rotation.z += 0.000025;
-  }
+  if (galaxy) galaxy.rotation.z = 0.18 + visualElapsed * 60 * 0.000025;
   if (asteroidField) asteroidField.rotation.y = visualElapsed * 0.004;
 
   celestialBodies.forEach(({ group, mesh, cloudMesh, rotationSpeed }, index) => {
-    if (benchmarkFreeze) {
-      mesh.rotation.y = visualElapsed * 60 * rotationSpeed;
-      if (cloudMesh) cloudMesh.rotation.y = visualElapsed * 60 * rotationSpeed * 1.35;
-    } else {
-      mesh.rotation.y += rotationSpeed;
-      if (cloudMesh) cloudMesh.rotation.y += rotationSpeed * 1.35;
-    }
+    mesh.rotation.y = visualElapsed * 60 * rotationSpeed;
+    if (cloudMesh) cloudMesh.rotation.y = visualElapsed * 60 * rotationSpeed * 1.35;
     group.rotation.z = Math.sin(visualElapsed * 0.08 + index) * 0.02;
   });
 
