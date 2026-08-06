@@ -431,6 +431,7 @@ function getFullscreenElement() {
 
 function updateFullscreenUi() {
   const active = Boolean(getFullscreenElement());
+  document.documentElement.classList.toggle("is-mobile-fullscreen", mobileDevice && active);
   fullscreenToggle.setAttribute("aria-pressed", String(active));
   fullscreenToggle.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
   fullscreenLabel.textContent = active ? "WINDOWED" : "FULLSCREEN";

@@ -150,6 +150,13 @@ ETA. Each cluster carries its own scrim, because the readouts have to survive a
 gas giant filling the frame behind them, and every hairline in the centre group
 and the trajectory tape gets a dark drop shadow for the same reason.
 
+Mobile fullscreen scales the DOM interface from the viewport's short edge
+(`11.5–14 px` root size), tightens the gutter and controls, and removes the
+heading, pitch ladder, roll arc, reactor row, quality selector, and mission
+badge. This is keyed from the explicit fullscreen state rather than only an
+orientation media query, because the visual landscape fallback still reports a
+portrait viewport to CSS.
+
 The centre group is a live attitude display. `viewYaw` and `viewPitch` already
 drive the camera; feeding them to the heading tape, the pitch ladder, and a
 cluster parallax offset is what makes the projection feel attached to the ship
