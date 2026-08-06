@@ -90,6 +90,23 @@ html:-webkit-full-screen #experience {
   transform: translateZ(0);
 }
 
+/* Fullscreen orientation locking is not implemented by iOS Safari and may be
+   rejected by embedded Android browsers. In portrait, rotate the complete
+   authored viewport as a visual landscape fallback. JavaScript only adds this
+   class after the native lock is unavailable or has failed. */
+html.is-landscape-emulated:fullscreen #experience,
+html.is-landscape-emulated:-webkit-full-screen #experience {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  height: 100vw;
+  max-width: none;
+  max-height: none;
+  translate: -50% -50%;
+  transform: rotate(90deg);
+}
+
 html:fullscreen #space-canvas,
 html:-webkit-full-screen #space-canvas {
   position: absolute;

@@ -436,17 +436,45 @@ function updateFullscreenUi() {
   fullscreenLabel.textContent = active ? "WINDOWED" : "FULLSCREEN";
 }
 
-function lockMobileLandscape() {
-  if (!mobileDevice || !screen.orientation?.lock) return;
+let orientationLockFailed = false;
+
+function updateLandscapeFallback() {
+  const portrait = window.innerHeight > window.innerWidth;
+  const emulateLandscape =
+    mobileDevice &&
+    Boolean(getFullscreenElement()) &&
+    portrait &&
+    (orientationLockFailed || !screen.orientation?.lock);
+  document.documentElement.classList.toggle("is-landscape-emulated", emulateLandscape);
+}
+
+async function lockMobileLandscape() {
+  if (!mobileDevice || !getFullscreenElement()) {
+    updateLandscapeFallback();
+    return false;
+  }
+
+  if (!screen.orientation?.lock) {
+    orientationLockFailed = true;
+    updateLandscapeFallback();
+    refreshViewportAfterModeChange();
+    return false;
+  }
+
   try {
-    const lock = screen.orientation.lock("landscape");
-    Promise.resolve(lock)
-      .then(refreshViewportAfterModeChange)
-      .catch(() => {
-        // Orientation locking is optional and unavailable on several mobile browsers.
-      });
+    await screen.orientation.lock("landscape");
+    orientationLockFailed = false;
+    updateLandscapeFallback();
+    refreshViewportAfterModeChange();
+    return true;
   } catch {
-    // Fullscreen still works when orientation locking is unsupported.
+    // iOS and some Android WebViews expose fullscreen without granting the
+    // orientation lock. Rotate the authored 16:9 experience instead of leaving
+    // it as a small letterbox in the middle of a portrait screen.
+    orientationLockFailed = true;
+    updateLandscapeFallback();
+    refreshViewportAfterModeChange();
+    return false;
   }
 }
 
@@ -504,7 +532,11 @@ function initFullscreenControls() {
   const onFullscreenChange = () => {
     updateFullscreenUi();
     refreshViewportAfterModeChange();
-    if (!getFullscreenElement()) {
+    if (getFullscreenElement()) {
+      lockMobileLandscape();
+    } else {
+      orientationLockFailed = false;
+      updateLandscapeFallback();
       try {
         screen.orientation?.unlock?.();
       } catch {
@@ -514,8 +546,12 @@ function initFullscreenControls() {
   };
   document.addEventListener("fullscreenchange", onFullscreenChange);
   document.addEventListener("webkitfullscreenchange", onFullscreenChange);
-  screen.orientation?.addEventListener?.("change", refreshViewportAfterModeChange);
-  window.addEventListener("orientationchange", refreshViewportAfterModeChange);
+  const onOrientationChange = () => {
+    updateLandscapeFallback();
+    refreshViewportAfterModeChange();
+  };
+  screen.orientation?.addEventListener?.("change", onOrientationChange);
+  window.addEventListener("orientationchange", onOrientationChange);
   window.visualViewport?.addEventListener("resize", onResize);
   if ("ResizeObserver" in window) {
     viewportObserver = new ResizeObserver(onResize);
@@ -3718,14 +3754,34 @@ function resetCameraView() {
   pointerY = 0;
 }
 
+function getCockpitPointer(event) {
+  if (document.documentElement.classList.contains("is-landscape-emulated")) {
+    // The visual viewport is rotated clockwise. Convert physical portrait input
+    // back into the landscape coordinate system the camera controls expect.
+    return {
+      x: event.clientY,
+      y: window.innerWidth - event.clientX,
+      width: window.innerHeight,
+      height: window.innerWidth,
+    };
+  }
+  return {
+    x: event.clientX,
+    y: event.clientY,
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+}
+
 function onCameraPointerDown(event) {
   if (state === "returning" || (event.pointerType === "mouse" && event.button !== 0) || isCameraDragging) return;
   event.preventDefault();
+  const point = getCockpitPointer(event);
   isCameraDragging = true;
   cameraPointerId = event.pointerId;
   cameraPointerType = event.pointerType;
-  dragLastX = event.clientX;
-  dragLastY = event.clientY;
+  dragLastX = point.x;
+  dragLastY = point.y;
   dragDistance = 0;
   yawVelocity = 0;
   pitchVelocity = 0;
@@ -3736,21 +3792,23 @@ function onCameraPointerDown(event) {
 function onCameraPointerMove(event) {
   if (!isCameraDragging || event.pointerId !== cameraPointerId) {
     if (event.pointerType === "mouse") {
+      const point = getCockpitPointer(event);
       cameraPointerType = "mouse";
-      pointerX = (event.clientX / window.innerWidth) * 2 - 1;
-      pointerY = (event.clientY / window.innerHeight) * 2 - 1;
+      pointerX = (point.x / point.width) * 2 - 1;
+      pointerY = (point.y / point.height) * 2 - 1;
     }
     return;
   }
 
   event.preventDefault();
-  const deltaX = event.clientX - dragLastX;
-  const deltaY = event.clientY - dragLastY;
+  const point = getCockpitPointer(event);
+  const deltaX = point.x - dragLastX;
+  const deltaY = point.y - dragLastY;
   // Raised alongside the yaw and pitch limits, so reaching the edge of the look
   // range still takes about a screen-width of drag rather than two.
   const sensitivity = event.pointerType === "touch" ? 0.005 : 0.0038;
-  dragLastX = event.clientX;
-  dragLastY = event.clientY;
+  dragLastX = point.x;
+  dragLastY = point.y;
   dragDistance += Math.abs(deltaX) + Math.abs(deltaY);
 
   const yawDelta = -deltaX * sensitivity;

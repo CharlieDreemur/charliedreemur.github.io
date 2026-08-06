@@ -39,13 +39,16 @@ the same trap on the page side — a fixed masthead re-anchored by the collapse 
 is riding on — is paid for by handing the scroll offset back through
 `.space-fixed-anchor`.
 
-The loading screen offers optional fullscreen while resources are prepared, but the
-flight starts automatically when ready whether or not it is pressed. Supported
-mobile browsers also lock fullscreen to landscape; otherwise the visitor must
-rotate the device manually. The top-bar control can enter or leave fullscreen
-again. Audio stays muted until the visitor presses `SOUND ON` when autoplay is
-blocked. Fullscreen preserves the authored 16:9 composition and uses black
-letterboxing on displays with a different aspect ratio.
+The loading screen offers optional fullscreen while resources are prepared, but
+the flight starts automatically when ready whether or not it is pressed. Mobile
+fullscreen requests a native landscape lock and retries when fullscreen becomes
+active. Browsers that do not implement or grant that API get a visual fallback:
+the complete authored viewport rotates in portrait, with pointer coordinates
+converted back into cockpit space so one-finger camera control still follows the
+display. The top-bar control can enter or leave fullscreen again. Audio stays
+muted until the visitor presses `SOUND ON` when autoplay is blocked. Fullscreen
+preserves the authored 16:9 composition and uses black letterboxing on displays
+with a different aspect ratio.
 
 Dragging with the left button or one finger swings the view, up to 54° of yaw and
 34° of pitch, and a double click or double tap recentres it. The range is set by
