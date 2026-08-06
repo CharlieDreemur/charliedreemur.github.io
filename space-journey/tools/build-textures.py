@@ -46,12 +46,12 @@ SOURCES = {
     "night": "https://eoimages.gsfc.nasa.gov/images/imagerecords/79000/79765/dnb_land_ocean_ice.2012.3600x1800.jpg",
     "clouds": "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57747/cloud_combined_2048.jpg",
     "moon": "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_poles_2k.tif",
-    # SDO/HMI continuum on 2014-10-24, when AR12192 was the largest sunspot
-    # group in 24 years. Pinned to a date so the bake stays reproducible.
+    # AIA 304 Å full-disc frame from NASA SVS. This wavelength supplies the
+    # dense red-orange surface texture and visible edge eruptions used by the
+    # reference look, while retaining detail after reduction and bloom.
     "sun": (
-        "https://api.helioviewer.org/v2/takeScreenshot/?date=2014-10-24T12:00:00Z"
-        "&layers=%5BSDO,HMI,continuum,1,100%5D&imageScale=1.2"
-        "&x0=0&y0=0&width=2048&height=2048&display=true&watermark=false"
+        "https://svs.gsfc.nasa.gov/vis/a000000/a003900/a003983/"
+        "SDOAIA304A_Jewelbox.01000.jpg"
     ),
     # Cassini's global colour map of Jupiter (PIA07782), 3601x1801 equirectangular.
     "jupiter": (
@@ -67,6 +67,11 @@ SOURCES = {
     ),
 }
 
+CACHE_NAMES = {
+    # Version the cached file when changing the pinned solar frame.
+    "sun": "sun-aia304-jewelbox-01000",
+}
+
 # Jupiter is the hero flyby and earns the full tier width. Mars is passed at a
 # distance, so half the tier width is indistinguishable and a third of the bytes.
 MARS_DIVISOR = 2
@@ -80,7 +85,8 @@ def download(name: str, url: str) -> Path:
     # PIL sniffs the format from the content, so a generic extension is fine for
     # API endpoints that carry no filename.
     suffix = Path(url.split("?")[0]).suffix
-    destination = CACHE_DIRECTORY / f"{name}{suffix if len(suffix) <= 5 else ''}"
+    cache_name = CACHE_NAMES.get(name, name)
+    destination = CACHE_DIRECTORY / f"{cache_name}{suffix if len(suffix) <= 5 else ''}"
     if destination.exists() and destination.stat().st_size > 0:
         print(f"  cached  {destination.name}")
         return destination
@@ -137,21 +143,6 @@ def build_night(night: np.ndarray, ocean: np.ndarray, height: int) -> np.ndarray
     return np.clip(lights * 1.35, 0, 255)
 
 
-def limb_darkening(mu: np.ndarray) -> np.ndarray:
-    """The standard quadratic law, as a fraction of the disc-centre intensity."""
-    return 0.3 + 0.93 * mu - 0.23 * mu * mu
-
-
-def measure_disc(luminance: np.ndarray) -> tuple[float, float, float]:
-    """Locate the solar limb against the empty background."""
-    lit = luminance > luminance.max() * 0.25
-    rows, columns = np.nonzero(lit)
-    center_y = (rows.min() + rows.max()) / 2.0
-    center_x = (columns.min() + columns.max()) / 2.0
-    radius = (columns.max() - columns.min() + rows.max() - rows.min()) / 4.0
-    return center_x, center_y, radius
-
-
 def blend_poles(image: Image.Image, band: float = 0.06) -> Image.Image:
     """Fade the top and bottom rows into the latitude below them.
 
@@ -173,15 +164,26 @@ def blend_poles(image: Image.Image, band: float = 0.06) -> Image.Image:
     return to_image(pixels)
 
 
-def build_sun(disc: Image.Image) -> Image.Image:
-    """Turn a flattened HMI continuum disc into a coloured photosphere billboard.
+def build_sun(source: Image.Image) -> Image.Image:
+    """Crop an AIA full-disc frame into a transparent solar billboard."""
+    source = source.convert("RGB")
+    luminance = np.asarray(source.convert("L"), dtype=np.float32)
+    height, width = luminance.shape
+    center_x = (width - 1) / 2.0
+    center_y = (height - 1) / 2.0
 
-    The continuum image is monochrome, so intensity is remapped onto photospheric
-    colour temperatures. Its limb darkening is divided out before that remap and
-    reapplied after, since the ramp cannot tell a darkened limb from a sunspot.
-    """
-    luminance = np.asarray(disc.convert("L"), dtype=np.float32)
-    center_x, center_y, radius = measure_disc(luminance)
+    # The AIA limb is the strongest falling edge in the outer half of a radial
+    # luminance profile. Measuring it keeps the crop reproducible without tying
+    # the bake to hard-coded source pixels.
+    y, x = np.indices((height, width), dtype=np.float32)
+    radial = np.hypot(x - center_x, y - center_y).astype(np.int32)
+    totals = np.bincount(radial.ravel(), weights=luminance.ravel())
+    counts = np.bincount(radial.ravel())
+    profile = totals / np.maximum(counts, 1)
+    profile = np.convolve(profile, np.ones(31, dtype=np.float32) / 31.0, mode="same")
+    lower = int(min(width, height) * 0.32)
+    upper = int(min(width, height) * 0.46)
+    radius = lower + int(np.argmin(np.gradient(profile)[lower:upper]))
 
     margin = int(radius * 1.04)
     box = (
@@ -190,63 +192,16 @@ def build_sun(disc: Image.Image) -> Image.Image:
         int(center_x + margin),
         int(center_y + margin),
     )
-    luminance = np.asarray(disc.convert("L").crop(box), dtype=np.float32)
-    size = luminance.shape[0]
+    color = np.asarray(source.crop(box), dtype=np.float32)
+    size = color.shape[0]
 
-    axis = (np.arange(size, dtype=np.float32) - (size - 1) / 2.0) / (radius * 1.04)
-    distance = np.hypot(axis[None, :], axis[:, None])
-    inside = distance < 0.985
+    # Lift the darker coronal structures enough to survive tone mapping while
+    # retaining the source's bright active-region highlights.
+    color = 255.0 * np.power(np.clip(color / 255.0, 0.0, 1.0), 0.78)
 
-    # The render arrives with the sun's own limb darkening intact, and the ramp
-    # below reads anything dimmer than the quiet sun as a spot. Left in, the gain
-    # drives the limb down to a quarter of the quiet level and the whole rim is
-    # painted penumbra orange -- a dark ring no amount of corona tuning can hide,
-    # because it is the disc itself. Divide the profile out so the ramp sees only
-    # granulation and real spots; it is applied back to the finished colour below.
-    # Measured against this source the standard law is accurate to about a
-    # percent from the centre out to 0.9 R.
-    solar = np.clip(distance * 1.04, 0.0, 0.995)
-    mu = np.sqrt(1.0 - solar * solar)
-    profile = limb_darkening(mu)
-
-    quiet = float(np.median((luminance / profile)[inside]))
-    intensity = luminance / (profile * max(quiet, 1.0))
-    # Granulation spans only a few percent of the raw continuum's range. Without
-    # this gain the colour ramp below flattens it away entirely, and bloom
-    # flattens whatever survives again on the way to the screen. Spot cores fall
-    # well below the ramp either way, so they simply clamp to the umbra.
-    intensity = 1.0 + (intensity - 1.0) * 3.0
-
-    umbra = np.array([88, 30, 8], dtype=np.float32)
-    penumbra = np.array([206, 112, 34], dtype=np.float32)
-    # Warm rather than golden. A near-white disc reads as a generic glowing ball
-    # once bloom is applied, but pushing blue as low as the eye expects from the
-    # word "golden" leaves nothing for the limb to fall through: blue bottoms out
-    # partway across the disc and the rest of the falloff turns into a saturated
-    # orange band that reads as a painted ring rather than a curving surface.
-    photosphere = np.array([253, 231, 186], dtype=np.float32)
-    facula = np.array([255, 246, 216], dtype=np.float32)
-
-    low = smoothstep(0.0, 0.62, intensity)[..., None]
-    mid = smoothstep(0.62, 0.94, intensity)[..., None]
-    high = smoothstep(0.97, 1.09, intensity)[..., None]
-    color = umbra + (penumbra - umbra) * low
-    color = color + (photosphere - color) * mid
-    color = color + (facula - color) * high
-
-    # Put the profile removed above back, now that it is shading a colour rather
-    # than being mistaken for a spot.
-    color = color * profile[..., None]
-    # The limb is redder as well as darker, since shorter wavelengths escape from
-    # the higher and cooler layers seen at a grazing angle. Kept subtle for the
-    # reason given above the palette.
-    color = color * np.stack(
-        [np.ones_like(mu), 0.95 + 0.05 * mu, 0.86 + 0.14 * mu], axis=-1
-    )
-
-    # A wide alpha ramp lets the limb dissolve into the corona instead of ending
-    # on a hard cut.
-    alpha = 255.0 * (1.0 - smoothstep(0.9, 1.0, distance))
+    axis = np.arange(size, dtype=np.float32) - (size - 1) / 2.0
+    distance = np.hypot(axis[None, :], axis[:, None]) / radius
+    alpha = 255.0 * (1.0 - smoothstep(1.0, 1.04, distance))
     return to_image(np.concatenate([color, alpha[..., None]], axis=-1)).convert("RGBA")
 
 

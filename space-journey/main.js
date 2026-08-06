@@ -2135,34 +2135,84 @@ function addSolarProminences(position, solarRadius, intensity) {
         return sum;
       }
 
+      // A prominence follows a magnetic arch: two feet at the limb and a thin,
+      // turbulent loop suspended above it. Using an ellipse rather than another
+      // radial noise field is what makes these read as solar plasma instead of
+      // a fringe of flames.
+      float magneticLoop(
+        vec2 point,
+        float angle,
+        float halfWidth,
+        float height,
+        float seed
+      ) {
+        vec2 radial = vec2(cos(angle), sin(angle));
+        vec2 tangent = vec2(-radial.y, radial.x);
+        float x = dot(point, tangent);
+        float y = dot(point, radial) - uLimb;
+        vec2 loopPoint = vec2(x / halfWidth, y / height);
+        float loopDistance = abs(length(loopPoint) - 1.0);
+        float arch = 1.0 - smoothstep(0.035, 0.12, loopDistance);
+        float aboveLimb = smoothstep(-0.012, 0.025, y);
+        float crown = 1.0 - smoothstep(1.02, 1.16, loopPoint.y);
+        float strands = fbm(vec3(loopPoint * vec2(3.2, 1.7), seed + uTime * 0.055));
+        strands = 0.42 + smoothstep(0.28, 0.82, strands) * 0.9;
+        return arch * aboveLimb * crown * strands;
+      }
+
       void main() {
         vec2 offset = vUv * 2.0 - 1.0;
         float radius = length(offset);
+        // The corners are outside the reach, and the disc covers everything well
+        // inside the limb, so neither is worth shading.
         if (radius > 1.0 || radius < uLimb * 0.9) discard;
 
         vec2 heading = offset / max(radius, 0.0001);
 
-        // The angle enters as a point on the unit circle, so the field wraps
-        // with no seam where atan would fold. Radius goes on the third axis and
-        // scrolls with time, which is what stretches the features along the
-        // radius and makes them climb away from the limb rather than swirl.
-        vec3 flow = vec3(heading * 3.6, radius * 1.7 - uTime * 0.14);
-        float curl = noise3(vec3(heading * 1.4, radius * 0.8 + uTime * 0.045));
-        float turbulence = fbm(flow + (curl - 0.5) * 2.4);
+        float altitude = max(0.0, (radius - uLimb) / (1.0 - uLimb));
 
-        float above = smoothstep(uLimb * 0.96, uLimb + 0.05, radius);
-        float reach = 1.0 - smoothstep(uLimb, 1.0, radius);
-        reach *= reach;
+        // A very thin, broken chromosphere connects the disc to the outer gas.
+        // It is deliberately irregular so it never becomes a perfect neon ring.
+        float rimNoise = fbm(vec3(heading * 4.8, uTime * 0.035));
+        float chromosphere = exp(-altitude * 32.0);
+        chromosphere *= 0.22 + smoothstep(0.32, 0.78, rimNoise) * 0.7;
+        chromosphere *= smoothstep(uLimb * 0.995, uLimb + 0.018, radius);
 
-        // Thresholded rather than used raw. The tongues have to resolve as
-        // separate filaments with gaps between them; the field taken straight
-        // is a uniform haze, and a uniform haze against the limb is the ring
-        // this disc spent so long getting rid of.
-        float flame = smoothstep(0.36, 0.82, turbulence + reach * 0.16) * above * reach;
-        if (flame < 0.004) discard;
+        // Long, hair-thin coronal streamers. Coarse noise opens only a handful
+        // of active sectors; ridged fine noise splits each one into strands.
+        float curl = noise3(vec3(heading * 1.35, altitude * 0.8 + uTime * 0.035));
+        vec3 flow = vec3(heading * 3.1, altitude * 2.2 - uTime * 0.11);
+        float coarse = fbm(vec3(heading * 1.2, altitude * 0.45 - uTime * 0.025));
+        float fine = fbm(flow + (curl - 0.5) * 2.8);
+        float ridges = 1.0 - abs(fine * 2.0 - 1.0);
+        float sectorGate = smoothstep(0.5, 0.76, coarse);
+        float filaments = smoothstep(0.58, 0.9, ridges) * sectorGate;
+        float streamerReach = pow(max(0.0, 1.0 - altitude), 2.35);
+        float streamers = filaments * streamerReach;
+        streamers *= smoothstep(uLimb + 0.005, uLimb + 0.055, radius);
 
-        vec3 tint = mix(vec3(0.92, 0.19, 0.03), vec3(1.0, 0.74, 0.32), reach);
-        gl_FragColor = vec4(tint * flame * uIntensity, 1.0);
+        // Several differently sized magnetic arches keep the silhouette
+        // asymmetric. Paired nearby arcs make the larger events look braided.
+        float loops = 0.0;
+        loops += magneticLoop(offset, 0.18, 0.105, 0.16, 1.2);
+        loops += magneticLoop(offset, 0.22, 0.078, 0.125, 2.7) * 0.72;
+        loops += magneticLoop(offset, 1.72, 0.068, 0.10, 4.1) * 0.74;
+        loops += magneticLoop(offset, 3.42, 0.135, 0.205, 6.3) * 0.9;
+        loops += magneticLoop(offset, 4.92, 0.085, 0.13, 8.8) * 0.78;
+
+        float plasma = chromosphere + streamers * 0.82 + loops * 1.25;
+        if (plasma < 0.004) discard;
+
+        // Hot feet approach yellow-white; suspended gas cools through orange
+        // into deep red. This matches the AIA 304 texture without flattening all
+        // three layers into the same colour.
+        vec3 cool = vec3(0.92, 0.055, 0.008);
+        vec3 warm = vec3(1.0, 0.28, 0.025);
+        vec3 hot = vec3(1.0, 0.82, 0.34);
+        vec3 tint = mix(warm, cool, smoothstep(0.18, 0.9, altitude));
+        tint = mix(tint, hot, exp(-altitude * 13.0) * 0.72);
+        float energy = chromosphere * 0.75 + streamers + loops * 1.2;
+        gl_FragColor = vec4(tint * energy * uIntensity, 1.0);
       }
     `,
     transparent: true,
@@ -2198,7 +2248,12 @@ function addStellarBeacon(position, size, options = {}) {
     // ACES knee, which compresses a 34% falloff into 6% on screen and hands back
     // a flat matte ball; the texture's gradient is intact, it is being tone
     // mapped away. Trimming here drops it onto the responsive stretch.
-    photosphereBrightness = 1,
+    // Per-channel scale on the baked disc. The overall level decides where the
+    // disc lands on the tone curve; the imbalance between the channels is what
+    // survives it as colour. ACES pulls the three channels toward each other as
+    // they climb, so a disc scaled neutrally at a level this high comes back out
+    // white however golden the texture underneath it is.
+    photosphereGain = [1, 1, 1],
     // Set for stars the flight path passes through rather than approaches.
     fadeRadius = 0,
     // Only a star with a resolvable disc is worth aiming at; see addCelestialBody.
@@ -2266,7 +2321,7 @@ function addStellarBeacon(position, size, options = {}) {
     // against the surface instead of being added into the glow.
     const discMaterial = new THREE.SpriteMaterial({
       map: photosphere,
-      color: new THREE.Color(photosphereBrightness, photosphereBrightness, photosphereBrightness),
+      color: new THREE.Color(...photosphereGain),
       transparent: true,
       depthWrite: false,
       fog: false,
@@ -2514,8 +2569,8 @@ async function buildScene() {
     [sunDirection.x * sunDistance, sunDirection.y * sunDistance, -1048 + sunDirection.z * sunDistance],
     260,
     {
-      // Seen from space the photosphere is a hard white disc at roughly 5800K;
-      // the warm tones belong to the corona around it, not to the star itself.
+      // Keep the unresolved core white; the resolved disc below uses NASA's
+      // red-orange AIA 304 Å data so its surface and eruptions remain visible.
       coreColor: "#ffffff",
       haloColor: "#ffd9a6",
       // Diffraction spikes are a point-source artifact. On a star resolved to
@@ -2546,8 +2601,10 @@ async function buildScene() {
         [1, "rgba(255,206,154,0)"],
       ],
       coronaScale: 2,
-      photosphereBrightness: 0.6,
-      prominences: 0.55,
+      // The replacement texture is already colour-mapped. A neutral gain keeps
+      // its gold/black contrast instead of tinting it a second time.
+      photosphereGain: [1, 1, 1],
+      prominences: 0.68,
       photosphere: surfaces.sun,
       info: {
         name: "SOL",

@@ -276,6 +276,13 @@ scaled down onto the responsive stretch of the curve before bloom ever sees it.
 Brightness and gradient trade against each other here, and the disc is worth
 less than the shading.
 
+Scaling it down neutrally, though, hands back a white ball: ACES pulls the three
+channels toward each other as they climb, so a disc sitting this high on the
+curve comes out at 0.07 saturation however golden the texture underneath it is.
+The scale is therefore per channel — the imbalance between them is what survives
+the curve as colour, and an uneven scale that costs the same luminance restores
+the photosphere to 0.23 without touching the falloff.
+
 Two smaller things sit on top. The baked alpha ramp is deliberately wide, but it
 opens well inside the limb and is still partly open past it, where the texture
 has already fallen to the near-black it uses beyond the edge — a seventh of the
@@ -285,6 +292,30 @@ rather than in the bake, so the shipped texture stays usable at other sizes.
 And the sun opts out of the diffraction spikes every other beacon draws: those
 are a point-source artifact, and on a star resolved to several hundred pixels
 they put a hard cross over the disc that reads as a reticle.
+
+Prominences climb off the limb from a camera-facing quad, sized in solar radii
+and shaded entirely by noise — modelled geometry would be sub-pixel across at
+this range. The angle enters the noise field as a point on the unit circle so it
+wraps without a seam, and radius rides the third axis scrolling with time, which
+is what stretches the features along the radius and makes them climb rather than
+swirl. Two scales do the work: a coarse field decides which sectors erupt and how
+high they throw, a fine one breaks each eruption into filaments, and a narrow
+core inside each tongue supplies something bright enough to read as burning
+instead of as smoke. A single scale gives an evenly spaced fringe the whole way
+round, which reads as fur.
+
+The one thing that matters for correctness is where the roots start. Bright
+plasma laid against a limb that is meant to be darkening turns the falloff into
+a ring by contrast, and because this plasma is additive and nearly pure red, the
+bloom carrying it inward drags the limb's blue channel to nothing and makes that
+ring a hard maroon band — the same artifact the corona produced, arriving from
+the other side. Ramping the roots in over a wide band starting just outside the
+limb is the whole fix: with it the angle-averaged disc profile is identical to
+the same frame rendered with the plumes switched off, so brightness can then be
+set by eye. The roots also keep some blue, since they are the end whose bloom
+reaches the disc; the tips carry the colour, and what they bloom onto is sky.
+Filament octaves follow the quality tier, and the layer costs about 1.5% of frame
+time even on the software rasteriser.
 
 Source imagery is NASA public-domain material: Blue Marble Next Generation
 topography/bathymetry and cloud composites, Black Marble 2012 night lights (all
