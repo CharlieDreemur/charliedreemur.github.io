@@ -60,6 +60,18 @@ a:focus-visible {
   height: 100%;
 }
 
+.flight-ui {
+  position: fixed;
+  z-index: 5;
+  inset: 0;
+  pointer-events: none;
+}
+
+.flight-ui .topbar a,
+.flight-ui .topbar button {
+  pointer-events: auto;
+}
+
 #space-canvas {
   display: block;
   cursor: grab;
@@ -99,8 +111,8 @@ html.is-landscape-emulated:-webkit-full-screen #experience {
   inset: auto;
   top: 50%;
   left: 50%;
-  width: 100vh;
-  height: 100vw;
+  width: min(100vh, 177.7778vw);
+  height: min(100vw, 56.25vh);
   max-width: none;
   max-height: none;
   translate: -50% -50%;
@@ -2393,17 +2405,20 @@ html:-webkit-full-screen #space-canvas {
   }
 }
 
-/* Fullscreen gets its own mobile layout flag because an emulated landscape
-   remains "portrait" to CSS media queries. Size from the short viewport edge so
-   native and rotated landscape use the same visual scale. */
-html.is-mobile-fullscreen {
-  --gutter: clamp(0.75rem, 2.4vmin, 1.5rem);
-  font-size: clamp(11.5px, 2.9vmin, 14px);
+/* A phone fullscreen is one fixed design surface, scaled as a unit by
+   --flight-ui-scale. The wrapper is expanded by the inverse scale in script, so
+   percentage anchors keep their spacing while text, panels, and gaps all shrink
+   together. This also works when the physical viewport still reports portrait. */
+html.is-mobile-fullscreen .flight-ui {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(var(--flight-ui-scale, 1));
+  transform-origin: center;
 }
 
 html.is-mobile-fullscreen .topbar {
   grid-template-columns: 1fr 1fr;
-  padding: max(0.7rem, env(safe-area-inset-top)) var(--gutter);
 }
 
 html.is-mobile-fullscreen .mission-id,
@@ -2415,33 +2430,40 @@ html.is-mobile-fullscreen .bars li[data-key="reactor"] {
   display: none;
 }
 
-html.is-mobile-fullscreen .topbar__controls {
-  gap: 0.45rem;
-}
-
-html.is-mobile-fullscreen .icon-button {
-  padding: 0.38rem 0.58rem;
-}
-
 html.is-mobile-fullscreen .cockpit__pillar {
-  width: 5.5vw;
+  width: clamp(1.3rem, 3.6vw, 4rem);
+}
+
+html.is-mobile-fullscreen .gauge {
+  width: clamp(6rem, 8.5vw, 8.4rem);
+}
+
+html.is-mobile-fullscreen .bars li {
+  width: clamp(9.5rem, 15vw, 13rem);
+  grid-template-columns: 3.4rem 1fr 1.6rem;
 }
 
 html.is-mobile-fullscreen .cluster--left {
-  top: 5.2rem;
+  top: 6.5rem;
+  transform:
+    perspective(1500px) rotateY(7deg)
+    translate3d(calc(var(--px) * 13px), calc(var(--py) * 9px), 0);
 }
 
 html.is-mobile-fullscreen .cluster--right {
-  bottom: 7.2rem;
+  bottom: 7.5rem;
+  transform:
+    perspective(1500px) rotateY(-7deg)
+    translate3d(calc(var(--px) * 13px), calc(var(--py) * 9px), 0);
 }
 
 html.is-mobile-fullscreen .gunsight {
-  top: 44%;
+  top: 47%;
 }
 
 html.is-mobile-fullscreen .target {
-  top: calc(44% + 4rem);
-  max-width: 72vw;
+  top: calc(50% + 4.4rem);
+  max-width: min(36rem, 84%);
 }
 
 html.is-mobile-fullscreen .target b {
@@ -2449,11 +2471,11 @@ html.is-mobile-fullscreen .target b {
 }
 
 html.is-mobile-fullscreen .tape {
-  bottom: 1.7rem;
+  bottom: 2.4rem;
 }
 
 html.is-mobile-fullscreen .camera-hint {
-  bottom: 4.5rem;
+  bottom: 6rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

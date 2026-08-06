@@ -150,12 +150,15 @@ ETA. Each cluster carries its own scrim, because the readouts have to survive a
 gas giant filling the frame behind them, and every hairline in the centre group
 and the trajectory tape gets a dark drop shadow for the same reason.
 
-Mobile fullscreen scales the DOM interface from the viewport's short edge
-(`11.5–14 px` root size), tightens the gutter and controls, and removes the
-heading, pitch ladder, roll arc, reactor row, quality selector, and mission
-badge. This is keyed from the explicit fullscreen state rather than only an
-orientation media query, because the visual landscape fallback still reports a
-portrait viewport to CSS.
+Mobile fullscreen treats the cockpit, top bar, and HUD as one 1080×608 design
+surface. Script expands that wrapper by the inverse of the fit scale and CSS
+shrinks the whole surface back into the 16:9 experience, so component sizes,
+percentage anchors, gaps, and edge offsets all change by the same factor. This
+replaces the earlier root-font approach: shrinking rem-based sizes while leaving
+viewport-based anchors independent made the two instrument clusters converge on
+short screens. Secondary attitude details remain hidden on coarse landscape
+inputs, and the explicit fullscreen class gives the visual-rotation fallback the
+same treatment even though its media query still reports portrait.
 
 The centre group is a live attitude display. `viewYaw` and `viewPitch` already
 drive the camera; feeding them to the heading tape, the pitch ladder, and a

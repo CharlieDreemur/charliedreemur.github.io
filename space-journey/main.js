@@ -2,6 +2,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.m
 
 const canvas = document.querySelector("#space-canvas");
 const experience = document.querySelector("#experience");
+const flightUi = document.querySelector(".flight-ui");
 const loader = document.querySelector("#loader");
 const loaderBar = document.querySelector("#loader-bar");
 const loaderLabel = document.querySelector("#loader-label");
@@ -432,12 +433,32 @@ function getFullscreenElement() {
 function updateFullscreenUi() {
   const active = Boolean(getFullscreenElement());
   document.documentElement.classList.toggle("is-mobile-fullscreen", mobileDevice && active);
+  updateMobileUiFrame();
   fullscreenToggle.setAttribute("aria-pressed", String(active));
   fullscreenToggle.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
   fullscreenLabel.textContent = active ? "WINDOWED" : "FULLSCREEN";
 }
 
 let orientationLockFailed = false;
+
+function updateMobileUiFrame() {
+  if (!mobileDevice || !getFullscreenElement()) {
+    flightUi.style.removeProperty("width");
+    flightUi.style.removeProperty("height");
+    flightUi.style.removeProperty("--flight-ui-scale");
+    return;
+  }
+
+  // Treat the HUD as one 1080×608 design surface. Expanding the wrapper by the
+  // inverse scale before shrinking it keeps every percentage anchor in place;
+  // changing rem sizes independently is what made the two clusters converge.
+  const width = Math.max(1, experience.clientWidth);
+  const height = Math.max(1, experience.clientHeight);
+  const scale = Math.min(1, width / 1080, height / 608);
+  flightUi.style.width = `${width / scale}px`;
+  flightUi.style.height = `${height / scale}px`;
+  flightUi.style.setProperty("--flight-ui-scale", String(scale));
+}
 
 function updateLandscapeFallback() {
   const portrait = window.innerHeight > window.innerWidth;
@@ -3730,6 +3751,7 @@ function applyCameraLens() {
 function onResize() {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
+    updateMobileUiFrame();
     const { width, height } = getViewportSize();
     camera.aspect = width / height;
     applyCameraLens();
