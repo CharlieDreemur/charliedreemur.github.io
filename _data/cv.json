@@ -34,47 +34,36 @@
   "work": [
     {
       "company": "TikTok",
-      "position": "Research Scientist Intern, Multimodal LLMs/Agents",
+      "position": "Research Scientist Intern, RSI / Self-Evolving Agents",
       "startDate": "Jun 2026",
       "endDate": "Present",
-      "summary": "Researching self-evolving multimodal agents for content moderation.",
+      "summary": "Project lead for TikTok's agent self-evolution framework, built from 0 to 1.",
       "highlights": [
-        "Designed a self-evolving content-moderation agent framework centered on a ReAct agent that autonomously analyzes individual videos using specialized tools for frame sampling, ASR/OCR, metadata extraction, originality scoring, and watermark/celebrity detection; integrated multimodal evidence with policy-grounded reasoning to produce structured moderation decisions.",
-        "Built a self-evolution loop where a Reflector aggregates Solver failures into root-cause attribution reports and an Evolver adds, revises, or merges case-relevant skills to refine the Solver, improving the overall F1 score by 15.5%."
+        "Designed and shipped a closed Solver-Reflector-Evolver loop in which the Solver executes tasks, the Reflector attributes failures, and the Evolver iterates reusable skills; lifted F1 from 62.7% to 81.3% on unoriginal-video detection (9,600 real short videos) and from 76.5% to 87.3% on reposting-account detection (200 accounts).",
+        "Designed a transferable Online Failure Discovery process: the Reflector mines failure patterns from scenarios and Solver traces, maintains a two-level scenario-to-failure-mode taxonomy, and distills high-value error clusters into reusable skills, so the same framework self-evolves across scenarios without human-predefined error types.",
+        "Trained a video-understanding model: built an account-level SFT dataset of 74K accounts and 1.33M videos, ran distributed full-parameter SFT of Qwen3-VL 2B/4B/8B on 32 H100s with DeepSpeed, and calibrated thresholds across 53 checkpoints; the final 4B model cut false positives by 42.8% (318 to 182) against the 8B baseline at ~70% recall."
       ]
     },
     {
       "company": "Microsoft",
-      "position": "Research Scientist Intern",
+      "position": "Research Intern, Large Language Models",
       "startDate": "Jul 2025",
       "endDate": "Sep 2025",
-      "summary": "Conducted LLM research for Microsoft 365 Excel Copilot, focusing on spreadsheet text analysis and Office.js code generation.",
+      "summary": "Built the Excel Coding Agent data engine and post-training pipeline for Excel Copilot's code agent.",
       "highlights": [
-        "Developed the TextAnalysisSFT data pipeline for Excel Copilot's TextAnalysis API: mined 2,000+ real-world examples from Kaggle, filtered text-heavy spreadsheets, generated user queries and Office.js programs, and validated executions with SheetEngine.",
-        "The resulting dataset improved Office Scripts code-generation accuracy by 15%."
+        "Produced execution-verified SFT/RL data by mining 20,000+ real-world workbooks, back-translating user queries from spreadsheet context, sampling multi-turn Office.js rollouts (write, execute, repair), and using SheetEngine final-state assertions as a programmatic verifier to filter incorrect and reward-hacking solutions.",
+        "Post-trained the coding agent on this corpus with rejection-sampling SFT and RL over same-task pass/fail rollouts under execution-based reward, improving Office Scripts pass@1 by 15% against the production baseline on a held-out set."
       ]
     },
     {
       "company": "Reborn Network",
-      "position": "AI Engineer",
+      "position": "AI Agent Engineer",
       "startDate": "May 2023",
       "endDate": "Jul 2023",
-      "summary": "Built real-time role-playing agent systems in Unity VR.",
+      "summary": "Built real-time embodied role-playing agents in Unity VR.",
       "highlights": [
-        "Developed a role-playing agent Unity VR game enabling agents to interact through text, voice, and VR actions in real time with under 1s latency.",
-        "Introduced RAG and vector databases to strengthen long-term agent memory, improving dialogue coherence score from 2/5 to 4/5.",
-        "Designed a reusable character-card framework, enabling a UGC ecosystem and reducing character persona configuration time by 300%."
-      ]
-    },
-    {
-      "company": "Tencent, WeChat Group",
-      "position": "Software Engineer",
-      "startDate": "Aug 2024",
-      "endDate": "Sep 2024",
-      "summary": "Built performance analysis tooling for WeChat Mini Programs and Unity memory profiling.",
-      "highlights": [
-        "Developed a cross-platform Android and iOS hardware performance analysis tool for WeChat Mini Programs, supporting 200+ partner teams in identifying performance bottlenecks.",
-        "Built a Unity Mono Memory Profiler that discovered 40+ hidden memory allocation points, reducing memory-leak-related crash rate by 120%."
+        "Built an embodied role-playing agent in a Unity VR environment, closing a real-time perception-dialogue-action loop across text, voice, and full-body VR actions at sub-second end-to-end latency.",
+        "Introduced RAG/vector databases and dual-level (episodic + semantic) memory, improving cross-session recall accuracy from 38% to 61% on an internal multi-session dialogue eval."
       ]
     }
   ],
@@ -83,15 +72,15 @@
       "institution": "Yale University",
       "area": "M.S. in Computer Science",
       "studyType": "Thesis Track with Full Scholarship",
-      "startDate": "2026-08",
+      "startDate": "2026-09",
       "endDate": "2028-05",
-      "gpa": null,
+      "gpa": "4.0/4.0",
       "courses": []
     },
     {
       "institution": "University of Illinois Urbana-Champaign",
       "area": "B.S. in Computer Science and Mathematics",
-      "studyType": "2026 C.W. Gear Outstanding Undergraduate Student, one of two annual recipients",
+      "studyType": "2026 C.W. Gear Outstanding Undergraduate Student, one of two annual recipients; 2025 Dean's List",
       "startDate": "2022-08",
       "endDate": "2026-05",
       "gpa": "3.7/4.0",
@@ -101,15 +90,15 @@
   "skills": [
     {
       "name": "Programming Languages",
-      "keywords": ["Python", "C/C++", "C#", "Java", "JavaScript/TypeScript", "HTML/CSS", "SQL", "Rust"]
+      "keywords": ["Python", "C/C++", "C#"]
     },
     {
       "name": "Frameworks and Libraries",
-      "keywords": ["VERL", "VLLM", "LangGraph", "LangChain", "PyTorch", "TensorFlow"]
+      "keywords": ["VERL", "vLLM", "LangGraph", "LangChain", "PyTorch", "TensorFlow"]
     },
     {
       "name": "AI Focus",
-      "keywords": ["SFT", "Reinforcement Learning", "Post-training", "RAG", "Agentic AI", "Machine Learning", "Generative AI"]
+      "keywords": ["RL/Post-training", "LLM Agents", "Multimodal Reasoning", "Self-Evolving Agents", "SFT", "RAG", "Evaluation"]
     }
   ],
   "languages": [],
@@ -130,21 +119,21 @@
     },
     {
       "name": "Every Act Has Its Price: Compressed Moral Composition in Frontier LLMs",
-      "publisher": "Under review at EMNLP 2026",
+      "publisher": "EMNLP 2026",
       "releaseDate": "2026-01-01",
       "website": "",
       "summary": "Research on compressed moral composition in frontier LLMs."
     },
     {
       "name": "SeeingEye: Agentic Information Flow Unlocks Multimodal Reasoning in Text-only LLMs",
-      "publisher": "arXiv preprint arXiv:2510.25092; under review at EMNLP 2026",
+      "publisher": "arXiv preprint arXiv:2510.25092; under review at AAAI 2026",
       "releaseDate": "2025-10-01",
       "website": "/files/SeeingEye_Agentic_Information_Flow_Unlocks_Multimodal_Reasoning_in_Text_Only_LLMs.pdf",
       "summary": "Agentic information flow for multimodal reasoning in text-only LLMs."
     },
     {
       "name": "CUADebug: Diagnosing and Repairing Computer-Use Agent Failures",
-      "publisher": "Under review at EMNLP 2026",
+      "publisher": "EMNLP 2026",
       "releaseDate": "2026-01-01",
       "website": "https://arxiv.org/abs/2608.02643",
       "summary": "A framework for diagnosing and repairing computer-use agent failures."
@@ -165,7 +154,7 @@
     },
     {
       "name": "Where LLM Agents Fail and How They Can Learn From Failures",
-      "publisher": "arXiv preprint arXiv:2509.25370",
+      "publisher": "arXiv preprint arXiv:2509.25370; Failure Modes in Agentic AI Workshop, ICML 2026",
       "releaseDate": "2025-09-01",
       "website": "https://arxiv.org/abs/2509.25370",
       "summary": "Research on LLM agent failures and learning from failed trajectories."
@@ -179,7 +168,7 @@
       "category": "research",
       "date": "2025-01-01",
       "url": "https://github.com/OpenManus/OpenManus-RL",
-      "description": "Open-source agent research ecosystem with 60,000+ GitHub stars; contributed to OpenManus-RL as a core contributor."
+      "description": "Core author of OpenManus-RL, a verl-based agent RL post-training framework in an open-source ecosystem with 70,000+ GitHub stars."
     },
     {
       "name": "SeeingEye",
@@ -189,11 +178,11 @@
       "description": "Agentic information-flow framework that enables text-only LLMs to perform multimodal reasoning through structured, tool-mediated textual context."
     },
     {
-      "name": "GUIAgentDebugger",
+      "name": "AgentDebugX",
       "category": "research",
-      "date": "2026-01-01",
-      "url": "",
-      "description": "Self-evolving VLM-agent debugging framework with a GUI-agent error taxonomy and dual-layer memory."
+      "date": "2026-08-01",
+      "url": "https://github.com/AgentDebugX/AgentDebugX",
+      "description": "Comprehensive debugging framework for long-horizon agent trajectories, with a Detect-Attribute-Recover-Rerun loop across multi-agent, tool-using, and computer-use agents."
     }
   ]
 }

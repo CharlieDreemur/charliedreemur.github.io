@@ -201,6 +201,8 @@ exclude:
   - node_modules
   - package.json*
   - space-journey/tools
+  - advisor-match
+  - output
   - Rakefile
   - README
   - old_personal_website

@@ -20,7 +20,7 @@ I am an incoming M.S. student in Computer Science at [Yale University](https://w
 
 I graduated from [UIUC](https://illinois.edu/) in Math + Computer Science with the [2026 C.W. Gear Outstanding Undergraduate Student](https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student) award, as one of two annual recipients.
 
-Currently, I worked as a research assistant in UIUC U Lab on LLM agents, multimodal agents, and agentic RL, advised by [Prof. Jiaxuan You](https://cs.stanford.edu/people/jiaxuan/).
+Currently, I am a Research Scientist Intern at [TikTok](https://www.tiktok.com/) working on self-evolving agents, and a research assistant in UIUC U Lab on LLM agents, multimodal agents, and agentic RL, advised by [Prof. Jiaxuan You](https://cs.stanford.edu/people/jiaxuan/).
 
 
 </div>

@@ -5,7 +5,7 @@ category: manuscripts
 permalink: /publication/2026-01-01-how-much-vision
 excerpt: "Vision-stripping for multimodal benchmarks and multimodal reasoning."
 date: 2026-01-01
-venue: "Under review"
+venue: "Under review at NeurIPS 2026"
 authors: "Weijia Zhang, Zijia Liu, Tianyi Zhang, Ruiqi Chen, Lian Zhang, Haoru Li, Haoqi Chen, and Jiaxuan You"
 citation: "Weijia Zhang, Zijia Liu, Tianyi Zhang, Ruiqi Chen, Lian Zhang, Haoru Li, Haoqi Chen, and Jiaxuan You. (2026). &quot;How Much Vision Does Multimodal Reasoning Need? Vision-Stripping for Multimodal Benchmarks.&quot; <i>Under review at NeurIPS 2026</i>."
 showcase_group: year-2026
