@@ -37,7 +37,7 @@
       "position": "Machine Learning Engineer Intern, RSI / Self-Evolving Agents",
       "startDate": "Jun 2026",
       "endDate": "Present",
-      "summary": "Project lead for TikTok's agent self-evolution framework, built from 0 to 1.",
+      "summary": "Project lead for TikTok's RSI/Self-Evolving Agent framework, built from 0 to 1.",
       "highlights": [
         "Designed and shipped a closed Solver-Reflector-Evolver loop in which the Solver executes tasks, the Reflector attributes failures, and the Evolver iterates reusable skills; lifted F1 from 62.7% to 81.3% on unoriginal-video detection (9,600 real short videos) and from 76.5% to 87.3% on reposting-account detection (200 accounts).",
         "Designed a transferable Online Failure Discovery process: the Reflector mines failure patterns from scenarios and Solver traces, maintains a two-level scenario-to-failure-mode taxonomy, and distills high-value error clusters into reusable skills, so the same framework self-evolves across scenarios without human-predefined error types.",
@@ -60,7 +60,7 @@
       "position": "AI Agent Engineer",
       "startDate": "May 2023",
       "endDate": "Jul 2023",
-      "summary": "Built real-time embodied role-playing agents in Unity VR.",
+      "summary": "Built real-time embodied role-playing agents in Unity VR games.",
       "highlights": [
         "Built an embodied role-playing agent in a Unity VR environment, closing a real-time perception-dialogue-action loop across text, voice, and full-body VR actions at sub-second end-to-end latency.",
         "Introduced RAG/vector databases and dual-level (episodic + semantic) memory, improving cross-session recall accuracy from 38% to 61% on an internal multi-session dialogue eval."
