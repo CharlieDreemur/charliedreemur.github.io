@@ -51,15 +51,6 @@
   }
 }
 
-.experience-card.tilt-card {
-  transform-origin: center;
-
-  .experience-card__mark,
-  .experience-card__body {
-    transform: translateZ(18px);
-  }
-}
-
 .home-intro-card.tilt-card {
   transform-origin: center top;
 
