@@ -26,7 +26,7 @@ Education
 Work Experience
 ======
 
-- Research Scientist Intern, RSI / Self-Evolving Agents, TikTok, Jun 2026 - Present
+- Machine Learning Engineer Intern, RSI / Self-Evolving Agents, TikTok, Jun 2026 - Present
   - As project lead, designed and shipped TikTok's agent self-evolution framework from 0 to 1 with a closed Solver-Reflector-Evolver loop: the Solver executes tasks, the Reflector attributes failures, and the Evolver iterates reusable skills. Lifted F1 from 62.7% to 81.3% on unoriginal-video detection (9,600 real short videos) and from 76.5% to 87.3% on reposting-account detection (200 accounts).
   - Designed a transferable Online Failure Discovery process: the Reflector mines failure patterns directly from scenarios and Solver agent traces, continuously updates a two-level "scenario to agent failure mode" taxonomy, and distills high-value error clusters into reusable skills, so the same framework self-evolves across scenarios without any human-predefined error types.
   - Trained a video-understanding model: built an account-level SFT dataset of 74K accounts and 1.33M videos, ran distributed full-parameter SFT of Qwen3-VL 2B/4B/8B on 32 H100s with DeepSpeed, and performed cross-domain evaluation and threshold calibration over 53 checkpoints. The final 4B model cut false positives by 42.8% (318 to 182) against the 8B baseline at ~70% recall.
