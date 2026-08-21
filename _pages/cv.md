@@ -42,7 +42,7 @@ Work Experience
 Publications
 ======
 
-200+ citations on [Google Scholar](https://scholar.google.com/citations?user=JN57tLsAAAAJ).
+<span{% if site.google_scholar_stats_url %} data-scholar-citations data-scholar-url="{{ site.google_scholar_stats_url }}"{% endif %}>200+</span> citations on [Google Scholar](https://scholar.google.com/citations?user={{ site.google_scholar_id }}).
 
 <ul>{% for post in site.publications reversed %}
   {% include archive-single-cv.html %}

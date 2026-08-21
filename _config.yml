@@ -18,6 +18,11 @@ url                      : https://charliedreemur.github.io # The base hostname 
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "CharlieDreemur/CharlieDreemur.github.io"
 
+# Citation totals crawled daily from Google Scholar by .github/workflows/google-scholar-stats.yml
+# and published to the google-scholar-stats branch. Clear this value to fall back to static counts.
+google_scholar_id        : "JN57tLsAAAAJ"
+google_scholar_stats_url : "https://raw.githubusercontent.com/CharlieDreemur/CharlieDreemur.github.io/google-scholar-stats/gs_data.json"
+
 # Optional standalone experience. Set enabled to false to restore the original
 # avatar behavior without loading any of the space journey's CSS or JavaScript.
 space_journey:

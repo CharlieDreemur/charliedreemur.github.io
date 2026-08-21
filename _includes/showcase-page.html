@@ -55,7 +55,11 @@
       <h2>At a glance</h2>
       {% for metric in page.showcase.metrics %}
         <div class="showcase-metric">
-          <strong>{{ metric.value }}</strong>
+          {% if metric.live == "scholar-citations" and site.google_scholar_stats_url %}
+            <strong data-scholar-citations data-scholar-url="{{ site.google_scholar_stats_url }}">{{ metric.value }}</strong>
+          {% else %}
+            <strong>{{ metric.value }}</strong>
+          {% endif %}
           <span>{{ metric.label }}</span>
         </div>
       {% endfor %}

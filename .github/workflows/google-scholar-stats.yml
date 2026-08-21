@@ -1,0 +1,36 @@
+name: Google Scholar Stats
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write           # This workflow pushes to the google-scholar-stats branch
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install scholarly
+
+    - name: Fetch citation totals
+      run: python scripts/fetch_scholar_stats.py --output results
+
+    - name: Publish to google-scholar-stats branch
+      run: |
+        cd results
+        git init -q -b google-scholar-stats
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add gs_data.json
+        git commit -q -m "Update Google Scholar stats"
+        git push -q --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:google-scholar-stats
