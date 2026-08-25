@@ -10,6 +10,7 @@ authors: "Weijia Zhang*, Ruiqi Chen*, Yunze Xiao*, and Weihao Xuan"
 paperurl: "https://arxiv.org/abs/2606.11232"
 citation: "Weijia Zhang, Ruiqi Chen, Yunze Xiao, and Weihao Xuan. (2026). &quot;Every Act Has Its Price: Compressed Moral Composition in Frontier LLMs.&quot; <i>arXiv preprint arXiv:2606.11232</i>."
 showcase_group: year-2026
+same_year_order: 31
 badge: "First Author · Preprint"
 image: "/images/publications/every-act-has-its-price.png"
 image_alt: "Single-scene moral calibration and composite judgment framework"

@@ -10,6 +10,7 @@ authors: "Weijia Zhang*, Zijia Liu*, Haoru Li*, Haoqi Chen*, and Jiaxuan You"
 paperurl: "https://arxiv.org/abs/2510.25092"
 citation: "Weijia Zhang*, Zijia Liu*, Haoru Li*, Haoqi Chen*, and Jiaxuan You. (2025). &quot;SeeingEye: Agentic Information Flow Unlocks Multimodal Reasoning in Text-only LLMs.&quot; <i>arXiv preprint arXiv:2510.25092</i>. Under review at AAAI 2026."
 showcase_group: year-2025
+same_year_order: 30
 badge: "Co-first Author · Under Review"
 image: "/images/publications/seeingeye.png"
 image_alt: "SeeingEye translator and text reasoning agent information flow"

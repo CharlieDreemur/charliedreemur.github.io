@@ -69,6 +69,9 @@
   <div class="showcase-content" id="showcase-top">
     {% for group in page.showcase.groups %}
       {% assign group_items = showcase_items | where: "showcase_group", group.key %}
+      {% if page.showcase.item_sort %}
+        {% assign group_items = group_items | sort: page.showcase.item_sort %}
+      {% endif %}
       {% if group_items.size > 0 %}
         <section class="showcase-group" id="{{ group.key }}">
           <header class="showcase-group__header">
