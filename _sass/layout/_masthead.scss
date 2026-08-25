@@ -67,6 +67,59 @@
   }
 }
 
+.masthead__institution {
+  margin-left: clamp(0.45rem, 1vw, 0.8rem);
+  padding-left: clamp(0.6rem, 1.25vw, 1rem);
+  border-left: 1px solid var(--global-border-color);
+}
+
+.greedy-nav .visible-links .masthead__institution-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.15rem 0;
+
+  &::before {
+    content: none;
+  }
+}
+
+.masthead__institution-mark {
+  width: 2rem;
+  height: 2.1rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+  transition: transform 160ms ease;
+}
+
+.masthead__institution-link:hover .masthead__institution-mark,
+.masthead__institution-link:focus-visible .masthead__institution-mark {
+  transform: translateY(-1px);
+}
+
+.masthead__institution-copy {
+  display: grid;
+  gap: 0.12rem;
+  line-height: 1;
+
+  strong {
+    color: var(--global-masthead-link-color);
+    font-family: $serif;
+    font-size: 1rem;
+    letter-spacing: -0.025em;
+  }
+
+  small {
+    color: var(--global-text-color-light);
+    font-family: $sans-serif;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+}
+
 .masthead__brand {
   --brand-mark-size: 2.65rem;
 
@@ -339,6 +392,26 @@
 }
 
 @media (max-width: 37.5em) {
+  .masthead__institution {
+    margin-left: 0.2rem;
+    padding-left: 0.45rem;
+  }
+
+  .masthead__institution-mark {
+    width: 1.65rem;
+    height: 1.75rem;
+  }
+
+  .masthead__institution-copy {
+    strong {
+      font-size: 0.82rem;
+    }
+
+    small {
+      display: none;
+    }
+  }
+
   .masthead__brand-copy small {
     display: none;
   }
