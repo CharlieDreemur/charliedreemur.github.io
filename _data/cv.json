@@ -56,6 +56,17 @@
       ]
     },
     {
+      "company": "Tencent, WeChat Group (WXG)",
+      "position": "Software Development Intern",
+      "startDate": "Aug 2024",
+      "endDate": "Sep 2024",
+      "summary": "Built cross-platform performance analysis and Unity memory-profiling tools for WeChat Mini Programs.",
+      "highlights": [
+        "Developed a cross-platform Android and iOS hardware performance analysis tool with WeChat Mini Program telemetry, helping 200+ partner teams identify performance bottlenecks.",
+        "Built a Unity Mono Memory Profiler that identified 40+ hidden memory allocation sites in a pilot application."
+      ]
+    },
+    {
       "company": "Reborn Network",
       "position": "AI Agent Engineer",
       "startDate": "May 2023",

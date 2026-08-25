@@ -64,6 +64,10 @@
         {% assign logo_text = "MSR" %}
         {% assign logo_src = "/images/logos/microsoft-icon.svg" %}
         {% assign company_url = "https://www.microsoft.com/en-us/research/" %}
+      {% elsif job.company contains "Tencent" %}
+        {% assign logo_text = "WXG" %}
+        {% assign logo_src = "/images/logos/wechat.svg" %}
+        {% assign company_url = "https://www.tencent.com/" %}
       {% elsif job.company contains "Reborn" %}
         {% assign logo_text = "RN" %}
         {% assign logo_src = "/images/logos/reborn.png" %}
