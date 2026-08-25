@@ -27,11 +27,11 @@ Currently, I am a Machine Learning Engineer Intern at [TikTok](https://www.tikto
 
 ## Research
 
-My research interests center on LLM agents, especially next-generation AI agents that bridge virtual and physical worlds through socially intelligent, tool-agnostic, and ethically grounded architectures.
+My research studies reliable self-improving agents for long-horizon interactive tasks. I explore how agents can learn from interaction traces and failures, acquire reusable memory and skills, and improve through inference-time evolution and SFT/RL across coding, computer-use, and multimodal environments.
 
-- Multimodal agents: memory, reasoning, tool use, and multi-agent systems
-- Conversational AI: anthropomorphism and social intelligence
-- Post-training: agent SFT and RL
+- **Self-Evolving Agents:** recursive self-improvement (RSI), self-evolving harnesses, memory and skills, and multi-agent evolution
+- **Multimodal Agents:** game-development agents, GUI and computer-use agents, and agentic world models
+- **Agent Post-Training:** SFT and RL for coding agents and long-horizon agents
 
 ## News
 
