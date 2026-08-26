@@ -3,7 +3,7 @@ title: "AgentDebugX"
 excerpt: "The first comprehensive debugging framework for long-horizon agent trajectories, turning failed runs into auditable diagnoses, repairs, and verifiable reruns."
 collection: portfolio
 date: 2026-08-01
-link: "https://www.agentdebugx.com/"
+link: "https://github.com/AgentDebugX/AgentDebugX"
 github: "https://github.com/AgentDebugX/AgentDebugX"
 website: "https://www.agentdebugx.com/"
 paperurl: "https://arxiv.org/abs/2607.18754"
