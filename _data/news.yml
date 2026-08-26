@@ -1,7 +1,7 @@
 # Emoji convention: Oral acceptances always use the crown 👑.
 
 - date: "2026.08"
-  prefix: "🎉 "
+  prefix: "🎉 My first-author paper "
   link_text: "CUADebug"
   suffix: " was accepted to EMNLP 2026 Findings! 📄✨"
   url: "/publication/2026-01-01-cuadebug"
@@ -26,12 +26,6 @@
   link_text: "bias inheritance"
   suffix: " was accepted to ACL 2026 as an Oral! 📄✨"
   url: "/publication/2026-01-01-bias-inheritance"
-
-- date: "2025.10"
-  prefix: "🚀 "
-  link_text: "SeeingEye"
-  suffix: " was released as an arXiv preprint and is under review at EMNLP 2026! 👀📝"
-  url: "/publication/2025-10-01-seeingeye"
 
 - date: "2025.07"
   text: "🎉 Joined Microsoft Research Asia as a research intern! 🔬💼"
