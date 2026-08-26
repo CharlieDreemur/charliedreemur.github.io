@@ -1,5 +1,9 @@
 # Emoji convention: Oral acceptances always use the crown 👑.
 
+- date: "2026.08"
+  text: "🚀 We released AgentDebugX, the most comprehensive open-source framework for debugging agentic trajectories—from trace ingestion and failure diagnosis to root-cause attribution, recovery, inspection, and reruns! 🛠️🤖"
+  url: "https://github.com/ulab-uiuc/AgentDebugX"
+
 - date: "2026.05"
   text: "🎉🎓 Graduated from UIUC in Math + Computer Science with the 2026 C.W. Gear Outstanding Undergraduate Student award! 🏆"
   url: "https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student"
