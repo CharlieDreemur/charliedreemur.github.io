@@ -5,12 +5,14 @@
   {% for item in site.data.news limit: news_limit %}
     <li>
       <span class="home-news-date">{{ item.date }}:</span>
-      {% if item.url %}
+      {% if item.url and item.link_text %}
+        {{ item.prefix }}
         {% if item.url contains "://" %}
-          <a href="{{ item.url }}">{{ item.text }}</a>
+          <a href="{{ item.url }}">{{ item.link_text }}</a>
         {% else %}
-          <a href="{{ item.url | relative_url }}">{{ item.text }}</a>
+          <a href="{{ item.url | relative_url }}">{{ item.link_text }}</a>
         {% endif %}
+        {{ item.suffix }}
       {% else %}
         {{ item.text }}
       {% endif %}

@@ -1,26 +1,36 @@
 # Emoji convention: Oral acceptances always use the crown 👑.
 
 - date: "2026.08"
-  text: "🚀 We released AgentDebugX, the most comprehensive open-source framework for debugging agentic trajectories—from trace ingestion and failure diagnosis to root-cause attribution, recovery, inspection, and reruns! 🛠️🤖"
-  url: "https://www.agentdebugx.com/"
+  prefix: "🎉 "
+  link_text: "CUADebug"
+  suffix: " was accepted to EMNLP 2026 Findings! 📄✨"
+  url: "/publication/2026-01-01-cuadebug"
 
 - date: "2026.08"
-  text: "🎉 My first-author paper CUADebug was accepted to EMNLP 2026! 📄✨"
-  url: "/publication/2026-01-01-cuadebug"
+  prefix: "🎉 "
+  link_text: "AgentDebugX"
+  suffix: " was accepted to EMNLP 2026 (System Demonstration)! 🛠️🤖"
+  url: "https://github.com/ulab-uiuc/AgentDebugX"
 
 - date: "2026.06"
   text: "🎉 Joined TikTok as a Machine Learning Engineer Intern working on self-evolving agents! 🤖✨"
 
 - date: "2026.05"
-  text: "🎉🎓 Graduated from UIUC in Math + Computer Science with the 2026 C.W. Gear Outstanding Undergraduate Student award! 🏆"
+  prefix: "🎉🎓 Graduated from UIUC in Math + Computer Science with the 2026 "
+  link_text: "C.W. Gear Outstanding Undergraduate Student award"
+  suffix: "! 🏆"
   url: "https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student"
 
 - date: "2026.01"
-  text: "🎉👑 Paper on bias inheritance was accepted to ACL 2026 as an Oral! 📄✨"
+  prefix: "🎉👑 Paper on "
+  link_text: "bias inheritance"
+  suffix: " was accepted to ACL 2026 as an Oral! 📄✨"
   url: "/publication/2026-01-01-bias-inheritance"
 
 - date: "2025.10"
-  text: "🚀 SeeingEye was released as an arXiv preprint and is under review at EMNLP 2026! 👀📝"
+  prefix: "🚀 "
+  link_text: "SeeingEye"
+  suffix: " was released as an arXiv preprint and is under review at EMNLP 2026! 👀📝"
   url: "/publication/2025-10-01-seeingeye"
 
 - date: "2025.07"
