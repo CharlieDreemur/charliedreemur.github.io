@@ -18,9 +18,7 @@ redirect_from:
 
 I am an incoming M.S. student in Computer Science at [Yale University](https://www.yale.edu/) (2026 - 2028), admitted to the **(Thesis Track) M.S. in Computer Science with Full Scholarship**.
 
-I graduated from [UIUC](https://illinois.edu/) in Math + Computer Science with the [2026 C.W. Gear Outstanding Undergraduate Student](https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student) award, as one of two annual recipients.
-
-Previously, I worked as a research assistant in UIUC U Lab on LLM agents, multimodal agents, and agentic RL, advised by [Prof. Jiaxuan You](https://cs.stanford.edu/people/jiaxuan/).
+I graduated from [UIUC](https://illinois.edu/) in Math + Computer Science, where I was a research assistant in U Lab working on LLM agents, multimodal agents, and agentic RL, advised by [Prof. Jiaxuan You](https://cs.stanford.edu/people/jiaxuan/). I received the [2026 C.W. Gear Outstanding Undergraduate Student](https://siebelschool.illinois.edu/about/awards/undergraduate-scholarships-awards/cw-gear-outstanding-undergraduate-student) award as one of two annual recipients.
 
 Currently, I am a Machine Learning Engineer Intern at [TikTok](https://www.tiktok.com/) working on self-evolving agents.
 
