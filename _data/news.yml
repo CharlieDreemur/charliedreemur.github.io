@@ -2,7 +2,7 @@
 
 - date: "2026.08"
   text: "🚀 We released AgentDebugX, the most comprehensive open-source framework for debugging agentic trajectories—from trace ingestion and failure diagnosis to root-cause attribution, recovery, inspection, and reruns! 🛠️🤖"
-  url: "https://github.com/ulab-uiuc/AgentDebugX"
+  url: "https://www.agentdebugx.com/"
 
 - date: "2026.08"
   text: "🎉 My first-author paper CUADebug was accepted to EMNLP 2026! 📄✨"
