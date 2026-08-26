@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#02040b">
+    <meta name="description" content="A flight in from beyond the Milky Way, back to Charlie's Earth.">
+    <title>Starbound · Charlie's Space Journey</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main id="experience">
+      <canvas id="space-canvas" aria-label="Interactive 3D space scene"></canvas>
+
+      <div class="optical-fx" aria-hidden="true">
+        <i class="optical-fx__flare"></i>
+        <i class="optical-fx__reflection"></i>
+        <i class="optical-fx__grain"></i>
+      </div>
+      <div class="cinema-bars" aria-hidden="true"></div>
+
+      <div class="flight-ui">
+      <div class="cockpit" aria-hidden="true">
+        <div class="cockpit__pillar cockpit__pillar--left">
+          <i class="cockpit__seam"></i>
+          <i class="cockpit__rivets"></i>
+        </div>
+        <div class="cockpit__pillar cockpit__pillar--right">
+          <i class="cockpit__seam"></i>
+          <i class="cockpit__rivets"></i>
+        </div>
+        <div class="cockpit__brow"></div>
+        <div class="console">
+          <div class="console__deck"></div>
+          <div class="console__glow"></div>
+          <div class="console__bank console__bank--left">
+            <i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="console__bank console__bank--right">
+            <i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="console__leds">
+            <span class="console__led console__led--cyan"></span>
+            <span class="console__led console__led--amber"></span>
+            <span class="console__led console__led--red"></span>
+          </div>
+        </div>
+        <div class="cockpit__glass"></div>
+        <div class="cockpit__heat"></div>
+      </div>
+
+      <header class="topbar">
+        <a class="home-link" href="../" aria-label="Return to the personal site">
+          <span class="home-link__glyph" aria-hidden="true"></span>
+          <span>RETURN HOME</span>
+        </a>
+        <div class="mission-id">
+          <span>HOMEBOUND</span>
+          <small>RETURN VOYAGE 01</small>
+        </div>
+        <div class="topbar__controls">
+          <button id="fullscreen-toggle" class="icon-button fullscreen-toggle" type="button" aria-label="Enter fullscreen" aria-pressed="false">
+            <i class="fullscreen-toggle__icon" aria-hidden="true"></i>
+            <span id="fullscreen-label">FULLSCREEN</span>
+          </button>
+          <button id="quality-toggle" class="icon-button quality-toggle" type="button" aria-label="Switch graphics quality" title="Switch graphics quality">
+            <i aria-hidden="true"></i><span id="quality-label">AUTO</span>
+          </button>
+          <button id="sound-toggle" class="icon-button" type="button" aria-label="Toggle sound" aria-pressed="false">
+            <i class="icon-button__wave" aria-hidden="true"><b></b><b></b><b></b></i>
+            <span class="sound-on">SOUND ON</span>
+            <span class="sound-off">SOUND OFF</span>
+          </button>
+        </div>
+      </header>
+
+      <section id="hud" class="hud">
+        <div class="hud__glass" aria-hidden="true"></div>
+
+        <aside class="cluster cluster--left" aria-hidden="true">
+          <header class="cluster__head">
+            <i></i><span>PROPULSION</span><em>PRP·01</em>
+          </header>
+
+          <div class="gauge">
+            <div class="gauge__ring"></div>
+            <div class="gauge__ticks"></div>
+            <div class="gauge__value">
+              <strong id="velocity">0.00</strong>
+              <small>C · LIGHT</small>
+            </div>
+          </div>
+
+          <ul class="bars">
+            <li data-key="thrust">
+              <small>THRUST</small>
+              <div class="bar"><i id="bar-thrust"></i></div>
+              <b id="val-thrust">00</b>
+            </li>
+            <li data-key="reactor">
+              <small>REACTOR</small>
+              <div class="bar"><i id="bar-reactor"></i></div>
+              <b id="val-reactor">00</b>
+            </li>
+            <li data-key="hull">
+              <small>HULL</small>
+              <div class="bar"><i id="bar-hull"></i></div>
+              <b id="val-hull">100</b>
+            </li>
+          </ul>
+        </aside>
+
+        <aside class="cluster cluster--right">
+          <header class="cluster__head" aria-hidden="true">
+            <em>NAV·07</em><span>NAVIGATION</span><i></i>
+          </header>
+
+          <div class="nav-target" aria-live="polite">
+            <small aria-hidden="true">NEXT WAYPOINT</small>
+            <strong id="waypoint">MILKY WAY HALO</strong>
+            <span id="status">FLIGHT SYSTEMS STANDING BY</span>
+          </div>
+
+          <div class="nav-readouts" aria-hidden="true">
+            <div><small>RANGE</small><strong id="distance">26,000 LY</strong></div>
+            <div><small>ETA</small><strong id="eta">--:--</strong></div>
+          </div>
+
+          <div class="nav-uplink" aria-hidden="true">
+            <small>UPLINK</small>
+            <span class="signal"><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+        </aside>
+
+        <div class="gunsight" aria-hidden="true">
+          <div class="heading">
+            <div class="heading__strip" id="heading-strip"></div>
+            <span class="heading__mark"></span>
+          </div>
+          <div class="ladder" id="ladder"></div>
+          <div class="gunsight__core">
+            <span class="gunsight__ring"></span>
+            <span class="gunsight__pip"></span>
+            <i class="gunsight__wing gunsight__wing--l"></i>
+            <i class="gunsight__wing gunsight__wing--r"></i>
+          </div>
+          <div class="roll">
+            <span class="roll__arc"></span>
+            <span class="roll__needle" id="roll-needle"></span>
+          </div>
+        </div>
+
+        <div class="target" id="target" aria-live="polite">
+          <i class="target__lock" aria-hidden="true"></i>
+          <strong id="target-name"></strong>
+          <span id="target-kind"></span>
+          <b id="target-stat"></b>
+          <em id="target-note"></em>
+        </div>
+
+        <div class="camera-hint" aria-hidden="true">
+          <span class="camera-hint__mouse"></span>
+          <span>DRAG TO LOOK · DOUBLE-CLICK TO RECENTRE</span>
+        </div>
+
+        <div class="caution" id="caution" aria-hidden="true">
+          <i></i>
+          <strong>HULL TEMP CRITICAL</strong>
+          <span>SHIELD OVERLOAD · HOLD ATTITUDE</span>
+        </div>
+
+        <div class="tape" aria-label="Journey progress" aria-hidden="true">
+          <div class="tape__head">
+            <span>TRAJECTORY · DEEP SPACE — EARTH</span>
+          </div>
+          <div class="tape__marks" id="tape-marks"></div>
+          <div class="tape__rail">
+            <i id="progress-bar"></i>
+            <span class="tape__ship" id="tape-ship"></span>
+          </div>
+        </div>
+      </section>
+      </div>
+
+      <section id="earth-return" class="earth-return" aria-live="polite">
+        <div class="earth-return__avatar">
+          <img src="../images/github_avatar.png" alt="Charlie's Earth avatar">
+        </div>
+        <div class="earth-return__copy">
+          <small>HOME SIGNAL ACQUIRED</small>
+          <strong>WELCOME BACK TO EARTH</strong>
+        </div>
+      </section>
+
+      <section id="arrival" class="arrival" aria-labelledby="arrival-title">
+        <small>TRANSMISSION RECEIVED</small>
+        <h2 id="arrival-title">Welcome to my universe.</h2>
+        <p>Every project is an expedition into the unknown.</p>
+        <div class="arrival__actions">
+          <button id="replay-button" type="button">FLY AGAIN</button>
+          <a href="../projects/">EXPLORE MY PROJECTS</a>
+        </div>
+      </section>
+
+      <div id="loader" class="loader">
+        <div class="loader__badge">
+          <i></i>
+          <img src="../images/github_avatar.png" alt="">
+        </div>
+        <div class="loader__track"><i id="loader-bar"></i></div>
+        <span id="loader-label" role="status" aria-live="polite">CALIBRATING STAR CHARTS…</span>
+        <button id="loader-fullscreen" type="button">
+          <i aria-hidden="true"></i>
+          <span>ENTER FULLSCREEN</span>
+        </button>
+        <small>OPTIONAL · MOBILE FLIGHT USES LANDSCAPE</small>
+        <small class="loader__credit">
+          MUSIC ·
+          <a href="https://www.scottbuckley.com.au/library/aphelion/" target="_blank" rel="noopener">“APHELION” BY SCOTT BUCKLEY</a>
+          · CC-BY 4.0 · EDITED FOR THIS FLIGHT
+        </small>
+      </div>
+
+      <noscript>
+        <div class="fallback">This journey needs JavaScript. <a href="../">Return to the site</a></div>
+      </noscript>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

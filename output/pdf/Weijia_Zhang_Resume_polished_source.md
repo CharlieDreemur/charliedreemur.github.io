@@ -4,7 +4,7 @@
 
 ## Education
 
-**Yale University** | Aug 2026 - May 2028  
+**Yale University** | Sep 2026 - May 2028  
 *M.S. in Computer Science, Thesis Track with Full Scholarship* | Incoming Student
 
 **University of Illinois Urbana-Champaign (UIUC)** | Aug 2022 - May 2026  

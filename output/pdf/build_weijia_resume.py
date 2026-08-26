@@ -179,7 +179,7 @@ def make_resume() -> None:
     education = [
         Entry(
             "Yale University",
-            "Aug 2026 - May 2028",
+            "Sep 2026 - May 2028",
             "M.S. in Computer Science, Thesis Track with Full Scholarship | Incoming Student",
         ),
         Entry(

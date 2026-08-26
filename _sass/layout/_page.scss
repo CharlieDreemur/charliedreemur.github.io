@@ -165,6 +165,67 @@
     color: var(--global-text-color);
   }
 
+  .home-easter-egg-hint {
+    visibility: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    max-width: 100%;
+    margin: 0.35rem 0 1.35rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--global-border-color);
+    border-radius: 999px;
+    background: var(--global-bg-color);
+    box-shadow: 0 8px 22px rgba(#0d2028, 0.11);
+    color: var(--global-text-color-light);
+    font-family: $sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    opacity: 0;
+    animation:
+      home-easter-egg-reveal 450ms ease 5s forwards,
+      home-easter-egg-float 3s ease-in-out 5.45s infinite;
+
+    strong {
+      color: var(--global-text-color);
+    }
+  }
+
+  .home-easter-egg-hint__icon {
+    flex: 0 0 auto;
+    font-size: 1.35rem;
+    filter: drop-shadow(0 3px 5px rgba(#0d2028, 0.2));
+  }
+
+  @keyframes home-easter-egg-reveal {
+    from {
+      visibility: visible;
+      opacity: 0;
+    }
+
+    to {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+
+  @keyframes home-easter-egg-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-0.28rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-easter-egg-hint {
+      animation: home-easter-egg-reveal 1ms linear 5s forwards;
+    }
+  }
+
   h3.publication-category-title {
     position: relative;
     margin-top: 1.5rem;
@@ -329,79 +390,94 @@
     }
   }
 
-  .experience-card-list {
-    display: grid;
-    gap: 0.8rem;
+  .experience-timeline {
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .experience-card {
+  .experience-entry {
     display: grid;
-    grid-template-columns: 3rem 1fr;
-    gap: 0.9rem;
-    padding: 0.95rem 1rem;
-    border: 1px solid var(--global-border-color);
-    border-left: 4px solid var(--global-link-color);
-    border-radius: 8px;
-    background: rgba(#fff, 0.04);
-    box-shadow: 0 4px 14px rgba(#000, 0.06);
+    grid-template-columns: 5.5rem 3.4rem 1fr;
+    align-items: center;
+    gap: 0 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--global-border-color);
 
-    h3 {
-      margin: 0 0 0.25rem;
-      font-size: 1rem;
+    &:last-child {
+      border-bottom: 0;
     }
 
     p {
-      margin-bottom: 0.35rem;
+      margin: 0;
+      line-height: 1.35;
     }
   }
 
-  .experience-card--work {
-    border-left-color: #ff7a3d;
-
-    .experience-card__mark {
-      color: #d45b1f;
-      border-color: rgba(#ff7a3d, 0.45);
-      background: rgba(#ff7a3d, 0.08);
-    }
+  .experience-entry__date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: var(--global-text-color-light);
+    font-family: $monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
   }
 
-  .experience-card__mark {
+  .experience-entry__dash {
+    line-height: 0.9;
+  }
+
+  .experience-entry__mark {
     display: grid;
     place-items: center;
-    width: 2.45rem;
-    height: 2.45rem;
-    overflow: hidden;
-    border: 1px solid rgba(#52adc8, 0.45);
-    border-radius: 8px;
-    color: var(--global-link-color);
-    background: rgba(#52adc8, 0.08);
+    height: 2.2rem;
+    color: var(--global-text-color-light);
     font-family: $sans-serif;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: bold;
     line-height: 1;
   }
 
-  .experience-card__logo {
+  .experience-entry__logo {
     display: block;
-    max-width: 82%;
-    max-height: 82%;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 2.2rem;
     object-fit: contain;
   }
 
-  .experience-card__role {
-    color: var(--global-text-color-light);
+  .experience-entry__brand-icon.fa-tiktok {
+    color: #111;
+    font-size: 1.55rem;
+    text-shadow: -1px -1px 0 #25f4ee, 1px 1px 0 #fe2c55;
   }
 
-  .experience-card__date {
-    color: var(--global-link-color);
-    font-family: $sans-serif;
-    font-size: 0.85rem;
+  html[data-theme="dark"] & .experience-entry__brand-icon.fa-tiktok {
+    color: #fff;
+  }
+
+  .experience-entry__title {
     font-weight: bold;
   }
 
-  .experience-card__highlights {
-    margin: 0.4rem 0 0;
-    padding-left: 1.1rem;
+  .experience-entry__meta {
+    font-size: 0.9rem;
+  }
+
+  .experience-entry__note {
+    color: var(--global-text-color-light);
+    font-size: 0.85rem;
+    font-style: italic;
+    font-weight: normal;
+  }
+
+  .experience-section__more {
+    margin: 0.7rem 0 0;
+    font-family: $sans-serif;
+    font-size: 0.8rem;
+    text-align: right;
   }
 
   @include breakpoint(max-width $small) {
@@ -428,8 +504,17 @@
       text-align: center;
     }
 
-    .experience-card {
-      grid-template-columns: 1fr;
+    .experience-entry {
+      grid-template-columns: 4.4rem 2rem 1fr;
+      gap: 0 0.6rem;
+    }
+
+    .experience-entry__mark {
+      height: 1.8rem;
+    }
+
+    .experience-entry__logo {
+      max-height: 1.8rem;
     }
   }
 }

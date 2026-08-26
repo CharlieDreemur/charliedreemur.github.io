@@ -1,6 +1,6 @@
 # Advisor Dossier: Prof. Arman Cohan — Yale University
 
-**Student:** Weijia Zhang | M.S. CS, Yale University (Aug 2026 – May 2028, Thesis Track, Full Scholarship)
+**Student:** Weijia Zhang | M.S. CS, Yale University (Sep 2026 – May 2028, Thesis Track, Full Scholarship)
 **Assumed goals (inferred from CV):** Industry-research 60% · Academia (PhD after M.S.) 40%
 **Report date:** 2026-06-11
 

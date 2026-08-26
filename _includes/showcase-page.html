@@ -1,0 +1,160 @@
+{% include base_path %}
+{% assign showcase_items = site[page.collection_name] | sort: "date" | reverse %}
+
+<header class="showcase-hero">
+  <p class="showcase-hero__eyebrow">{{ page.showcase.eyebrow }}</p>
+  <div class="showcase-hero__heading">
+    <div class="showcase-hero__copy">
+      <h1>{{ page.title }}</h1>
+      <p>{{ page.showcase.description }}</p>
+      {% if page.showcase.primary_url %}
+        <a class="showcase-button showcase-button--primary" href="{{ page.showcase.primary_url }}">
+          <i class="{{ page.showcase.primary_icon | default: 'fas fa-external-link-alt' }}" aria-hidden="true"></i>
+          {{ page.showcase.primary_label }}
+        </a>
+      {% endif %}
+    </div>
+    {% if page.showcase.hero_image %}
+      <figure class="showcase-hero__art{% if page.showcase.hero_image_mode %} showcase-hero__art--{{ page.showcase.hero_image_mode }}{% endif %}">
+        {% if page.showcase.hero_image_mode == "avatar" %}
+          <a class="showcase-github-profile" href="{{ page.showcase.primary_url }}">
+            <img src="{{ base_path }}{{ page.showcase.hero_image }}" alt="{{ page.showcase.hero_alt }}" loading="eager">
+            <figcaption>
+              <span><i class="fab fa-github" aria-hidden="true"></i> GitHub</span>
+              <strong>@{{ page.showcase.github_username }}</strong>
+              <small>{{ page.showcase.github_bio }}</small>
+            </figcaption>
+          </a>
+        {% else %}
+          <img src="{{ base_path }}{{ page.showcase.hero_image }}" alt="{{ page.showcase.hero_alt }}" loading="eager">
+        {% endif %}
+      </figure>
+    {% endif %}
+  </div>
+</header>
+
+<div class="showcase-shell">
+  <aside class="showcase-rail" aria-label="{{ page.title }} navigation">
+    <section class="showcase-rail__section">
+      <h2>Collections</h2>
+      <nav class="showcase-nav">
+        <a class="showcase-nav__item is-active" href="#showcase-top">
+          <i class="{{ page.showcase.icon }}" aria-hidden="true"></i>
+          <span>All {{ page.title }}</span>
+        </a>
+        {% for group in page.showcase.groups %}
+          <a class="showcase-nav__item" href="#{{ group.key }}">
+            <i class="{{ group.icon }}" aria-hidden="true"></i>
+            <span>{{ group.label }}</span>
+          </a>
+        {% endfor %}
+      </nav>
+    </section>
+
+    <section class="showcase-rail__section showcase-metrics">
+      <h2>At a glance</h2>
+      {% for metric in page.showcase.metrics %}
+        <div class="showcase-metric">
+          {% if metric.live == "scholar-citations" and site.google_scholar_stats_url %}
+            <strong data-scholar-citations data-scholar-url="{{ site.google_scholar_stats_url }}">{{ metric.value }}</strong>
+          {% else %}
+            <strong>{{ metric.value }}</strong>
+          {% endif %}
+          <span>{{ metric.label }}</span>
+        </div>
+      {% endfor %}
+    </section>
+  </aside>
+
+  <div class="showcase-content" id="showcase-top">
+    {% for group in page.showcase.groups %}
+      {% assign group_items = showcase_items | where: "showcase_group", group.key %}
+      {% if page.showcase.item_sort %}
+        {% assign group_items = group_items | sort: page.showcase.item_sort %}
+      {% endif %}
+      {% if group_items.size > 0 %}
+        <section class="showcase-group" id="{{ group.key }}">
+          <header class="showcase-group__header">
+            <span class="showcase-group__marker" aria-hidden="true"></span>
+            <div>
+              <p>{{ group.kicker }}</p>
+              <h2>{{ group.label }}</h2>
+              {% if group.description %}<span>{{ group.description }}</span>{% endif %}
+            </div>
+          </header>
+
+          <div class="showcase-card-list">
+            {% for item in group_items %}
+              <article class="showcase-card{% if item.image %} showcase-card--with-media{% endif %}">
+                <div class="showcase-card__topline">
+                  <div>
+                    {% if item.badge %}<span class="showcase-card__badge">{{ item.badge }}</span>{% endif %}
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                  <div class="showcase-card__signals">
+                    {% if item.stars %}
+                      <a class="showcase-card__stars" href="{{ item.github }}" aria-label="Open {{ item.title }} repository with {{ item.stars }} GitHub stars">
+                        <i class="fas fa-star" aria-hidden="true"></i>
+                        {{ item.stars }} stars
+                      </a>
+                    {% endif %}
+                    {% unless page.collection_name == "portfolio" %}
+                      {% if item.date_label or item.venue %}
+                        <span class="showcase-card__meta">{{ item.date_label | default: item.venue }}</span>
+                      {% endif %}
+                    {% endunless %}
+                  </div>
+                </div>
+
+                {% if item.image %}
+                  {% assign media_url = item.paperurl | default: item.link | default: item.url %}
+                  <a class="showcase-card__media" href="{{ media_url }}" aria-label="View {{ item.title }}">
+                    <img src="{{ base_path }}{{ item.image }}" alt="{{ item.image_alt | default: item.title }}" loading="lazy">
+                  </a>
+                {% endif %}
+
+                {% if item.authors %}
+                  {% assign author_line = item.authors %}
+                  {% if page.showcase.highlight_author %}
+                    {% capture highlighted_author %}<strong>{{ page.showcase.highlight_author }}</strong>{% endcapture %}
+                    {% assign author_line = author_line | replace: page.showcase.highlight_author, highlighted_author %}
+                  {% endif %}
+                  <p class="showcase-card__authors">{{ author_line }}</p>
+                {% endif %}
+                <p class="showcase-card__summary">{{ item.excerpt | strip_html }}</p>
+
+                {% if item.tags %}
+                  <ul class="showcase-tags" aria-label="Topics">
+                    {% for tag in item.tags %}<li>{{ tag }}</li>{% endfor %}
+                  </ul>
+                {% endif %}
+
+                <div class="showcase-card__footer">
+                  <div class="showcase-card__actions">
+                    {% if item.paperurl %}
+                      <a href="{{ item.paperurl }}"><i class="fas fa-file-alt" aria-hidden="true"></i> Paper</a>
+                    {% endif %}
+                    {% if item.github %}
+                      <a href="{{ item.github }}"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a>
+                    {% elsif item.link and item.link contains "github.com" %}
+                      <a href="{{ item.link }}"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a>
+                    {% endif %}
+                    {% if item.website %}
+                      <a href="{{ item.website }}"><i class="fas fa-external-link-alt" aria-hidden="true"></i> Website</a>
+                    {% endif %}
+                    {% if page.collection_name != "portfolio" %}
+                      <a href="{{ base_path }}{{ item.url }}"><i class="fas fa-arrow-right" aria-hidden="true"></i> Details</a>
+                    {% endif %}
+                  </div>
+                  {% if page.collection_name == "portfolio" and item.date_label %}
+                    <span class="showcase-card__date"><i class="far fa-calendar-alt" aria-hidden="true"></i> {{ item.date_label }}</span>
+                  {% endif %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>

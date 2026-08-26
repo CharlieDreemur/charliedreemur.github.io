@@ -1,11 +1,43 @@
 ---
-layout: archive
+layout: showcase
 title: "Publications"
 permalink: /publications/
-author_profile: true
+author_profile: false
+collection_name: publications
+showcase:
+  eyebrow: "Research Portfolio"
+  description: "Research on reliable AI agents, multimodal reasoning, and the social and ethical behavior of large language models."
+  icon: "fas fa-book-open"
+  highlight_author: "Weijia Zhang"
+  # 10s: first-author accepted; 20s: coauthor accepted; 30s: first-author unaccepted; 40s: coauthor unaccepted.
+  item_sort: same_year_order
+  hero_image: "/images/showcase/publications-hero.png"
+  hero_alt: "Abstract visualization of research papers connected through a knowledge graph"
+  primary_label: "Google Scholar"
+  primary_icon: "ai ai-google-scholar"
+  primary_url: "https://scholar.google.com/citations?user=JN57tLsAAAAJ"
+  groups:
+    - key: year-2026
+      label: "2026"
+      icon: "fas fa-calendar-alt"
+      kicker: "Latest Research"
+      description: "Agent reliability, multimodal reasoning, and responsible AI."
+    - key: year-2025
+      label: "2025"
+      icon: "fas fa-calendar-alt"
+      kicker: "Research in 2025"
+      description: "Agentic multimodal reasoning and learning from agent failures."
+    - key: year-2024
+      label: "2024"
+      icon: "fas fa-calendar-alt"
+      kicker: "Research in 2024"
+      description: "Emergent social behavior in multi-agent systems."
+  metrics:
+    - value: "7"
+      label: "Publications"
+    - value: "200+"
+      label: "Citations"
+      live: "scholar-citations"
+    - value: "4"
+      label: "Accepted papers"
 ---
-
-{% include publications-list.html show_scholar=true category_heading_tag="h2" %}
-
-
-

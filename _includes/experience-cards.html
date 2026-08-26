@@ -1,83 +1,109 @@
 <section class="experience-section">
   <h2>Education</h2>
 
-  <div class="experience-card-list">
+  <ul class="experience-timeline">
     {% for education in site.data.cv.education %}
       {% assign logo_text = education.institution | slice: 0, 1 %}
       {% assign logo_src = "" %}
+      {% assign school_url = "" %}
       {% if education.institution contains "Yale" %}
         {% assign logo_text = "Y" %}
         {% assign logo_src = "/images/logos/yale-shield.svg" %}
+        {% assign school_url = "https://www.yale.edu/" %}
       {% elsif education.institution contains "Illinois" %}
         {% assign logo_text = "UIUC" %}
         {% assign logo_src = "/images/logos/uiuc-block-i.svg" %}
+        {% assign school_url = "https://illinois.edu/" %}
       {% endif %}
 
-      <article class="experience-card experience-card--education">
-        <div class="experience-card__mark" aria-hidden="true">
+      <li class="experience-entry">
+        <p class="experience-entry__date">
+          <span>{{ education.startDate | append: "-01" | date: "%b %Y" }}</span>
+          <span class="experience-entry__dash" aria-hidden="true">&ndash;</span>
+          <span>{{ education.endDate | append: "-01" | date: "%b %Y" }}</span>
+        </p>
+        <div class="experience-entry__mark" aria-hidden="true">
           {% if logo_src != "" %}
-            <img class="experience-card__logo" src="{{ logo_src | relative_url }}" alt="">
+            <img class="experience-entry__logo" src="{{ logo_src | relative_url }}" alt="">
           {% else %}
             {{ logo_text }}
           {% endif %}
         </div>
-        <div class="experience-card__body">
-          <h3>{{ education.institution }}</h3>
-          <p class="experience-card__role">{{ education.area }}</p>
-          <p class="experience-card__date">{{ education.startDate }} - {{ education.endDate }}</p>
+        <div class="experience-entry__body">
+          <p class="experience-entry__title">
+            {% if school_url != "" %}
+              <a href="{{ school_url }}">{{ education.institution }}</a>
+            {% else %}
+              {{ education.institution }}
+            {% endif %}
+          </p>
+          <p class="experience-entry__meta">{{ education.area }}</p>
           {% if education.studyType and education.studyType != "" %}
-            <p>{{ education.studyType }}</p>
-          {% endif %}
-          {% if education.gpa %}
-            <p>GPA: {{ education.gpa }}</p>
+            <p class="experience-entry__note">{{ education.studyType }}</p>
           {% endif %}
         </div>
-      </article>
+      </li>
     {% endfor %}
-  </div>
+  </ul>
 </section>
 
 <section class="experience-section">
   <h2>Work Experience</h2>
 
-  <div class="experience-card-list">
+  <ul class="experience-timeline">
     {% for job in site.data.cv.work %}
       {% assign company_name = job.company | split: "," | first %}
       {% assign logo_text = company_name | slice: 0, 1 %}
       {% assign logo_src = "" %}
-      {% if job.company contains "Microsoft" %}
+      {% assign logo_icon = "" %}
+      {% assign company_url = "" %}
+      {% if job.company contains "TikTok" %}
+        {% assign logo_icon = "fab fa-tiktok" %}
+        {% assign company_url = "https://www.tiktok.com/" %}
+      {% elsif job.company contains "Microsoft" %}
         {% assign logo_text = "MSR" %}
         {% assign logo_src = "/images/logos/microsoft-icon.svg" %}
+        {% assign company_url = "https://www.microsoft.com/en-us/research/" %}
       {% elsif job.company contains "Tencent" %}
-        {% assign logo_text = "WX" %}
+        {% assign logo_text = "WXG" %}
         {% assign logo_src = "/images/logos/wechat.svg" %}
+        {% assign company_url = "https://www.tencent.com/" %}
       {% elsif job.company contains "Reborn" %}
         {% assign logo_text = "RN" %}
         {% assign logo_src = "/images/logos/reborn.png" %}
       {% endif %}
 
-      <article class="experience-card experience-card--work">
-        <div class="experience-card__mark" aria-hidden="true">
-          {% if logo_src != "" %}
-            <img class="experience-card__logo" src="{{ logo_src | relative_url }}" alt="">
+      <li class="experience-entry">
+        <p class="experience-entry__date">
+          <span>{{ job.startDate }}</span>
+          <span class="experience-entry__dash" aria-hidden="true">&ndash;</span>
+          <span>{{ job.endDate }}</span>
+        </p>
+        <div class="experience-entry__mark" aria-hidden="true">
+          {% if logo_icon != "" %}
+            <i class="experience-entry__brand-icon {{ logo_icon }}"></i>
+          {% elsif logo_src != "" %}
+            <img class="experience-entry__logo" src="{{ logo_src | relative_url }}" alt="">
           {% else %}
             {{ logo_text }}
           {% endif %}
         </div>
-        <div class="experience-card__body">
-          <h3>{{ job.company }}</h3>
-          <p class="experience-card__role">{{ job.position }}</p>
-          <p class="experience-card__date">{{ job.startDate }} - {{ job.endDate }}</p>
-          <p>{{ job.summary }}</p>
-          {% if job.highlights %}
-            <ul class="experience-card__highlights">
-              {% for highlight in job.highlights %}
-                <li>{{ highlight }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
+        <div class="experience-entry__body">
+          <p class="experience-entry__title">
+            {% if company_url != "" %}
+              <a href="{{ company_url }}">{{ job.company }}</a>
+            {% else %}
+              {{ job.company }}
+            {% endif %}
+          </p>
+          <p class="experience-entry__meta">{{ job.position }}</p>
+          <p class="experience-entry__note">{{ job.summary }}</p>
         </div>
-      </article>
+      </li>
     {% endfor %}
-  </div>
+  </ul>
+
+  <p class="experience-section__more">
+    <a href="{{ '/cv/' | relative_url }}">See full responsibilities on my CV</a>
+  </p>
 </section>

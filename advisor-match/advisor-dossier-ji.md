@@ -1,6 +1,6 @@
 # Advisor Dossier: Prof. Heng Ji — UIUC (Siebel School of Computing and Data Science)
 
-**Student:** Weijia Zhang | M.S. CS, Yale University (Aug 2026 – May 2028, Thesis Track, Full Scholarship)
+**Student:** Weijia Zhang | M.S. CS, Yale University (Sep 2026 – May 2028, Thesis Track, Full Scholarship)
 **Assumed goals (inferred from CV):** Industry-research 60% · Academia (PhD after M.S.) 40%
 **Report date:** 2026-06-11
 
@@ -64,7 +64,7 @@ Same institutional constraint as Jiaxuan You: Ji cannot serve as Weijia's Yale M
 
 | # | Problem | Severity | Confidence | Evidence |
 |---|---------|----------|------------|----------|
-| 1 | **Institutional mismatch** | Critical (for M.S. advising) | High | Weijia: Yale M.S. Aug 2026; Ji: UIUC Full Professor. Different institutions. |
+| 1 | **Institutional mismatch** | Critical (for M.S. advising) | High | Weijia: Yale M.S. Sep 2026; Ji: UIUC Full Professor. Different institutions. |
 | 2 | **Large lab, limited bandwidth** | Medium | High | 8–10+ active PhD students; plus visiting students; plus 2 center directorships |
 | 3 | **Long PhD timelines** | Medium | High | Qingyun Wang: 8 years; Zhenhailong Wang: ~6-7 years; norm for students who join early |
 | 4 | **Amazon pipeline bias** | Medium | High | Amazon Scholar + AICE center + 3 Amazon-placed alumni. May skew research toward Amazon applications. |

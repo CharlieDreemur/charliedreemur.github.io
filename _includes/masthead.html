@@ -6,7 +6,26 @@
         <button><span class="navicon"></span></button>
         <ul class="visible-links">
           <li class="masthead__menu-item masthead__menu-item--lg persist {% if page.url == '/' or page.url == '/index.html' %}selected{% endif %}">
-            <a href="{{ base_path }}/">{{ site.title }}</a>
+            <span class="masthead__brand">
+              {% if site.space_journey.enabled %}
+              <a class="masthead__brand-mark masthead__space-launch" href="{{ base_path }}{{ site.space_journey.url }}" data-space-launch data-hold-duration="5000" aria-label="Hold for 5 seconds to launch Charlie's space journey" aria-describedby="space-launch-hint" title="Hold for 5 seconds to launch">
+                <img src="{{ base_path }}/images/github_avatar.png" alt="">
+              </a>
+              <svg class="masthead__launch-progress" viewBox="0 0 48 48" aria-hidden="true">
+                <circle class="masthead__launch-track" cx="24" cy="24" r="22.5" pathLength="100"></circle>
+                <circle class="masthead__launch-value" cx="24" cy="24" r="22.5" pathLength="100"></circle>
+              </svg>
+              <span id="space-launch-hint" class="masthead__launch-hint" role="status">Hold logo 5s to launch</span>
+              {% else %}
+              <a class="masthead__brand-mark" href="{{ base_path }}/" aria-label="{{ site.title }} — Home">
+                <img src="{{ base_path }}/images/github_avatar.png" alt="">
+              </a>
+              {% endif %}
+              <span class="masthead__brand-copy">
+                <strong>Weijia Zhang</strong>
+                <small>AI Researcher</small>
+              </span>
+            </span>
           </li>
           {% for link in site.data.navigation.main %}
             {% if link.url contains 'http' %}
@@ -20,6 +39,15 @@
           {% endfor %}
           <li id="theme-toggle" class="masthead__menu-item persist tail">
             <a role="button" aria-labelledby="theme-icon"><i id="theme-icon" class="fa-solid fa-sun" aria-hidden="true" title="toggle theme"></i></a>
+          </li>
+          <li class="masthead__menu-item masthead__institution persist">
+            <a class="masthead__institution-link" href="https://www.yale.edu/" target="_blank" rel="noopener" aria-label="Yale University">
+              <img class="masthead__institution-mark" src="{{ '/images/logos/yale-shield.svg' | relative_url }}" alt="">
+              <span class="masthead__institution-copy">
+                <strong>Yale</strong>
+                <small>University</small>
+              </span>
+            </a>
           </li>
         </ul>
         <ul class="hidden-links hidden"></ul>

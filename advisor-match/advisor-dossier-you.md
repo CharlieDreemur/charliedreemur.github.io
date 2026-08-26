@@ -1,6 +1,6 @@
 # Advisor Dossier: Prof. Jiaxuan You — UIUC (Siebel School of Computing and Data Science)
 
-**Student:** Weijia Zhang | M.S. CS, Yale University (Aug 2026 – May 2028, Thesis Track, Full Scholarship)
+**Student:** Weijia Zhang | M.S. CS, Yale University (Sep 2026 – May 2028, Thesis Track, Full Scholarship)
 **Assumed goals (inferred from CV):** Industry-research 60% · Academia (PhD after M.S.) 40%
 **Report date:** 2026-06-11
 
@@ -64,7 +64,7 @@ This creates a structural incompatibility: You cannot serve as Weijia's primary 
 
 | # | Problem | Severity | Confidence | Evidence |
 |---|---------|----------|------------|----------|
-| 1 | **Institutional mismatch** | Critical (for M.S. advising) | High | Weijia: Yale M.S. Aug 2026. You: UIUC faculty. Cannot be primary thesis advisor at Yale. |
+| 1 | **Institutional mismatch** | Critical (for M.S. advising) | High | Weijia: Yale M.S. Sep 2026. You: UIUC faculty. Cannot be primary thesis advisor at Yale. |
 | 2 | **Zero UIUC PhD graduates** | Critical | High | You joined UIUC Fall 2024; 0 graduated PhDs from his UIUC lab |
 | 3 | **Zero frontier lab placement data** | Critical | High | No documented student internships or full-time roles at top AI labs |
 | 4 | **Coverage gap (agents hit rate limits)** | High | High | 2/3 research agents returned no student data; student roster and alumni data is partially unavailable for this dossier |
