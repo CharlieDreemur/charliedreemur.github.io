@@ -1,12 +1,17 @@
 ---
 title: "OpenManus & OpenManus-RL"
-excerpt: "Core author of OpenManus-RL in an open-source agent ecosystem with 70,000+ GitHub stars."
+excerpt: "Core author of OpenManus-RL in an open-source agent ecosystem with 62,000+ combined GitHub stars."
 collection: portfolio
 permalink: /projects/openmanus-rl/
 date: 2025-01-01
-link: "https://github.com/OpenManus/OpenManus-RL"
-github: "https://github.com/OpenManus/OpenManus-RL"
-stars: "4.1K"
+link: "https://github.com/FoundationAgents/OpenManus"
+github: "https://github.com/FoundationAgents/OpenManus"
+github_repositories:
+  - label: "OpenManus"
+    url: "https://github.com/FoundationAgents/OpenManus"
+  - label: "OpenManus-RL"
+    url: "https://github.com/OpenManus/OpenManus-RL"
+stars: "62.2K"
 showcase_group: agent-systems
 badge: "Core Author"
 date_label: "Jan 2025 – Jul 2025"
@@ -17,7 +22,7 @@ tags:
   - "SFT / RL"
 ---
 
-OpenManus-RL is a verl-based agent RL post-training framework and the follow-up project of OpenManus. I collaborated with the official OpenManus team as a core author in an open-source ecosystem with 70,000+ GitHub stars.
+OpenManus-RL is a verl-based agent RL post-training framework and the follow-up project of OpenManus. I collaborated with the official OpenManus team as a core author in an open-source ecosystem with 62,000+ combined GitHub stars.
 
 Key contributions include:
 

@@ -134,7 +134,11 @@
                     {% if item.paperurl %}
                       <a href="{{ item.paperurl }}"><i class="fas fa-file-alt" aria-hidden="true"></i> Paper</a>
                     {% endif %}
-                    {% if item.github %}
+                    {% if item.github_repositories %}
+                      {% for repository in item.github_repositories %}
+                        <a href="{{ repository.url }}"><i class="fab fa-github" aria-hidden="true"></i> {{ repository.label }}</a>
+                      {% endfor %}
+                    {% elsif item.github %}
                       <a href="{{ item.github }}"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a>
                     {% elsif item.link and item.link contains "github.com" %}
                       <a href="{{ item.link }}"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a>
